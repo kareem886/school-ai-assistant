@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Modern Infinity — Live AI Assistant</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #0f1b2d;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+}
+
+.top-bar {
+  width: 100%;
+  max-width: 480px;
+  background: #1B3A6B;
+  border-radius: 12px 12px 0 0;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.school-info { display: flex; align-items: center; gap: 12px; }
+.logo {
+  width: 44px; height: 44px;
+  background: white; border-radius: 10px;
+  display: flex; align-items: center;
+  justify-content: center; font-size: 22px;
+}
+.school-name h1 { color: white; font-size: 14px; font-weight: 700; }
+.school-name p { color: #93c5fd; font-size: 11px; margin-top: 2px; }
+
+.live-badge {
+  background: #22c55e;
+  color: white; font-size: 10px;
+  font-weight: 700; padding: 4px 10px;
+  border-radius: 20px; letter-spacing: 1px;
+  display: flex; align-items: center; gap: 5px;
+}
+
+.live-dot {
+  width: 6px; height: 6px;
+  background: white; border-radius: 50%;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.8); }
+}
+
+.phone {
+  width: 100%;
+  max-width: 480px;
+  background: #e5ddd5;
+  border-radius: 0 0 12px 12px;
+  overflow: hidden;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+  display: flex;
+  flex-direction: column;
+  height: 680px;
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none'%3E%3Cg fill='%23c8b89a' fill-opacity='0.15'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+
+.chat-header {
+  background: #075e54;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.chat-avatar {
+  width: 36px; height: 36px;
+  background: #25d366; border-radius: 50%;
+  display: flex; align-items: center;
+  justify-content: center; font-size: 17px;
+}
+
+.chat-header-text h3 { color: white; font-size: 14px; font-weight: 600; }
+.chat-header-text p { color: #b2dfdb; font-size: 11px; }
+
+.online { display: inline-block; width: 7px; height: 7px;
+  background: #25d366; border-radius: 50; margin-right: 4px;
+  animation: blink 2s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+.messages {
+  flex: 1; overflow-y: auto;
+  padding: 10px; display: flex;
+  flex-direction: column; gap: 6px;
+}
+
+.msg {
+  max-width: 85%; padding: 7px 10px;
+  border-radius: 7px; font-size: 13px;
+  line-height: 1.5; word-wrap: break-word;
+}
+
+.msg.ai {
+  background: white; align-self: flex-start;
+  border-radius: 0 7px 7px 7px;
+  box-shadow: 0 1px 1px rgba(0,0,0,0.1);
+}
+
+.msg.user {
+  background: #dcf8c6; align-self: flex-end;
+  border-radius: 7px 0 7px 7px;
+  box-shadow: 0 1px 1px rgba(0,0,0,0.1);
+}
+
+.msg .sender { font-size: 10px; font-weight: 700; color: #075e54; margin-bottom: 2px; }
+.msg .time { font-size: 10px; color: #999; text-align: right; margin-top: 3px; }
+
+.chips {
+  display: flex; flex-wrap: wrap;
+  gap: 6px; padding: 4px 0;
+  align-self: flex-start; max-width: 95%;
+}
+
+.chip {
+  background: white; border: 1.5px solid #075e54;
+  color: #075e54; font-size: 11px;
+  padding: 5px 10px; border-radius: 16px;
+  cursor: pointer; transition: all 0.15s;
+  white-space: nowrap;
+}
+.chip:hover { background: #075e54; color: white; }
+
+.typing {
+  background: white; align-self: flex-start;
+  padding: 10px 14px; border-radius: 0 7px 7px 7px;
+  display: none; box-shadow: 0 1px 1px rgba(0,0,0,0.1);
+}
+.typing.show { display: block; }
+.dots { display: flex; gap: 4px; }
+.dots span {
+  width: 7px; height: 7px; background: #aaa;
+  border-radius: 50%; animation: bounce 1.2s infinite;
+}
+.dots span:nth-child(2) { animation-delay: 0.2s; }
+.dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes bounce {
+  0%,80%,100%{transform:scale(0.7);opacity:0.5}
+  40%{transform:scale(1.1);opacity:1}
+}
+
+.date-chip {
+  background: rgba(255,255,255,0.8); color: #667781;
+  font-size: 11px; padding: 3px 10px;
+  border-radius: 8px; align-self: center; margin: 4px 0;
+}
+
+.input-row {
+  padding: 8px 10px; background: #f0f2f5;
+  display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+}
+
+.input-row input {
+  flex: 1; padding: 9px 14px;
+  border-radius: 20px; border: none;
+  background: white; font-size: 13px;
+  outline: none; box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+}
+
+.send {
+  width: 40px; height: 40px; background: #075e54;
+  border: none; border-radius: 50%; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s;
+}
+.send:hover { background: #128c7e; }
+.send svg { fill: white; }
+
+.source-badge {
+  text-align: center; font-size: 10px;
+  color: #999; padding: 4px;
+  background: #f0f2f5; flex-shrink: 0;
+}
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div class="school-info">
+    <div class="logo">🏫</div>
+    <div class="school-name">
+      <h1>Modern Infinity Language School</h1>
+      <p>El Sheikh Zayed, 6th of October City</p>
+    </div>
+  </div>
+  <div class="live-badge">
+    <span class="live-dot"></span>
+    LIVE DATA
+  </div>
+</div>
+
+<div class="phone">
+  <div class="chat-header">
+    <div class="chat-avatar">🏫</div>
+    <div class="chat-header-text">
+      <h3>Modern Infinity AI</h3>
+      <p><span class="online"></span>Connected to Google Sheets</p>
+    </div>
+  </div>
+
+  <div class="messages" id="messages">
+    <div class="date-chip">Today</div>
+    <div class="msg ai">
+      <div class="sender">Modern Infinity AI</div>
+      Welcome to Modern Infinity Language School! 👋<br><br>
+      I'm connected to the school's live data. I can help with:<br>
+      📚 Homework & assignments<br>
+      📅 Class schedules<br>
+      💰 Fee payment status<br>
+      📋 Admissions information<br>
+      📢 School announcements<br><br>
+      What would you like to know?
+      <div class="time">Now</div>
+    </div>
+    <div class="chips">
+      <span class="chip" onclick="ask('What is the homework for Grade 7?')">📚 Grade 7 Homework</span>
+      <span class="chip" onclick="ask('Grade 7 schedule on Monday')">📅 Schedule</span>
+      <span class="chip" onclick="ask('Check fees for STU001')">💰 Check Fees</span>
+      <span class="chip" onclick="ask('Any school announcements?')">📢 Announcements</span>
+      <span class="chip" onclick="ask('How much are the fees for Grade 8?')">📋 Admissions</span>
+      <span class="chip" onclick="ask('Check attendance for STU002')">✅ Attendance</span>
+    </div>
+  </div>
+
+  <div class="typing" id="typing">
+    <div class="dots"><span></span><span></span><span></span></div>
+  </div>
+
+  <div class="input-row">
+    <input type="text" id="input" placeholder="Type your question..."
+           onkeypress="if(event.key==='Enter') sendMsg()"/>
+    <button class="send" onclick="sendMsg()">
+      <svg width="18" height="18" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+    </button>
+  </div>
+
+  <div class="source-badge">⚡ Reading live from Google Sheets</div>
+</div>
+
+<script>
+const API = "http://localhost:5000/api";
+
+function getTime() {
+  return new Date().toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
+}
+
+function addMsg(text, type) {
+  const area = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = `msg ${type}`;
+  const formatted = text
+    .replace(/\*(.*?)\*/g, '<strong>$1</strong>')
+    .replace(/\n/g, '<br>');
+  div.innerHTML = type === 'ai'
+    ? `<div class="sender">Modern Infinity AI</div>${formatted}<div class="time">${getTime()}</div>`
+    : `${formatted}<div class="time">${getTime()} ✓✓</div>`;
+  area.appendChild(div);
+  area.scrollTop = area.scrollHeight;
+}
+
+function showTyping() {
+  document.getElementById('typing').classList.add('show');
+  document.getElementById('messages').scrollTop = 9999;
+}
+
+function hideTyping() {
+  document.getElementById('typing').classList.remove('show');
+}
+
+async function processMessage(msg) {
+  const m = msg.toLowerCase();
+
+  try {
+    // HOMEWORK
+    if (m.includes('homework') || m.includes('assignment')) {
+      const gradeMatch = msg.match(/grade\s*(\d+)/i);
+      if (gradeMatch) {
+        const grade = `Grade ${gradeMatch[1]}`;
+        const res = await fetch(`${API}/homework?grade=${encodeURIComponent(grade)}`);
+        const data = await res.json();
+        if (data.homework && data.homework.length > 0) {
+          let response = `📚 *${grade} Homework* (Live from Google Sheets)\n\n`;
+          data.homework.forEach(hw => {
+            response += `📖 *${hw.Subject}:*\n${hw.Assignment}\nDue: ${hw['Due Date']}\nTeacher: ${hw.Teacher}\n\n`;
+          });
+          return response.trim();
+        }
+        return `No homework found for ${grade} in the system right now.`;
+      }
+      return `Please specify the grade.\nExample: *"Homework for Grade 7"*`;
+    }
+
+    // SCHEDULE
+    if (m.includes('schedule') || m.includes('timetable')) {
+      const gradeMatch = msg.match(/grade\s*(\d+)/i);
+      const dayMatch = msg.match(/sunday|monday|tuesday|wednesday|thursday/i);
+      if (gradeMatch) {
+        const grade = `Grade ${gradeMatch[1]}`;
+        const day = dayMatch ? dayMatch[0] : 'all';
+        const res = await fetch(`${API}/schedule?grade=${encodeURIComponent(grade)}&day=${day}`);
+        const data = await res.json();
+        if (data.schedule && data.schedule.length > 0) {
+          let response = `📅 *${grade} Schedule* (Live from Google Sheets)\n\n`;
+          data.schedule.forEach(s => {
+            const periods = [s['Period 1'], s['Period 2'], s['Period 3'], s['Period 4'], s['Period 5']]
+              .filter(Boolean).join(' → ');
+            response += `*${s.Day}:* ${periods}\n`;
+          });
+          return response.trim();
+        }
+        return `No schedule found for ${grade}.`;
+      }
+      return `Please specify the grade.\nExample: *"Grade 7 schedule on Monday"*`;
+    }
+
+    // FEES CHECK
+    if ((m.includes('fee') || m.includes('payment') || m.includes('paid')) && m.includes('stu')) {
+      const idMatch = msg.match(/STU\d+/i);
+      if (idMatch) {
+        const res = await fetch(`${API}/fees?id=${idMatch[0]}`);
+        const data = await res.json();
+        if (data.error) return `❌ ${data.error}\n\nContact: ${data.contact}`;
+        return `👤 *${data.name}* (${data.grade})\n\n💰 Fee Status (Live):\n• Total: ${Number(data.total).toLocaleString()} EGP\n• Paid: ${Number(data.paid).toLocaleString()} EGP ✅\n• Remaining: ${Number(data.remaining).toLocaleString()} EGP\n• Status: *${data.status}*\n• Next Due: ${data.next_due}`;
+      }
+    }
+
+    // FEES INQUIRY (general)
+    if (m.includes('fee') || m.includes('cost') || m.includes('how much') || m.includes('price')) {
+      const res = await fetch(`${API}/admissions`);
+      const data = await res.json();
+      const info = data.info;
+      return `💰 *Modern Infinity Fees* (Live from Google Sheets)\n\n🔸 KG: ${info['KG1 Fees']}\n🔸 Grade 1-3: ${info['Grade 1-3 Fees']}\n🔸 Grade 4-6: ${info['Grade 4-6 Fees']}\n🔸 Grade 7-9: ${info['Grade 7-9 Fees']}\n🔸 Grade 10-12: ${info['Grade 10-12 Fees']}\n\n📅 ${info['Payment Plan']}\n🏦 Deposit: ${info['Registration Deposit']}\n\nWhich grade are you asking about?`;
+    }
+
+    // ATTENDANCE
+    if (m.includes('attendance') || m.includes('absent')) {
+      const idMatch = msg.match(/STU\d+/i);
+      if (idMatch) {
+        const res = await fetch(`${API}/attendance?id=${idMatch[0]}`);
+        const data = await res.json();
+        if (data.error) return `❌ ${data.error}`;
+        return `👤 *${data.name}* (${data.grade})\n\n📊 Attendance (Live):\n• Present: ${data.present}/${data.total} days\n• Absent: ${data.absent} days\n• Rate: ${data.percentage}%\n• Status: ${data.status}`;
+      }
+      return `Please provide student ID.\nExample: *"Attendance for STU001"*`;
+    }
+
+    // ANNOUNCEMENTS
+    if (m.includes('announcement') || m.includes('news') || m.includes('holiday') || m.includes('exam')) {
+      const res = await fetch(`${API}/announcements`);
+      const data = await res.json();
+      if (data.announcements && data.announcements.length > 0) {
+        let response = `📢 *School Announcements* (Live)\n\n`;
+        data.announcements.forEach(a => {
+          response += `🔔 *${a.Title}*\n${a.Message}\n📅 ${a.Date}\n\n`;
+        });
+        return response.trim();
+      }
+      return `No active announcements at the moment.`;
+    }
+
+    // ADMISSIONS
+    if (m.includes('admission') || m.includes('enroll') || m.includes('register') || m.includes('apply')) {
+      const res = await fetch(`${API}/admissions`);
+      const data = await res.json();
+      const info = data.info;
+      return `📋 *Admissions* (Live from Google Sheets)\n\n✅ Status: ${info['Registration Status']}\n📅 Deadline: ${info['Application Deadline']}\n\n*Available Grades:*\n${info['Available Grades']}\n\n*Required Documents:*\n${info['Required Documents']}\n\n📞 ${info['School Phone']}\n💬 WhatsApp: ${info['School WhatsApp']}`;
+    }
+
+    // DEFAULT
+    return `I can help you with:\n\n📚 *Homework* — "Homework for Grade 7"\n📅 *Schedule* — "Grade 7 schedule Monday"\n💰 *Fees* — "How much are fees for Grade 8?"\n💳 *Fee Status* — "Check fees for STU001"\n✅ *Attendance* — "Attendance for STU001"\n📢 *Announcements* — "Any school news?"\n📋 *Admissions* — "Is registration open?"\n\nAll data is live from Google Sheets 📊`;
+
+  } catch (error) {
+    return `⚠️ Could not connect to server.\n\nMake sure app.py is running:\n"python app.py"\n\nError: ${error.message}`;
+  }
+}
+
+async function sendMsg() {
+  const input = document.getElementById('input');
+  const msg = input.value.trim();
+  if (!msg) return;
+  input.value = '';
+  addMsg(msg, 'user');
+  showTyping();
+  const response = await processMessage(msg);
+  setTimeout(() => {
+    hideTyping();
+    addMsg(response, 'ai');
+  }, 600);
+}
+
+function ask(text) {
+  document.getElementById('input').value = text;
+  sendMsg();
+}
+</script>
+</body>
+</html>
