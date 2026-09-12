@@ -87,98 +87,162 @@ def process_message(msg):
     m = msg.lower().strip()
     is_arabic = any('\u0600' <= c <= '\u06FF' for c in msg)
 
-    if any(w in m for w in ['homework', 'assignment', 'hw']):
+    # HOMEWORK
+    if any(w in m for w in ['homework', 'assignment', 'واجب', 'تكليف', 'hw']):
         grade = None
         for g in ['12', '11', '10', '9', '8', '7', '6', '5', '4', '3', '2', '1']:
-            if f'grade {g}' in m:
+            if f'grade {g}' in m or f'الصف {g}' in m or f'صف {g}' in m:
                 grade = f'Grade {g}'
                 break
         if not grade:
-            return "Specify grade\nExample: Homework for Grade 7"
+            return "حدد الصف\nمثال: واجب الصف السابع" if is_arabic else "Specify grade\nExample: Homework for Grade 7"
         rows = read_tab("Homework")
         hw = [r for r in rows if grade.lower() in str(r.get("Grade", "")).lower() and str(r.get("Assignment", "")).strip()]
         if not hw:
-            return f"No homework for {grade}\n{SCHOOL['phone']}"
-        r = f"Homework {grade}\n\n"
-        for h in hw:
-            r += f"- {h.get('Subject', '')}: {h.get('Assignment', '')} Due: {h.get('Due Date', '')}\n"
+            return f"لا يوجد واجب لـ{grade}\n📞 {SCHOOL['phone']}" if is_arabic else f"No homework for {grade}\n📞 {SCHOOL['phone']}"
+        if is_arabic:
+            r = f"📚 واجبات {grade}\n\n"
+            for h in hw:
+                r += f"• {h.get('Subject', '')}: {h.get('Assignment', '')}\n التسليم: {h.get('Due Date', '')}\n\n"
+        else:
+            r = f"📚 {grade} Homework\n\n"
+            for h in hw:
+                r += f"• {h.get('Subject', '')}: {h.get('Assignment', '')}\n Due: {h.get('Due Date', '')} | {h.get('Teacher', '')}\n\n"
         return r.strip()
 
-    if any(w in m for w in ['schedule', 'timetable']):
+    # SCHEDULE
+    if any(w in m for w in ['schedule', 'timetable', 'جدول', 'حصص']):
         grade = None
         for g in ['12', '11', '10', '9', '8', '7', '6', '5', '4', '3', '2', '1']:
-            if f'grade {g}' in m:
+            if f'grade {g}' in m or f'الصف {g}' in m:
                 grade = f'Grade {g}'
                 break
         if not grade:
-            return "Specify grade\nExample: Grade 7 schedule"
+            return "حدد الصف" if is_arabic else "Specify grade\nExample: Grade 7 schedule"
+        day_map = {'الأحد': 'Sunday', 'الاثنين': 'Monday', 'الثلاثاء': 'Tuesday', 'الأربعاء': 'Wednesday', 'الخميس': 'Thursday'}
+        day = None
+        for ar, en in day_map.items():
+            if ar in msg:
+                day = en
+                break
+        for en in ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday']:
+            if en in m:
+                day = en.capitalize()
+                break
         rows = read_tab("Schedule")
         sched = [r for r in rows if grade.lower() in str(r.get("Grade", "")).lower()]
+        if day:
+            sched = [r for r in sched if day.lower() in str(r.get("Day", "")).lower()]
         if not sched:
-            return f"No schedule for {grade}"
-        r = f"Schedule {grade}\n\n"
-        for s in sched:
-            ps = [str(s.get(f'Period {i}', '')) for i in range(1, 6) if s.get(f'Period {i}', '')]
-            r += f"{s.get('Day', '')}: {' / '.join(ps)}\n"
+            return f"لا يوجد جدول لـ{grade}" if is_arabic else f"No schedule for {grade}"
+        if is_arabic:
+            r = f"📅 جدول {grade}\n\n"
+            for s in sched:
+                ps = [str(s.get(f'Period {i}', '')) for i in range(1, 6) if s.get(f'Period {i}', '')]
+                r += f"{s.get('Day', '')}: {' ← '.join(ps)}\n"
+        else:
+            r = f"📅 {grade} Schedule\n\n"
+            for s in sched:
+                ps = [str(s.get(f'Period {i}', '')) for i in range(1, 6) if s.get(f'Period {i}', '')]
+                r += f"{s.get('Day', '')}: {' → '.join(ps)}\n"
         return r.strip()
 
+    # STUDENT LOOKUP (STU001, STU002, ...)
     id_match = re.search(r'STU\d+', msg.upper())
     if id_match:
         sid = id_match.group()
         rows = read_tab("Students")
         s = next((r for r in rows if str(r.get("Student ID", "")).upper() == sid), None)
         if not s:
-            return f"ID {sid} not found\n{SCHOOL['phone']}"
+            return f"ID {sid} not found\n📞 {SCHOOL['phone']}"
         name = s.get('Student Name', '')
         grade = s.get('Grade', '')
-        if any(w in m for w in ['attendance', 'absent']):
+        if any(w in m for w in ['attendance', 'absent', 'حضور', 'غياب']):
             present = int(s.get('Days Present', 0) or 0)
             total = int(s.get('Total School Days', 0) or 0)
             pct = round((present / total * 100) if total > 0 else 0, 1)
-            return f"{name} ({grade})\nPresent: {present}/{total}\nRate: {pct}%"
+            return f"👤 {name} ({grade})\n📊 Present: {present}/{total}\nAbsent: {total - present}\nRate: {pct}%"
         total = int(s.get('Total Fees', 0) or 0)
         paid = int(s.get('Amount Paid', 0) or 0)
         remaining = int(s.get('Remaining', 0) or 0)
-        return f"{name} ({grade})\nTotal: {total:,} EGP\nPaid: {paid:,} EGP\nRemaining: {remaining:,} EGP\n{SCHOOL['phone']}"
+        return (f"👤 {name} ({grade})\n💰 Total: {total:,} EGP\nPaid: {paid:,} EGP ✅\n"
+                f"Remaining: {remaining:,} EGP\nStatus: {s.get('Payment Status', '')}\n"
+                f"Next Due: {s.get('Next Payment Due', '')}\n📞 {SCHOOL['phone']}")
 
-    if any(w in m for w in ['fee', 'fees', 'cost', 'how much']):
+    # FEES
+    if any(w in m for w in ['fee', 'fees', 'cost', 'how much', 'رسوم', 'مصاريف', 'كام', 'بكام']):
         rows = read_tab("Admissions")
         info = {r.get("Item", ""): r.get("Value", "") for r in rows}
-        return (f"Modern Infinity Fees 2025/2026\n\n"
-                f"KG: {info.get('KG1 Fees', '42,000 EGP')}\n"
-                f"Grade 1-3: {info.get('Grade 1-3 Fees', '48,000 EGP')}\n"
-                f"Grade 4-6: {info.get('Grade 4-6 Fees', '55,000 EGP')}\n"
-                f"Grade 7-9: {info.get('Grade 7-9 Fees', '62,000 EGP')}\n"
-                f"Grade 10-12: {info.get('Grade 10-12 Fees', '70,000 EGP')}\n\n{SCHOOL['phone']}")
+        if is_arabic:
+            return (f"💰 رسوم مودرن إنفينيتي 2025/2026\n\n"
+                    f"🔸 KG: {info.get('KG1 Fees', '42,000 EGP')}\n"
+                    f"🔸 الصف 1-3: {info.get('Grade 1-3 Fees', '48,000 EGP')}\n"
+                    f"🔸 الصف 4-6: {info.get('Grade 4-6 Fees', '55,000 EGP')}\n"
+                    f"🔸 الصف 7-9: {info.get('Grade 7-9 Fees', '62,000 EGP')}\n"
+                    f"🔸 الصف 10-12: {info.get('Grade 10-12 Fees', '70,000 EGP')}\n\n"
+                    f"📅 3 أقساط\n📞 {SCHOOL['phone']}")
+        return (f"💰 Modern Infinity Fees 2025/2026\n\n"
+                f"🔸 KG: {info.get('KG1 Fees', '42,000 EGP')}\n"
+                f"🔸 Grade 1-3: {info.get('Grade 1-3 Fees', '48,000 EGP')}\n"
+                f"🔸 Grade 4-6: {info.get('Grade 4-6 Fees', '55,000 EGP')}\n"
+                f"🔸 Grade 7-9: {info.get('Grade 7-9 Fees', '62,000 EGP')}\n"
+                f"🔸 Grade 10-12: {info.get('Grade 10-12 Fees', '70,000 EGP')}\n\n"
+                f"📅 3 installments\n📞 {SCHOOL['phone']}")
 
-    if any(w in m for w in ['announcement', 'news', 'holiday', 'exam']):
+    # ANNOUNCEMENTS
+    if any(w in m for w in ['announcement', 'news', 'holiday', 'exam', 'إعلان', 'أخبار', 'امتحان', 'إجازة']):
         rows = read_tab("Announcements")
         active = [r for r in rows if str(r.get("Status", "")).lower() == "active"]
         if not active:
-            return "No announcements"
-        r = "School Announcements\n\n"
-        for a in active:
-            r += f"{a.get('Title', '')}\n{a.get('Message', '')}\n{a.get('Date', '')}\n\n"
+            return "لا توجد إعلانات" if is_arabic else "No announcements"
+        if is_arabic:
+            r = "📢 إعلانات المدرسة\n\n"
+            for a in active:
+                r += f"🔔 {a.get('Title', '')}\n{a.get('Message', '')}\n📅 {a.get('Date', '')}\n\n"
+        else:
+            r = "📢 School Announcements\n\n"
+            for a in active:
+                r += f"🔔 {a.get('Title', '')}\n{a.get('Message', '')}\n📅 {a.get('Date', '')}\n\n"
         return r.strip()
 
-    if any(w in m for w in ['admission', 'enroll', 'register']):
+    # ADMISSIONS
+    if any(w in m for w in ['admission', 'enroll', 'register', 'قبول', 'تسجيل', 'التحاق']):
         rows = read_tab("Admissions")
         info = {r.get("Item", ""): r.get("Value", "") for r in rows}
-        return (f"Admissions at Modern Infinity\n\n"
-                f"{info.get('Registration Status', 'Open')}\n"
-                f"Deadline: {info.get('Application Deadline', '')}\n\n{SCHOOL['phone']}")
+        if is_arabic:
+            return (f"📋 التسجيل في مودرن إنفينيتي\n\n"
+                    f"✅ {info.get('Registration Status', 'مفتوح')}\n"
+                    f"📅 آخر موعد: {info.get('Application Deadline', '')}\n\n"
+                    f"الصفوف المتاحة:\n{info.get('Available Grades', '')}\n\n📞 {SCHOOL['phone']}")
+        return (f"📋 Admissions at Modern Infinity\n\n"
+                f"✅ {info.get('Registration Status', 'Open')}\n"
+                f"📅 Deadline: {info.get('Application Deadline', '')}\n\n"
+                f"Available:\n{info.get('Available Grades', '')}\n\n📞 {SCHOOL['phone']}")
 
-    if any(w in m for w in ['location', 'address', 'where', 'map']):
-        return f"{SCHOOL['address']}\n{SCHOOL['phone']}\nHours: {SCHOOL['admin_hours']}"
+    # LOCATION
+    if any(w in m for w in ['location', 'address', 'where', 'map', 'عنوان', 'فين', 'موقع']):
+        if is_arabic:
+            return f"📍 {SCHOOL['address']}\n📞 {SCHOOL['phone']}\nساعات العمل: {SCHOOL['admin_hours']}"
+        return f"📍 {SCHOOL['address']}\n📞 {SCHOOL['phone']}\nHours: {SCHOOL['admin_hours']}"
 
-    return (f"Welcome to Modern Infinity!\n\n"
-            f"Homework for Grade 7\n"
-            f"Grade 8 schedule\n"
-            f"Fees for Grade 5\n"
-            f"Balance STU001\n"
-            f"Announcements\n"
-            f"Admissions\n"
-            f"Location\n\n{SCHOOL['phone']}")
+    # DEFAULT
+    if is_arabic:
+        return (f"أهلاً بك في مودرن إنفينيتي! 👋\n\n"
+                f"📚 الواجبات — واجب الصف السابع\n"
+                f"📅 الجداول — جدول الصف الثامن\n"
+                f"💰 المصاريف — رسوم الصف الخامس\n"
+                f"💳 رصيد — STU001\n"
+                f"📢 الإعلانات\n"
+                f"📋 التسجيل\n"
+                f"📍 الموقع\n\n📞 {SCHOOL['phone']}")
+    return (f"Welcome to Modern Infinity! 👋\n\n"
+            f"📚 Homework for Grade 7\n"
+            f"📅 Grade 8 schedule\n"
+            f"💰 Fees for Grade 5\n"
+            f"💳 Balance STU001\n"
+            f"📢 Announcements\n"
+            f"📋 Admissions\n"
+            f"📍 Location\n\n📞 {SCHOOL['phone']}")
 
 
 @app.route("/webhook", methods=["GET"])
