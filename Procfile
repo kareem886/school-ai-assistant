@@ -1,1 +1,1 @@
-web: python app_final.py
+web: gunicorn app_whatsapp:app --workers 2 --bind 0.0.0.0:$PORT --timeout 30 --log-level info --access-logfile - --error-logfile -
