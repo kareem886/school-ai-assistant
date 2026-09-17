@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Modern Infinity — Admin Panel</title>
+<title>Modern Infinity Admin Panel</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -78,11 +78,23 @@ textarea:focus{border-color:var(--g)}
 .mb2{padding:12px 32px;background:var(--g);border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit}
 @media(max-width:768px){.sb{display:none}.mn{margin-left:0;padding:20px}.sr{grid-template-columns:1fr}.gg{grid-template-columns:repeat(2,1fr)}}
 </style>
+<script>
+function login(){
+  var u=document.getElementById('lu').value.trim();
+  var p=document.getElementById('lp').value.trim();
+  if(u==='admin'&&p==='moderninfinity2026'){
+    document.getElementById('lw').style.display='none';
+    document.getElementById('aw').style.display='flex';
+    loadStats();loadParents();
+  }else{document.getElementById('le').style.display='block';}
+}
+function logout(){document.getElementById('aw').style.display='none';document.getElementById('lw').style.display='flex';}
+</script>
 </head>
 <body>
 <div class="lw" id="lw">
 <div class="lc">
-<div class="ll"><div class="li">📢</div><h1>Modern Infinity</h1><p>School Admin Panel</p></div>
+<div class="ll"><div class="li">&#128226;</div><h1>Modern Infinity</h1><p>School Admin Panel</p></div>
 <div class="fg"><label>Username</label><input type="text" id="lu" placeholder="admin"/></div>
 <div class="fg"><label>Password</label><input type="password" id="lp" placeholder="Enter admin password" onkeydown="if(event.key==='Enter')login()"/></div>
 <button class="btn" onclick="login()">Sign in</button>
@@ -91,121 +103,119 @@ textarea:focus{border-color:var(--g)}
 </div>
 <div class="aw" id="aw">
 <div class="sb">
-<div class="sl"><div class="si">📢</div><div class="st">Modern Infinity<span>Admin Panel</span></div></div>
-<div class="ni active" onclick="tab('b')"><span>📣</span> Send Announcement</div>
-<div class="ni" onclick="tab('h')"><span>📋</span> History</div>
-<div class="ni" onclick="tab('p')"><span>👥</span> Parents</div>
-<div class="sb-bot"><div class="lo" onclick="logout()"><span>🚪</span> Sign out</div></div>
+<div class="sl"><div class="si">&#128226;</div><div class="st">Modern Infinity<span>Admin Panel</span></div></div>
+<div class="ni active" onclick="showTab('b')"><span>&#128163;</span> Send Announcement</div>
+<div class="ni" onclick="showTab('h')"><span>&#128203;</span> History</div>
+<div class="ni" onclick="showTab('p')"><span>&#128101;</span> Parents</div>
+<div class="sb-bot"><div class="lo" onclick="logout()"><span>&#128682;</span> Sign out</div></div>
 </div>
 <div class="mn">
 <div class="tb"><div><div class="pt" id="pt">Send Announcement</div><div class="ps" id="ps">Broadcast a message to all parents via WhatsApp</div></div><div class="sp"><div class="sd"></div>Bot Online</div></div>
-<div class="sr" id="sr"><div class="sc"><div class="sl2">Total Parents</div><div class="sv" id="sp2">—</div></div><div class="sc"><div class="sl2">Sent Today</div><div class="sv" id="st2">0</div></div><div class="sc"><div class="sl2">Last Sent</div><div class="sv" id="sl3" style="font-size:18px;margin-top:6px">Never</div></div></div>
-<div id="tb"><div class="sec"><div class="sec-t">✍️ Write Announcement</div>
+<div class="sr" id="sr">
+<div class="sc"><div class="sl2">Total Parents</div><div class="sv" id="sp2">-</div></div>
+<div class="sc"><div class="sl2">Sent Today</div><div class="sv" id="st2">0</div></div>
+<div class="sc"><div class="sl2">Last Sent</div><div class="sv" id="sl3" style="font-size:18px;margin-top:6px">Never</div></div>
+</div>
+<div id="tb">
+<div class="sec"><div class="sec-t">Write Announcement</div>
 <label class="fl">Message</label>
-<textarea id="mt" placeholder="Type your announcement here..." oninput="prev()"></textarea>
+<textarea id="mt" placeholder="Type your announcement here..." oninput="updatePreview()"></textarea>
 <div class="cc"><span id="cc">0</span>/1000</div>
 <div style="margin-top:20px"><label class="fl">Send to</label>
 <div class="gg">
-<div class="gc all sel" data-g="All" onclick="sg(this)">🏫 All Parents</div>
-<div class="gc" data-g="KG" onclick="sg(this)">KG</div>
-<div class="gc" data-g="Grade 1" onclick="sg(this)">Grade 1</div>
-<div class="gc" data-g="Grade 2" onclick="sg(this)">Grade 2</div>
-<div class="gc" data-g="Grade 3" onclick="sg(this)">Grade 3</div>
-<div class="gc" data-g="Grade 4" onclick="sg(this)">Grade 4</div>
-<div class="gc" data-g="Grade 5" onclick="sg(this)">Grade 5</div>
-<div class="gc" data-g="Grade 6" onclick="sg(this)">Grade 6</div>
-<div class="gc" data-g="Grade 7" onclick="sg(this)">Grade 7</div>
-<div class="gc" data-g="Grade 8" onclick="sg(this)">Grade 8</div>
-<div class="gc" data-g="Grade 9" onclick="sg(this)">Grade 9</div>
-<div class="gc" data-g="Grade 10" onclick="sg(this)">Grade 10</div>
-<div class="gc" data-g="Grade 11" onclick="sg(this)">Grade 11</div>
-<div class="gc" data-g="Grade 12" onclick="sg(this)">Grade 12</div>
+<div class="gc all sel" data-g="All" onclick="selectGrade(this)">All Parents</div>
+<div class="gc" data-g="KG" onclick="selectGrade(this)">KG</div>
+<div class="gc" data-g="Grade 1" onclick="selectGrade(this)">Grade 1</div>
+<div class="gc" data-g="Grade 2" onclick="selectGrade(this)">Grade 2</div>
+<div class="gc" data-g="Grade 3" onclick="selectGrade(this)">Grade 3</div>
+<div class="gc" data-g="Grade 4" onclick="selectGrade(this)">Grade 4</div>
+<div class="gc" data-g="Grade 5" onclick="selectGrade(this)">Grade 5</div>
+<div class="gc" data-g="Grade 6" onclick="selectGrade(this)">Grade 6</div>
+<div class="gc" data-g="Grade 7" onclick="selectGrade(this)">Grade 7</div>
+<div class="gc" data-g="Grade 8" onclick="selectGrade(this)">Grade 8</div>
+<div class="gc" data-g="Grade 9" onclick="selectGrade(this)">Grade 9</div>
+<div class="gc" data-g="Grade 10" onclick="selectGrade(this)">Grade 10</div>
+<div class="gc" data-g="Grade 11" onclick="selectGrade(this)">Grade 11</div>
+<div class="gc" data-g="Grade 12" onclick="selectGrade(this)">Grade 12</div>
 </div></div>
-<div style="margin-top:20px"><label class="fl">Preview</label>
-<div class="pb"><div class="pl">Modern Infinity School</div><div class="pbb" id="pv">Your message will appear here...</div><div class="pt2" id="pvt">Now ✓✓</div></div></div>
-<div class="snd-row"><button class="snd" id="sb2" onclick="send()" disabled><span>📣</span> Send to Parents</button><div class="rc">To <strong id="rn">—</strong> parents</div></div>
+<div style="margin-top:20px"><label class="fl">Preview (what parents will see)</label>
+<div class="pb"><div class="pl">Modern Infinity School</div><div class="pbb" id="pv">Your message will appear here...</div><div class="pt2" id="pvt">Now</div></div></div>
+<div class="snd-row"><button class="snd" id="sb2" onclick="sendAnnouncement()" disabled>Send to Parents</button><div class="rc">Will be sent to <strong id="rn">-</strong> parents</div></div>
 </div></div>
-<div id="th" style="display:none"><div class="sec"><div class="sec-t">📋 Sent Announcements</div><div id="hl"><div style="color:#94a3b8;font-size:14px;padding:20px 0;text-align:center">No announcements sent yet</div></div></div></div>
-<div id="tp" style="display:none"><div class="sec"><div class="sec-t">👥 Parent Numbers</div><p style="font-size:14px;color:#64748b;margin-bottom:16px">From the <strong>Parents</strong> tab in your Google Sheet.</p><div id="pl2"><div style="color:#94a3b8;font-size:14px;text-align:center;padding:20px 0">Loading...</div></div></div></div>
+<div id="th" style="display:none"><div class="sec"><div class="sec-t">Sent Announcements</div><div id="hl"><div style="color:#94a3b8;font-size:14px;padding:20px 0;text-align:center">No announcements sent yet</div></div></div></div>
+<div id="tp" style="display:none"><div class="sec"><div class="sec-t">Parent Numbers</div><p style="font-size:14px;color:#64748b;margin-bottom:16px">From the <strong>Parents</strong> tab in your Google Sheet.</p><div id="pl2"><div style="color:#94a3b8;text-align:center;padding:20px 0">Loading...</div></div></div></div>
 </div>
 </div>
-<div class="mo" id="mo"><div class="md"><div style="font-size:48px;margin-bottom:16px">🎉</div><div style="font-size:22px;font-weight:700;margin-bottom:8px">Announcement Sent!</div><div style="font-size:15px;color:#64748b;margin-bottom:28px" id="ms">Delivered successfully.</div><button class="mb2" onclick="cm()">Done</button></div></div>
+<div class="mo" id="mo"><div class="md"><div style="font-size:48px;margin-bottom:16px">&#127881;</div><div style="font-size:22px;font-weight:700;margin-bottom:8px">Sent!</div><div style="font-size:15px;color:#64748b;margin-bottom:28px" id="ms">Delivered.</div><button class="mb2" onclick="closeModal()">Done</button></div></div>
 <script>
-let ap=[],sg2=['All'];
-window.login=function(){
-  const u=document.getElementById('lu').value.trim();
-  const p=document.getElementById('lp').value.trim();
-  if(u==='admin'&&p==='moderninfinity2026'){
-    document.getElementById('lw').style.display='none';
-    document.getElementById('aw').style.display='flex';
-    ls();lp2();
-  }else{document.getElementById('le').style.display='block';}
-}
-window.logout=function(){document.getElementById('aw').style.display='none';document.getElementById('lw').style.display='flex';}
-window.tab=function(t){
+var ap=[],sg=['All'];
+function showTab(t){
   document.getElementById('tb').style.display=t==='b'?'block':'none';
   document.getElementById('th').style.display=t==='h'?'block':'none';
   document.getElementById('tp').style.display=t==='p'?'block':'none';
   document.getElementById('sr').style.display=t==='b'?'grid':'none';
-  const tt={b:['Send Announcement','Broadcast a message to all parents via WhatsApp'],h:['History','All sent announcements'],p:['Parents','Manage parent numbers']};
-  document.getElementById('pt').textContent=tt[t][0];document.getElementById('ps').textContent=tt[t][1];
-  document.querySelectorAll('.ni').forEach((e,i)=>e.classList.toggle('active','bhp'[i]===t));
+  var tt={b:['Send Announcement','Broadcast to all parents via WhatsApp'],h:['History','All sent announcements'],p:['Parents','Manage parent numbers']};
+  document.getElementById('pt').textContent=tt[t][0];
+  document.getElementById('ps').textContent=tt[t][1];
+  document.querySelectorAll('.ni').forEach(function(e,i){e.classList.toggle('active','bhp'[i]===t);});
 }
-window.sg=function(el){
-  const g=el.dataset.g;
-  if(g==='All'){sg2=['All'];document.querySelectorAll('.gc').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');}
-  else{const a=document.querySelector('.all');a.classList.remove('sel');el.classList.toggle('sel');sg2=[...document.querySelectorAll('.gc:not(.all).sel')].map(c=>c.dataset.g);if(!sg2.length){sg2=['All'];a.classList.add('sel');}}
-  rc();
+function selectGrade(el){
+  var g=el.dataset.g;
+  if(g==='All'){sg=['All'];document.querySelectorAll('.gc').forEach(function(c){c.classList.remove('sel');});el.classList.add('sel');}
+  else{var a=document.querySelector('.all');a.classList.remove('sel');el.classList.toggle('sel');sg=[].slice.call(document.querySelectorAll('.gc:not(.all).sel')).map(function(c){return c.dataset.g;});if(!sg.length){sg=['All'];a.classList.add('sel');}}
+  updateCount();
 }
-window.prev=function(){
-  const t=document.getElementById('mt').value;
+function updatePreview(){
+  var t=document.getElementById('mt').value;
   document.getElementById('cc').textContent=t.length;
-  const n=new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true});
-  document.getElementById('pvt').textContent=n+' ✓✓';
-  if(t.trim()){document.getElementById('pv').textContent='📢 Modern Infinity School
+  document.getElementById('pvt').textContent=new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true});
+  if(t.trim()){document.getElementById('pv').textContent='Modern Infinity School
 
 '+t+'
 
-📞 02-3796-9155';document.getElementById('sb2').disabled=false;}
+Tel: 02-3796-9155';document.getElementById('sb2').disabled=false;}
   else{document.getElementById('pv').textContent='Your message will appear here...';document.getElementById('sb2').disabled=true;}
-  rc();
+  updateCount();
 }
-window.ls=async function(){
-  try{const r=await fetch('/api/parents');const d=await r.json();ap=d.parents||[];document.getElementById('sp2').textContent=ap.length;rc();
-  const h=JSON.parse(localStorage.getItem('bh')||'[]');
-  document.getElementById('st2').textContent=h.filter(x=>new Date(x.t).toDateString()===new Date().toDateString()).length;
-  if(h.length)document.getElementById('sl3').textContent=new Date(h[0].t).toLocaleDateString('en-GB',{day:'numeric',month:'short'});
-  rh(h);}catch(e){document.getElementById('sp2').textContent='0';}
+function loadStats(){
+  fetch('/api/parents').then(function(r){return r.json();}).then(function(d){
+    ap=d.parents||[];
+    document.getElementById('sp2').textContent=ap.length;
+    updateCount();
+    var h=JSON.parse(localStorage.getItem('bh')||'[]');
+    document.getElementById('st2').textContent=h.filter(function(x){return new Date(x.t).toDateString()===new Date().toDateString();}).length;
+    if(h.length)document.getElementById('sl3').textContent=new Date(h[0].t).toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+    renderHistory(h);
+  }).catch(function(){document.getElementById('sp2').textContent='0';});
 }
-window.lp2=function(){
-  fetch('/api/parents').then(r=>r.json()).then(d=>{
-    const pl=d.parents||[];const el=document.getElementById('pl2');
-    if(!pl.length){el.innerHTML='<div style="color:#94a3b8;font-size:14px;text-align:center;padding:20px 0">No parents yet. Add a Parents tab with: Name, Phone, Grade, Active</div>';return;}
-    el.innerHTML='<table style="width:100%;border-collapse:collapse;font-size:14px"><thead><tr style="border-bottom:2px solid #e2e8f0"><th style="text-align:left;padding:8px">Name</th><th style="text-align:left;padding:8px">Phone</th><th style="text-align:left;padding:8px">Grade</th><th style="text-align:left;padding:8px">Status</th></tr></thead><tbody>'+pl.map(p=>'<tr style="border-bottom:1px solid #f1f5f9"><td style="padding:10px 8px;font-weight:500">'+(p.name||'—')+'</td><td style="padding:10px 8px">'+p.phone+'</td><td style="padding:10px 8px">'+(p.grade||'All')+'</td><td style="padding:10px 8px"><span style="background:#dcfce7;color:#15803d;padding:2px 8px;border-radius:12px;font-size:12px">Active</span></td></tr>').join('')+'</tbody></table>';
-  }).catch(()=>{document.getElementById('pl2').innerHTML='<div style="color:#94a3b8;font-size:14px;text-align:center">Could not load</div>';});
+function loadParents(){
+  fetch('/api/parents').then(function(r){return r.json();}).then(function(d){
+    var pl=d.parents||[];var el=document.getElementById('pl2');
+    if(!pl.length){el.innerHTML='<div style="color:#94a3b8;text-align:center;padding:20px 0">No parents yet. Add a Parents tab with: Name, Phone, Grade, Active</div>';return;}
+    el.innerHTML='<table style="width:100%;border-collapse:collapse;font-size:14px"><thead><tr style="border-bottom:2px solid #e2e8f0"><th style="text-align:left;padding:8px">Name</th><th style="text-align:left;padding:8px">Phone</th><th style="text-align:left;padding:8px">Grade</th></tr></thead><tbody>'+pl.map(function(p){return '<tr style="border-bottom:1px solid #f1f5f9"><td style="padding:10px 8px">'+(p.name||'-')+'</td><td style="padding:10px 8px">'+p.phone+'</td><td style="padding:10px 8px">'+(p.grade||'All')+'</td></tr>';}).join('')+'</tbody></table>';
+  }).catch(function(){document.getElementById('pl2').innerHTML='<div style="color:#94a3b8;text-align:center">Could not load</div>';});
 }
-window.rc=function(){
-  const c=sg2.includes('All')?ap.length:ap.filter(p=>sg2.some(g=>(p.grade||'').toLowerCase().includes(g.toLowerCase()))).length;
+function updateCount(){
+  var c=sg.includes('All')?ap.length:ap.filter(function(p){return sg.some(function(g){return (p.grade||'').toLowerCase().includes(g.toLowerCase());});}).length;
   document.getElementById('rn').textContent=c;
 }
-window.send=async function(){
-  const msg=document.getElementById('mt').value.trim();if(!msg)return;
-  const btn=document.getElementById('sb2');btn.disabled=true;btn.innerHTML='<span>⏳</span> Sending...';
-  try{
-    const r=await fetch('/broadcast',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg,grades:sg2})});
-    const d=await r.json();
-    const h=JSON.parse(localStorage.getItem('bh')||'[]');h.unshift({msg,g:sg2,s:d.sent||0,t:new Date().toISOString()});
-    localStorage.setItem('bh',JSON.stringify(h.slice(0,50)));rh(h);
-    document.getElementById('ms').textContent='Sent to '+(d.sent||0)+' parents successfully.';
-    document.getElementById('mo').classList.add('show');document.getElementById('mt').value='';prev();ls();
-  }catch(e){alert('Error sending. Please try again.');}
-  btn.disabled=false;btn.innerHTML='<span>📣</span> Send to Parents';
+function sendAnnouncement(){
+  var msg=document.getElementById('mt').value.trim();if(!msg)return;
+  var btn=document.getElementById('sb2');btn.disabled=true;btn.textContent='Sending...';
+  fetch('/broadcast',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg,grades:sg})}).then(function(r){return r.json();}).then(function(d){
+    var h=JSON.parse(localStorage.getItem('bh')||'[]');h.unshift({msg:msg,g:sg,s:d.sent||0,t:new Date().toISOString()});
+    localStorage.setItem('bh',JSON.stringify(h.slice(0,50)));renderHistory(h);
+    document.getElementById('ms').textContent='Sent to '+(d.sent||0)+' parents.';
+    document.getElementById('mo').classList.add('show');
+    document.getElementById('mt').value='';updatePreview();loadStats();
+  }).catch(function(){alert('Error. Please try again.');});
+  btn.disabled=false;btn.textContent='Send to Parents';
 }
-window.cm=function(){document.getElementById('mo').classList.remove('show');}
-window.rh=function(h){
-  const l=document.getElementById('hl');
+function closeModal(){document.getElementById('mo').classList.remove('show');}
+function renderHistory(h){
+  var l=document.getElementById('hl');
   if(!h||!h.length){l.innerHTML='<div style="color:#94a3b8;font-size:14px;padding:20px 0;text-align:center">No announcements sent yet</div>';return;}
-  l.innerHTML=h.map(x=>'<div class="hi"><div style="width:40px;height:40px;border-radius:10px;background:#f0fdf4;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">📢</div><div class="hic"><div>'+x.msg+'</div><div class="hm">'+new Date(x.t).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})+' · '+(x.g||['All']).join(', ')+' · <span class="hb">✓ '+(x.s||0)+' sent</span></div></div></div>').join('');
+  l.innerHTML=h.map(function(x){return '<div class="hi"><div style="width:40px;height:40px;border-radius:10px;background:#f0fdf4;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">&#128226;</div><div class="hic"><div>'+x.msg+'</div><div class="hm">'+new Date(x.t).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})+' - '+(x.g||['All']).join(', ')+' - <span class="hb">'+( x.s||0)+' sent</span></div></div></div>';}).join('');
 }
 </script>
 </body>
