@@ -7,12 +7,12 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-:root{--g:#25D366;--g2:#128C7E;--n:#0F1C2E;--b:#e2e8f0;--r:#ef4444}
+:root{--g:#25D366;--g2:#128C7E;--n:#0F1C2E;--b:#e2e8f0;--r:#hef4444}
 body{font-family:'Inter',sans-serif;background:#f4f6f8;color:#1a202c;min-height:100vh}
 .lw{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px}
 .lc{background:#fff;border-radius:20px;padding:48px 40px;width:100%;max-width:420px;box-shadow:0 8px 40px rgba(0,0,0,.10)}
 .ll{text-align:center;margin-bottom:32px}
-.li{width:64px;height:64px;border-radius:16px;background:var(--g);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:28px}
+.li{width:64px;height:64px;border-radius:16px;background:varh(--g);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:28px}
 .ll h1{font-size:22px;font-weight:700;color:var(--n)}
 .ll p{font-size:14px;color:#64748b;margin-top:4px}
 .fg{margin-bottom:20px}
@@ -84,7 +84,7 @@ textarea:focus{border-color:var(--g)}
 <div class="lw" id="lw">
 <div class="lc">
 <div class="ll"><div class="li">&#128226;</div><h1>Modern Infinity</h1><p>School Admin Panel</p></div>
-<div class="fg"><label>Username</label><input type="text" id="lu" placeholder="admin" autocomplete="off"/></div>
+<div class="fg"><label>Username</label><input type="text" id="lu" placeholder="admin" value="admin" value="admin" autocomplete="off"/></div>
 <div class="fg"><label>Password</label><input type="password" id="lp" placeholder="Enter password" autocomplete="new-password" onkeydown="if(event.key==='Enter')doLogin()"/></div>
 <button class="btn" onclick="doLogin()">Sign in</button>
 <div class="err" id="le">Incorrect username or password</div>
