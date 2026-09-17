@@ -132,7 +132,7 @@ textarea:focus{border-color:var(--g)}
 <div class="mo" id="mo"><div class="md"><div style="font-size:48px;margin-bottom:16px">🎉</div><div style="font-size:22px;font-weight:700;margin-bottom:8px">Announcement Sent!</div><div style="font-size:15px;color:#64748b;margin-bottom:28px" id="ms">Delivered successfully.</div><button class="mb2" onclick="cm()">Done</button></div></div>
 <script>
 let ap=[],sg2=['All'];
-function login(){
+window.login=function(){
   const u=document.getElementById('lu').value.trim();
   const p=document.getElementById('lp').value.trim();
   if(u==='admin'&&p==='moderninfinity2026'){
@@ -141,8 +141,8 @@ function login(){
     ls();lp2();
   }else{document.getElementById('le').style.display='block';}
 }
-function logout(){document.getElementById('aw').style.display='none';document.getElementById('lw').style.display='flex';}
-function tab(t){
+window.logout=function(){document.getElementById('aw').style.display='none';document.getElementById('lw').style.display='flex';}
+window.tab=function(t){
   document.getElementById('tb').style.display=t==='b'?'block':'none';
   document.getElementById('th').style.display=t==='h'?'block':'none';
   document.getElementById('tp').style.display=t==='p'?'block':'none';
@@ -151,13 +151,13 @@ function tab(t){
   document.getElementById('pt').textContent=tt[t][0];document.getElementById('ps').textContent=tt[t][1];
   document.querySelectorAll('.ni').forEach((e,i)=>e.classList.toggle('active','bhp'[i]===t));
 }
-function sg(el){
+window.sg=function(el){
   const g=el.dataset.g;
   if(g==='All'){sg2=['All'];document.querySelectorAll('.gc').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');}
   else{const a=document.querySelector('.all');a.classList.remove('sel');el.classList.toggle('sel');sg2=[...document.querySelectorAll('.gc:not(.all).sel')].map(c=>c.dataset.g);if(!sg2.length){sg2=['All'];a.classList.add('sel');}}
   rc();
 }
-function prev(){
+window.prev=function(){
   const t=document.getElementById('mt').value;
   document.getElementById('cc').textContent=t.length;
   const n=new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true});
@@ -170,25 +170,25 @@ function prev(){
   else{document.getElementById('pv').textContent='Your message will appear here...';document.getElementById('sb2').disabled=true;}
   rc();
 }
-async function ls(){
+window.ls=async function(){
   try{const r=await fetch('/api/parents');const d=await r.json();ap=d.parents||[];document.getElementById('sp2').textContent=ap.length;rc();
   const h=JSON.parse(localStorage.getItem('bh')||'[]');
   document.getElementById('st2').textContent=h.filter(x=>new Date(x.t).toDateString()===new Date().toDateString()).length;
   if(h.length)document.getElementById('sl3').textContent=new Date(h[0].t).toLocaleDateString('en-GB',{day:'numeric',month:'short'});
   rh(h);}catch(e){document.getElementById('sp2').textContent='0';}
 }
-function lp2(){
+window.lp2=function(){
   fetch('/api/parents').then(r=>r.json()).then(d=>{
     const pl=d.parents||[];const el=document.getElementById('pl2');
     if(!pl.length){el.innerHTML='<div style="color:#94a3b8;font-size:14px;text-align:center;padding:20px 0">No parents yet. Add a Parents tab with: Name, Phone, Grade, Active</div>';return;}
     el.innerHTML='<table style="width:100%;border-collapse:collapse;font-size:14px"><thead><tr style="border-bottom:2px solid #e2e8f0"><th style="text-align:left;padding:8px">Name</th><th style="text-align:left;padding:8px">Phone</th><th style="text-align:left;padding:8px">Grade</th><th style="text-align:left;padding:8px">Status</th></tr></thead><tbody>'+pl.map(p=>'<tr style="border-bottom:1px solid #f1f5f9"><td style="padding:10px 8px;font-weight:500">'+(p.name||'—')+'</td><td style="padding:10px 8px">'+p.phone+'</td><td style="padding:10px 8px">'+(p.grade||'All')+'</td><td style="padding:10px 8px"><span style="background:#dcfce7;color:#15803d;padding:2px 8px;border-radius:12px;font-size:12px">Active</span></td></tr>').join('')+'</tbody></table>';
   }).catch(()=>{document.getElementById('pl2').innerHTML='<div style="color:#94a3b8;font-size:14px;text-align:center">Could not load</div>';});
 }
-function rc(){
+window.rc=function(){
   const c=sg2.includes('All')?ap.length:ap.filter(p=>sg2.some(g=>(p.grade||'').toLowerCase().includes(g.toLowerCase()))).length;
   document.getElementById('rn').textContent=c;
 }
-async function send(){
+window.send=async function(){
   const msg=document.getElementById('mt').value.trim();if(!msg)return;
   const btn=document.getElementById('sb2');btn.disabled=true;btn.innerHTML='<span>⏳</span> Sending...';
   try{
@@ -201,8 +201,8 @@ async function send(){
   }catch(e){alert('Error sending. Please try again.');}
   btn.disabled=false;btn.innerHTML='<span>📣</span> Send to Parents';
 }
-function cm(){document.getElementById('mo').classList.remove('show');}
-function rh(h){
+window.cm=function(){document.getElementById('mo').classList.remove('show');}
+window.rh=function(h){
   const l=document.getElementById('hl');
   if(!h||!h.length){l.innerHTML='<div style="color:#94a3b8;font-size:14px;padding:20px 0;text-align:center">No announcements sent yet</div>';return;}
   l.innerHTML=h.map(x=>'<div class="hi"><div style="width:40px;height:40px;border-radius:10px;background:#f0fdf4;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">📢</div><div class="hic"><div>'+x.msg+'</div><div class="hm">'+new Date(x.t).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})+' · '+(x.g||['All']).join(', ')+' · <span class="hb">✓ '+(x.s||0)+' sent</span></div></div></div>').join('');
