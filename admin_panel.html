@@ -80,6 +80,7 @@ textarea:focus{border-color:var(--g)}
 </style>
 </head>
 <body>
+
 <div class="lw" id="lw">
 <div class="lc">
 <div class="ll"><div class="li">&#128226;</div><h1>Modern Infinity</h1><p>School Admin Panel</p></div>
@@ -89,6 +90,7 @@ textarea:focus{border-color:var(--g)}
 <div class="err" id="le">Incorrect username or password</div>
 </div>
 </div>
+
 <div class="aw" id="aw">
 <div class="sb">
 <div class="sl"><div class="si">&#128226;</div><div class="st">Modern Infinity<span>Admin Panel</span></div></div>
@@ -134,127 +136,127 @@ textarea:focus{border-color:var(--g)}
 <div id="tab-p" style="display:none"><div class="sec"><div class="sec-t">Parent Numbers</div><p style="font-size:14px;color:#64748b;margin-bottom:16px">From the <strong>Parents</strong> tab in your Google Sheet.</p><div id="pl2"><div style="color:#94a3b8;text-align:center;padding:20px 0">Loading...</div></div></div></div>
 </div>
 </div>
+
 <div class="mo" id="mo"><div class="md"><div style="font-size:48px;margin-bottom:16px">&#127881;</div><div style="font-size:22px;font-weight:700;margin-bottom:8px">Sent!</div><div style="font-size:15px;color:#64748b;margin-bottom:28px" id="ms">Delivered.</div><button class="mb2" onclick="closeModal()">Done</button></div></div>
+
 <script>
 var AP=[],SG=['All'];
 
 function doLogin(){
-  var u=document.getElementById('lu').value.trim();
-  var p=document.getElementById('lp').value.trim();
-  if(u==='admin'&&p==='moderninfinity2026'){
-    document.getElementById('lw').style.display='none';
-    document.getElementById('aw').style.display='flex';
-    document.getElementById('le').style.display='none';
-    loadStats();
-    loadParents();
-  }else{
-    document.getElementById('le').style.display='block';
-  }
+var u=document.getElementById('lu').value.trim();
+var p=document.getElementById('lp').value.trim();
+if(u==='admin'&&p==='moderninfinity2026'){
+document.getElementById('lw').style.display='none';
+document.getElementById('aw').style.display='flex';
+document.getElementById('le').style.display='none';
+loadStats();
+loadParents();
+}else{
+document.getElementById('le').style.display='block';
+}
 }
 
 function doLogout(){
-  document.getElementById('aw').style.display='none';
-  document.getElementById('lw').style.display='flex';
-  document.getElementById('lu').value='';
-  document.getElementById('lp').value='';
+document.getElementById('aw').style.display='none';
+document.getElementById('lw').style.display='flex';
+document.getElementById('lu').value='';
+document.getElementById('lp').value='';
 }
 
 function showTab(t){
-  document.getElementById('tab-b').style.display=t==='b'?'block':'none';
-  document.getElementById('tab-h').style.display=t==='h'?'block':'none';
-  document.getElementById('tab-p').style.display=t==='p'?'block':'none';
-  document.getElementById('sr').style.display=t==='b'?'grid':'none';
-  var tt={b:['Send Announcement','Broadcast to all parents via WhatsApp'],h:['History','All sent announcements'],p:['Parents','Parent numbers from Google Sheet']};
-  document.getElementById('pt').textContent=tt[t][0];
-  document.getElementById('ps').textContent=tt[t][1];
-  document.querySelectorAll('.ni').forEach(function(e,i){e.classList.toggle('active',['b','h','p'][i]===t);});
+document.getElementById('tab-b').style.display=t==='b'?'block':'none';
+document.getElementById('tab-h').style.display=t==='h'?'block':'none';
+document.getElementById('tab-p').style.display=t==='p'?'block':'none';
+document.getElementById('sr').style.display=t==='b'?'grid':'none';
+var tt={b:['Send Announcement','Broadcast to all parents via WhatsApp'],h:['History','All sent announcements'],p:['Parents','Parent numbers from Google Sheet']};
+document.getElementById('pt').textContent=tt[t][0];
+document.getElementById('ps').textContent=tt[t][1];
+document.querySelectorAll('.ni').forEach(function(e,i){e.classList.toggle('active',['b','h','p'][i]===t);});
 }
 
 function selGrade(el){
-  var g=el.dataset.g;
-  if(g==='All'){
-    SG=['All'];
-    document.querySelectorAll('.gc').forEach(function(c){c.classList.remove('sel');});
-    el.classList.add('sel');
-  }else{
-    var a=document.querySelector('.all');
-    a.classList.remove('sel');
-    el.classList.toggle('sel');
-    SG=[].slice.call(document.querySelectorAll('.gc:not(.all).sel')).map(function(c){return c.dataset.g;});
-    if(!SG.length){SG=['All'];a.classList.add('sel');}
-  }
-  updateCount();
+var g=el.dataset.g;
+if(g==='All'){
+SG=['All'];
+document.querySelectorAll('.gc').forEach(function(c){c.classList.remove('sel');});
+el.classList.add('sel');
+}else{
+var a=document.querySelector('.all');
+a.classList.remove('sel');
+el.classList.toggle('sel');
+SG=[].slice.call(document.querySelectorAll('.gc:not(.all).sel')).map(function(c){return c.dataset.g;});
+if(!SG.length){SG=['All'];a.classList.add('sel');}
+}
+updateCount();
 }
 
 function updatePreview(){
-  var t=document.getElementById('mt').value;
-  document.getElementById('cc').textContent=t.length;
-  document.getElementById('pvt').textContent=new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true});
-  if(t.trim()){
-    document.getElementById('pv').textContent='Modern Infinity School
-
-'+t+'
-
-Tel: 02-3796-9155';
-    document.getElementById('sb2').disabled=false;
-  }else{
-    document.getElementById('pv').textContent='Your message will appear here...';
-    document.getElementById('sb2').disabled=true;
-  }
-  updateCount();
+var t=document.getElementById('mt').value;
+document.getElementById('cc').textContent=t.length;
+document.getElementById('pvt').textContent=new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true});
+if(t.trim()){
+document.getElementById('pv').textContent='Modern Infinity School\n'+t+'\n\nTel: 02-3796-9155';
+document.getElementById('sb2').disabled=false;
+}else{
+document.getElementById('pv').textContent='Your message will appear here...';
+document.getElementById('sb2').disabled=true;
+}
+updateCount();
 }
 
 function loadStats(){
-  fetch('/api/parents').then(function(r){return r.json();}).then(function(d){
-    AP=d.parents||[];
-    document.getElementById('sp2').textContent=AP.length;
-    updateCount();
-    var h=JSON.parse(localStorage.getItem('bh')||'[]');
-    document.getElementById('st2').textContent=h.filter(function(x){return new Date(x.t).toDateString()===new Date().toDateString();}).length;
-    if(h.length)document.getElementById('sl3').textContent=new Date(h[0].t).toLocaleDateString('en-GB',{day:'numeric',month:'short'});
-    renderHistory(h);
-  }).catch(function(){document.getElementById('sp2').textContent='0';});
+fetch('/api/parents').then(function(r){return r.json();}).then(function(d){
+AP=d.parents||[];
+document.getElementById('sp2').textContent=AP.length;
+updateCount();
+var h=JSON.parse(localStorage.getItem('bh')||'[]');
+document.getElementById('st2').textContent=h.filter(function(x){return new Date(x.t).toDateString()===new Date().toDateString();}).length;
+if(h.length)document.getElementById('sl3').textContent=new Date(h[0].t).toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+renderHistory(h);
+}).catch(function(){document.getElementById('sp2').textContent='0';});
 }
 
 function loadParents(){
-  fetch('/api/parents').then(function(r){return r.json();}).then(function(d){
-    var pl=d.parents||[];
-    var el=document.getElementById('pl2');
-    if(!pl.length){el.innerHTML='<div style="color:#94a3b8;text-align:center;padding:20px 0">No parents yet. Add to Google Sheet Parents tab.</div>';return;}
-    el.innerHTML='<table style="width:100%;border-collapse:collapse;font-size:14px"><thead><tr style="border-bottom:2px solid #e2e8f0"><th style="text-align:left;padding:8px">Name</th><th style="text-align:left;padding:8px">Phone</th><th style="text-align:left;padding:8px">Grade</th></tr></thead><tbody>'+pl.map(function(p){return '<tr style="border-bottom:1px solid #f1f5f9"><td style="padding:10px 8px">'+(p.name||'-')+'</td><td style="padding:10px 8px">'+p.phone+'</td><td style="padding:10px 8px">'+(p.grade||'All')+'</td></tr>';}).join('')+'</tbody></table>';
-  }).catch(function(){document.getElementById('pl2').innerHTML='<div style="color:#94a3b8;text-align:center">Could not load parents.</div>';});
+fetch('/api/parents').then(function(r){return r.json();}).then(function(d){
+var pl=d.parents||[];
+var el=document.getElementById('pl2');
+if(!pl.length){el.innerHTML='<div style="color:#94a3b8;text-align:center;padding:20px 0">No parents yet. Add to Google Sheet Parents tab.</div>';return;}
+el.innerHTML='<table style="width:100%;border-collapse:collapse;font-size:14px"><thead><tr style="border-bottom:2px solid #e2e8f0"><th style="text-align:left;padding:8px">Name</th><th style="text-align:left;padding:8px">Phone</th><th style="text-align:left;padding:8px">Grade</th></tr></thead><tbody>'+pl.map(function(p){return '<tr style="border-bottom:1px solid #f1f5f9"><td style="padding:10px 8px">'+(p.name||'-')+'</td><td style="padding:10px 8px">'+p.phone+'</td><td style="padding:10px 8px">'+(p.grade||'All')+'</td></tr>';}).join('')+'</tbody></table>';
+}).catch(function(){document.getElementById('pl2').innerHTML='<div style="color:#94a3b8;text-align:center">Could not load parents.</div>';});
 }
 
 function updateCount(){
-  var c=SG.includes('All')?AP.length:AP.filter(function(p){return SG.some(function(g){return (p.grade||'').toLowerCase().includes(g.toLowerCase());});}).length;
-  document.getElementById('rn').textContent=c;
+var c=SG.includes('All')?AP.length:AP.filter(function(p){return SG.some(function(g){return (p.grade||'').toLowerCase().includes(g.toLowerCase());});}).length;
+document.getElementById('rn').textContent=c;
 }
 
 function doSend(){
-  var msg=document.getElementById('mt').value.trim();
-  if(!msg)return;
-  var btn=document.getElementById('sb2');
-  btn.disabled=true;btn.textContent='Sending...';
-  fetch('/broadcast',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg,grades:SG})}).then(function(r){return r.json();}).then(function(d){
-    var h=JSON.parse(localStorage.getItem('bh')||'[]');
-    h.unshift({msg:msg,g:SG,s:d.sent||0,t:new Date().toISOString()});
-    localStorage.setItem('bh',JSON.stringify(h.slice(0,50)));
-    renderHistory(h);
-    document.getElementById('ms').textContent='Sent to '+(d.sent||0)+' parents successfully.';
-    document.getElementById('mo').classList.add('show');
-    document.getElementById('mt').value='';
-    updatePreview();
-    loadStats();
-  }).catch(function(){alert('Error sending. Please try again.');});
-  btn.disabled=false;btn.textContent='Send to Parents';
+var msg=document.getElementById('mt').value.trim();
+if(!msg)return;
+var btn=document.getElementById('sb2');
+btn.disabled=true;btn.textContent='Sending...';
+fetch('/broadcast',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg,grades:SG})}).then(function(r){return r.json();}).then(function(d){
+var h=JSON.parse(localStorage.getItem('bh')||'[]');
+h.unshift({msg:msg,g:SG,s:d.sent||0,t:new Date().toISOString()});
+localStorage.setItem('bh',JSON.stringify(h.slice(0,50)));
+renderHistory(h);
+document.getElementById('ms').textContent='Sent to '+(d.sent||0)+' parents successfully.';
+document.getElementById('mo').classList.add('show');
+document.getElementById('mt').value='';
+updatePreview();
+loadStats();
+}).catch(function(){alert('Error sending. Please try again.');});
+btn.disabled=false;btn.textContent='Send to Parents';
 }
 
 function closeModal(){document.getElementById('mo').classList.remove('show');}
 
 function renderHistory(h){
-  var l=document.getElementById('hl');
-  if(!h||!h.length){l.innerHTML='<div style="color:#94a3b8;text-align:center;padding:20px 0">No announcements yet</div>';return;}
-  l.innerHTML=h.map(function(x){return '<div class="hi"><div style="width:40px;height:40px;border-radius:10px;background:#f0fdf4;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">&#128226;</div><div class="hic"><div>'+x.msg+'</div><div class="hm">'+new Date(x.t).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})+' - '+(x.g||['All']).join(', ')+' - <span class="hb">'+(x.s||0)+' sent</span></div></div></div>';}).join('');
+var l=document.getElementById('hl');
+if(!h||!h.length){l.innerHTML='<div style="color:#94a3b8;text-align:center;padding:20px 0">No announcements yet</div>';return;}
+l.innerHTML=h.map(function(x){
+return '<div class="hi"><div style="width:40px;height:40px;border-radius:10px;background:#f0fdf4;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">[MSG]</div><div class="hic"><div>'+x.msg+'</div><div class="hm">'+new Date(x.t).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})+' - '+(x.g||['All']).join(', ')+' - <span class="hb">'+(x.s||0)+' sent</span></div></div></div>';
+}).join('');
 }
 </script>
 </body>
