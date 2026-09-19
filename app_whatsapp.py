@@ -1,3 +1,4 @@
+            r += f"{s.get('Day','')}: {arrow.join(ps)}\n"
 """
 School AI Assistant - Modern Infinity Language School
 Includes: WhatsApp webhook + Admin Panel + Broadcast announcements
