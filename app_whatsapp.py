@@ -215,7 +215,8 @@ def process_message(msg):
         r = title
         for s in sched:
             ps = [str(s.get(f'Period {i}','')) for i in range(1,6) if s.get(f'Period {i}','')]
-            r += f"{s.get('Day','')}: {' \u2192 '.join(ps)}\n"
+            arrow = ' → '
+            r += f"{s.get('Day','')}: {arrow.join(ps)}\n"
         return r.strip()
 
     id_match = re.search(r'STU\d+', msg.upper())
