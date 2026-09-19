@@ -258,17 +258,17 @@ def process_message(msg):
         rows = read_tab("Admissions")
         info = {r.get("Item",""): r.get("Value","") for r in rows}
         if is_arabic:
+            _kg_d = '42,000 \u062c\u0646\u064a\u0647'
+            _g13_d = '48,000 \u062c\u0646\u064a\u0647'
+            _g46_d = '55,000 \u062c\u0646\u064a\u0647'
+            _g79_d = '62,000 \u062c\u0646\u064a\u0647'
+            _g1012_d = '70,000 \u062c\u0646\u064a\u0647'
             return (f"\U0001f4b0 \u0631\u0633\u0648\u0645 \u0645\u062f\u0631\u0633\u0629 Modern Infinity 2025/2026\n\n"
-            _kg_default = 'جنيه 42,000'
-            _g13_default = 'جنيه 48,000'
-            _g46_default = 'جنيه 55,000'
-            _g79_default = 'جنيه 62,000'
-            _g1012_default = 'جنيه 70,000'
-                    f"\U0001f538 KG: {info.get('KG1 Fees','42,000 \u062c\u0646\u064a\u0647')}\n"
-                    f"\U0001f538 \u0627\u0644\u0635\u0641 1-3: {info.get('Grade 1-3 Fees','48,000 \u062c\u0646\u064a\u0647')}\n"
-                    f"\U0001f538 \u0627\u0644\u0635\u0641 4-6: {info.get('Grade 4-6 Fees','55,000 \u062c\u0646\u064a\u0647')}\n"
-                    f"\U0001f538 \u0627\u0644\u0635\u0641 7-9: {info.get('Grade 7-9 Fees','62,000 \u062c\u0646\u064a\u0647')}\n"
-                    f"\U0001f538 \u0627\u0644\u0635\u0641 10-12: {info.get('Grade 10-12 Fees','70,000 \u062c\u0646\u064a\u0647')}\n\n"
+                    f"\U0001f538 KG: {info.get('KG1 Fees',_kg_d)}\n"
+                    f"\U0001f538 \u0627\u0644\u0635\u0641 1-3: {info.get('Grade 1-3 Fees',_g13_d)}\n"
+                    f"\U0001f538 \u0627\u0644\u0635\u0641 4-6: {info.get('Grade 4-6 Fees',_g46_d)}\n"
+                    f"\U0001f538 \u0627\u0644\u0635\u0641 7-9: {info.get('Grade 7-9 Fees',_g79_d)}\n"
+                    f"\U0001f538 \u0627\u0644\u0635\u0641 10-12: {info.get('Grade 10-12 Fees',_g1012_d)}\n\n"
                     f"\U0001f4c5 \u062a\u0642\u0633\u064a\u0645 \u0639\u0644\u0649 3 \u0623\u0642\u0633\u0627\u0637\n"
                     f"\U0001f4de \u0644\u0644\u0627\u0633\u062a\u0641\u0633\u0627\u0631: {SCHOOL['phone']}")
         return (f"\U0001f4b0 Modern Infinity Fees 2025/2026\n\n"
@@ -299,9 +299,9 @@ def process_message(msg):
         rows = read_tab("Admissions")
         info = {r.get("Item",""): r.get("Value","") for r in rows}
         if is_arabic:
+            _open_d = '\u0645\u0641\u062a\u0648\u062d'
             return (f"\U0001f4cb \u0627\u0644\u062a\u0633\u062c\u064a\u0644 \u0641\u064a Modern Infinity\n\n"
-                    _open_default = 'مفتوح'
-                    f"\u2705 \u0627\u0644\u062d\u0627\u0644\u0629: {info.get('Registration Status','\u0645\u0641\u062a\u0648\u062d')}\n"
+                    f"\u2705 \u0627\u0644\u062d\u0627\u0644\u0629: {info.get('Registration Status',_open_d)}\n"
                     f"\U0001f4c5 \u0622\u062e\u0631 \u0645\u0648\u0639\u062f: {info.get('Application Deadline','')}\n\n"
                     f"\U0001f4de \u0644\u0644\u062a\u0648\u0627\u0635\u0644: {SCHOOL['phone']}\n"
                     f"\U0001f4cd \u0627\u0644\u0639\u0646\u0648\u0627\u0646: {SCHOOL['address']}")
