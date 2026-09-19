@@ -4,7 +4,7 @@ Includes: WhatsApp webhook + Admin Panel + Broadcast announcements
 """
 import os, json, re, base64, requests, logging, time, hmac, hashlib
 from collections import defaultdict
-from flask import Flask, request, jsonify, send_from_directory, render_template_string
+from flask import Flask, request, jsonify, send_from_directory, render_template_string, session, redirect
 import gspread
 from google.oauth2.service_account import Credentials
 
@@ -12,6 +12,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(mess
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
+app.secret_key = os.environ.get("SECRET_KEY", "school-bot-secret-2026")
 app.config["MAX_CONTENT_LENGTH"] = 64 * 1024
 
 # ── Config ─────────────────────────────────────────────────────────────────────────────
@@ -360,8 +361,7 @@ def webhook():
             return 'OK', 200
         msg_obj = messages[0]
         from_num = msg_obj.get('from', '')
-        msg_type = msg_obj.get('type', '')
-        if msg_type == 'text':
+        if msg_obj.get('type','') == 'text':
             body = msg_obj.get('text', {}).get('body', '')
             reply = process_message(body)
             send_whatsapp(from_num, reply)
@@ -375,7 +375,6 @@ def send_whatsapp(to, text):
     payload = {"messaging_product": "whatsapp", "to": to, "type": "text", "text": {"body": text[:4096]}}
     try:
         r = requests.post(url, headers=headers, json=payload, timeout=10)
-        logger.info(f"WhatsApp send to {to}: {r.status_code}")
         return r.status_code == 200
     except Exception as e:
         logger.error(f"Send error: {e}")
@@ -392,15 +391,12 @@ def admin():
             p = request.form.get('password','')
             if u == ADMIN_USER and hmac.compare_digest(p, ADMIN_PASSWORD):
                 session['admin'] = True
-                from flask import redirect
                 return redirect('/admin')
             error = 'Invalid credentials'
         elif not session.get('admin'):
-            from flask import redirect
             return redirect('/admin')
         elif action == 'logout':
             session.pop('admin', None)
-            from flask import redirect
             return redirect('/admin')
         elif action == 'broadcast':
             msg = request.form.get('message','').strip()
@@ -408,55 +404,32 @@ def admin():
             if msg:
                 rows = read_tab('Parents')
                 targets = rows if grade_filter == 'all' else [r for r in rows if r.get('Grade','') == grade_filter]
-                sent = 0
-                for r in targets:
-                    num = r.get('WhatsApp','') or r.get('Phone','')
-                    if num:
-                        if send_whatsapp(num.strip(), msg):
-                            sent += 1
+                sent = sum(1 for r in targets if send_whatsapp((r.get('WhatsApp','') or r.get('Phone','')).strip(), msg) if r.get('WhatsApp','') or r.get('Phone',''))
                 success = f"Sent! Sent to {sent} parents successfully"
     if not session.get('admin'):
-        return render_template_string("""<!DOCTYPE html>
-<html><head><title>Admin Login</title>
-<style>body{font-family:Arial;max-width:400px;margin:80px auto;padding:20px}
-input{width:100%;padding:8px;margin:8px 0;box-sizing:border-box}
-button{background:#25D366;color:white;border:none;padding:10px 20px;cursor:pointer;width:100%}
-.error{color:red}</style></head>
-<body><h2>&#x1F916; School Bot Admin</h2>
-{% if error %}<p class="error">{{ error }}</p>{% endif %}
-<form method="POST">
-<input type="hidden" name="action" value="login">
-<input type="text" name="username" placeholder="Username" required>
-<input type="password" name="password" placeholder="Password" required>
-<button type="submit">Login</button>
-</form></body></html>""", error=error)
+        return render_template_string("""<!DOCTYPE html><html><head><title>Admin</title>
+<style>body{font-family:Arial;max-width:400px;margin:80px auto;padding:20px}input{width:100%;padding:8px;margin:5px 0;box-sizing:border-box}button{background:#25D366;color:white;border:none;padding:10px;width:100%;cursor:pointer}.err{color:red}</style></head>
+<body><h2>&#x1F916; School Bot Admin</h2>{% if error %}<p class="err">{{error}}</p>{% endif %}
+<form method="POST"><input type="hidden" name="action" value="login">
+<input name="username" placeholder="Username" required><input type="password" name="password" placeholder="Password" required>
+<button>Login</button></form></body></html>""", error=error)
     rows = read_tab('Parents')
     grades = sorted(set(r.get('Grade','') for r in rows if r.get('Grade','')))
-    return render_template_string("""<!DOCTYPE html>
-<html><head><title>School Bot Admin</title>
-<style>body{font-family:Arial;max-width:600px;margin:40px auto;padding:20px}
-textarea{width:100%;height:120px;padding:8px;box-sizing:border-box}
-select,button{padding:8px 16px;margin:4px}
-.btn{background:#25D366;color:white;border:none;cursor:pointer;border-radius:4px}
-.btn-red{background:#e74c3c}.success{color:green}.stats{background:#f0f0f0;padding:10px;border-radius:4px}</style></head>
-<body>
-<h2>&#x1F916; Modern Infinity Bot Admin</h2>
-<div class="stats">&#x1F4CA; Parents: {{ total }}</div>
-{% if success %}<p class="success">&#x2705; {{ success }}</p>{% endif %}
-<form method="POST">
-<input type="hidden" name="action" value="broadcast">
-<h3>&#x1F4E2; Broadcast Message</h3>
-<select name="grade_filter">
-<option value="all">All Parents</option>
-{% for g in grades %}<option value="{{ g }}">Grade {{ g }}</option>{% endfor %}
-</select><br><br>
-<textarea name="message" placeholder="Type your message here..." required></textarea><br>
-<button type="submit" class="btn">Send WhatsApp Message</button>
-</form>
-<form method="POST" style="margin-top:20px">
-<input type="hidden" name="action" value="logout">
-<button type="submit" class="btn btn-red">Logout</button>
-</form></body></html>""", total=len(rows), grades=grades, success=success)
+    return render_template_string("""<!DOCTYPE html><html><head><title>Bot Admin</title>
+<style>body{font-family:Arial;max-width:600px;margin:30px auto;padding:20px}textarea{width:100%;height:100px;padding:8px;box-sizing:border-box}
+.btn{background:#25D366;color:white;border:none;padding:10px 20px;cursor:pointer;border-radius:4px}.btn2{background:#e74c3c}
+.ok{color:green}.info{background:#f5f5f5;padding:10px;border-radius:4px;margin:10px 0}</style></head>
+<body><h2>&#x1F916; Modern Infinity Admin</h2>
+<div class="info">&#x1F4CA; Parents: {{total}} | &#x1F3EB; Sent Today: {{sent_today}}</div>
+{% if success %}<p class="ok">&#x2705; {{success}}</p>{% endif %}
+<form method="POST"><input type="hidden" name="action" value="broadcast">
+<b>&#x1F4E2; Broadcast</b><br>
+Grade: <select name="grade_filter"><option value="all">All</option>{% for g in grades %}<option>{{g}}</option>{% endfor %}</select><br><br>
+<textarea name="message" placeholder="Message..." required></textarea><br>
+<button class="btn">Send to WhatsApp</button></form>
+<form method="POST" style="margin-top:15px"><input type="hidden" name="action" value="logout">
+<button class="btn btn2">Logout</button></form></body></html>""",
+        total=len(rows), grades=grades, success=success, sent_today=app.config.get('SENT_TODAY',0))
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(__import__('os').environ.get('PORT', 5000)))
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
