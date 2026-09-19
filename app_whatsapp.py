@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 64 * 1024
 
-# ── Config ───────────────────────────────────────────────────────────────────
+# ── Config ─────────────────────────────────────────────────────────────────────────────
 SHEET_ID        = os.environ.get("SHEET_ID", "1EqhlDPwQB_L7Ho_MN6lbeE_OrLsVmUKpfZTRUEw3ePE")
 PHONE_NUMBER_ID = os.environ.get("PHONE_NUMBER_ID", "1358537447338280")
 ACCESS_TOKEN    = os.environ.get("ACCESS_TOKEN", "")
@@ -36,7 +36,7 @@ SCOPES = [
     "https://www.googleapis.com/auth/drive",
 ]
 
-# ── Rate limiting ─────────────────────────────────────────────────────────────
+# ── Rate limiting ─────────────────────────────────────────────────────────────────────────────
 RATE_LIMIT_WINDOW = 60
 RATE_LIMIT_MAX = 10
 _rate_store = defaultdict(list)
@@ -49,7 +49,6 @@ def is_rate_limited(phone):
     _rate_store[phone] = hits
     return len(hits) > RATE_LIMIT_MAX
 
-# ── Webhook signature verification ────────────────────────────────────────────
 def verify_webhook_signature(payload, sig_header):
     if not APP_SECRET:
         return True
@@ -58,7 +57,6 @@ def verify_webhook_signature(payload, sig_header):
     expected = "sha256=" + hmac.new(APP_SECRET.encode(), payload, hashlib.sha256).hexdigest()
     return hmac.compare_digest(expected, sig_header)
 
-# ── Google credentials ────────────────────────────────────────────────────────
 def _load_creds_info():
     b64 = os.environ.get("GOOGLE_CREDENTIALS_B64", "").strip()
     if b64:
@@ -89,7 +87,6 @@ def read_tab(tab_name):
         logger.error(f"[sheets] FAIL {tab_name}: {e}")
         return []
 
-# ── WhatsApp send ─────────────────────────────────────────────────────────────
 def send_whatsapp(to_phone, message):
     if not ACCESS_TOKEN:
         return False
@@ -109,46 +106,116 @@ def send_whatsapp(to_phone, message):
         logger.error(f"[wa] error: {e}")
         return False
 
-# ── Message processing ────────────────────────────────────────────────────────
-def sanitize(text, max_len=500):
+# ── Arabic support ──────────────────────────────────────────────────────────────────────
+def sanitize(text, max_len=1000):
     text = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", "", text)
     return text[:max_len]
+
+ARABIC_GRADE_MAP = {
+    '\u0627\u0644\u0623\u0648\u0644': '1', '\u0627\u0644\u0627\u0648\u0644': '1', '\u0627\u0648\u0644': '1', '\u0623\u0648\u0644': '1', '\u0648\u0627\u062d\u062f': '1',
+    '\u0627\u0644\u062b\u0627\u0646\u064a': '2', '\u0627\u0644\u062b\u0627\u0646\u0649': '2', '\u0627\u062a\u0646\u064a\u0646': '2', '\u062b\u0627\u0646\u064a': '2', '\u062b\u0627\u0646\u0649': '2',
+    '\u0627\u0644\u062b\u0627\u0644\u062b': '3', '\u062a\u0644\u0627\u062a\u0629': '3', '\u062a\u0644\u0627\u062a\u0647': '3', '\u062b\u0627\u0644\u062b': '3',
+    '\u0627\u0644\u0631\u0627\u0628\u0639': '4', '\u0627\u0631\u0628\u0639\u0629': '4', '\u0623\u0631\u0628\u0639\u0629': '4', '\u0631\u0627\u0628\u0639': '4',
+    '\u0627\u0644\u062e\u0627\u0645\u0633': '5', '\u062e\u0645\u0633\u0629': '5', '\u062e\u0627\u0645\u0633': '5',
+    '\u0627\u0644\u0633\u0627\u062f\u0633': '6', '\u0633\u062a\u0629': '6', '\u0633\u0627\u062f\u0633': '6',
+    '\u0627\u0644\u0633\u0627\u0628\u0639': '7', '\u0633\u0628\u0639\u0629': '7', '\u0633\u0627\u0628\u0639': '7',
+    '\u0627\u0644\u062b\u0627\u0645\u0646': '8', '\u062a\u0645\u0627\u0646\u064a\u0629': '8', '\u062b\u0627\u0645\u0646': '8',
+    '\u0627\u0644\u062a\u0627\u0633\u0639': '9', '\u062a\u0633\u0639\u0629': '9', '\u062a\u0627\u0633\u0639': '9',
+    '\u0627\u0644\u0639\u0627\u0634\u0631': '10', '\u0639\u0627\u0634\u0631': '10',
+    '\u0627\u0644\u062d\u0627\u062f\u064a \u0639\u0634\u0631': '11', '\u062d\u0627\u062f\u064a \u0639\u0634\u0631': '11',
+    '\u0627\u0644\u062b\u0627\u0646\u064a \u0639\u0634\u0631': '12', '\u062b\u0627\u0646\u064a \u0639\u0634\u0631': '12',
+}
+
+def extract_grade(m):
+    for g in ['12','11','10','9','8','7','6','5','4','3','2','1']:
+        if f'grade {g}' in m or f'grade{g}' in m:
+            return f'Grade {g}'
+        if f'\u0627\u0644\u0635\u0641 {g}' in m or f'\u0635\u0641 {g}' in m or f'\u0635\u0641{g}' in m:
+            return f'Grade {g}'
+    for word, num in ARABIC_GRADE_MAP.items():
+        if word in m:
+            return f'Grade {num}'
+    return None
 
 def process_message(msg):
     m = msg.lower().strip()
     is_arabic = any('\u0600' <= c <= '\u06FF' for c in msg)
 
-    if any(w in m for w in ['homework', 'assignment', 'hw', 'واجب', 'تكليف']):
-        grade = None
-        for g in ['12','11','10','9','8','7','6','5','4','3','2','1']:
-            if f'grade {g}' in m or f'الصف {g}' in m or f'صف {g}' in m:
-                grade = f'Grade {g}'; break
+    greet_kw = ['\u0645\u0631\u062d\u0628\u0627','\u0627\u0647\u0644\u0627','\u0623\u0647\u0644\u0627','\u0647\u0644\u0627','\u0627\u0644\u0633\u0644\u0627\u0645','\u0635\u0628\u0627\u062d','\u0645\u0633\u0627\u0621','hi','hello','hey','\u0633\u0644\u0627\u0645']
+    if any(w in m for w in greet_kw):
+        if is_arabic:
+            return (f"\u0623\u0647\u0644\u0627\u064b \u0648\u0633\u0647\u0644\u0627\u064b \u0641\u064a \u0645\u062f\u0631\u0633\u0629 Modern Infinity \U0001f44b\n\n"
+                    f"\u0627\u062e\u062a\u0631 \u0645\u0646 \u0627\u0644\u062e\u062f\u0645\u0627\u062a \u0627\u0644\u062a\u0627\u0644\u064a\u0629:\n\n"
+                    f"\U0001f4da *\u0627\u0644\u0648\u0627\u062c\u0628\u0627\u062a* - \u0645\u062b\u0627\u0644: \u0648\u0627\u062c\u0628 \u0627\u0644\u0635\u0641 \u0627\u0644\u0633\u0627\u0628\u0639\n"
+                    f"\U0001f4c5 *\u0627\u0644\u062c\u062f\u0648\u0644 \u0627\u0644\u062f\u0631\u0627\u0633\u064a* - \u0645\u062b\u0627\u0644: \u062c\u062f\u0648\u0644 \u0627\u0644\u0635\u0641 \u0627\u0644\u062e\u0627\u0645\u0633\n"
+                    f"\U0001f4b0 *\u0627\u0644\u0631\u0633\u0648\u0645 \u0627\u0644\u062f\u0631\u0627\u0633\u064a\u0629*\n"
+                    f"\U0001f4b3 *\u0631\u0635\u064a\u062f \u0627\u0644\u0637\u0627\u0644\u0628* - \u0645\u062b\u0627\u0644: STU001\n"
+                    f"\U0001f4e2 *\u0627\u0644\u0625\u0639\u0644\u0627\u0646\u0627\u062a*\n"
+                    f"\U0001f4cb *\u0627\u0644\u062a\u0633\u062c\u064a\u0644 \u0648\u0627\u0644\u0642\u0628\u0648\u0644*\n"
+                    f"\U0001f4cd *\u0645\u0648\u0642\u0639 \u0627\u0644\u0645\u062f\u0631\u0633\u0629*\n\n"
+                    f"\U0001f4de {SCHOOL['phone']}")
+        return (f"Welcome to Modern Infinity Language School! \U0001f44b\n\n"
+                f"How can I help you?\n\n"
+                f"\U0001f4da Homework - e.g. Homework for Grade 7\n"
+                f"\U0001f4c5 Schedule - e.g. Grade 5 schedule\n"
+                f"\U0001f4b0 Fees\n"
+                f"\U0001f4b3 Balance - e.g. STU001\n"
+                f"\U0001f4e2 Announcements\n"
+                f"\U0001f4cb Admissions\n"
+                f"\U0001f4cd Location\n\n"
+                f"\U0001f4de {SCHOOL['phone']}")
+
+    hw_kw = ['homework','assignment','hw','\u0648\u0627\u062c\u0628','\u062a\u0643\u0644\u064a\u0641','\u0648\u0627\u062c\u0628\u0627\u062a','\u0627\u0644\u0648\u0627\u062c\u0628','\u0627\u0644\u0648\u0627\u062c\u0628\u0627\u062a','\u062a\u0643\u0644\u064a\u0641\u0627\u062a']
+    if any(w in m for w in hw_kw):
+        grade = extract_grade(m)
         if not grade:
-            return "حدد الصف\nمثال: واجب الصف السابع" if is_arabic else "Specify grade\nExample: Homework for Grade 7"
+            return ("\U0001f4da \u062d\u062f\u062f \u0627\u0644\u0635\u0641 \u0645\u0646 \u0641\u0636\u0644\u0643\n"
+                    "\u0645\u062b\u0627\u0644: *\u0648\u0627\u062c\u0628 \u0627\u0644\u0635\u0641 \u0627\u0644\u0633\u0627\u0628\u0639*\n\n"
+                    "\u0627\u0644\u0635\u0641\u0648\u0641 \u0627\u0644\u0645\u062a\u0627\u062d\u0629: 1 \u0625\u0644\u0649 12") if is_arabic else \
+                   ("\U0001f4da Please specify the grade\n"
+                    "Example: *Homework for Grade 7*\n\n"
+                    "Available: Grade 1 to 12")
         rows = read_tab("Homework")
         hw = [r for r in rows if grade.lower() in str(r.get("Grade","")).lower() and str(r.get("Assignment","")).strip()]
         if not hw:
-            return f"لا يوجد واجب لـ{grade}\n📞 {SCHOOL['phone']}" if is_arabic else f"No homework for {grade}\n📞 {SCHOOL['phone']}"
-        r = f"📚 {grade} Homework\n\n"
-        for h in hw:
-            r += f"• {h.get('Subject','')}: {h.get('Assignment','')}\n  Due: {h.get('Due Date','')}\n\n"
+            return (f"\U0001f4da \u0644\u0627 \u064a\u0648\u062c\u062f \u0648\u0627\u062c\u0628 \u0645\u0633\u062c\u0651\u0644 \u0644\u0640 {grade} \u062d\u0627\u0644\u064a\u0627\u064b\n"
+                    f"\U0001f4de \u062a\u0648\u0627\u0635\u0644 \u0645\u0639 \u0627\u0644\u0645\u062f\u0631\u0633\u0629: {SCHOOL['phone']}") if is_arabic else \
+                   (f"\U0001f4da No homework found for {grade}\n"
+                    f"\U0001f4de Contact school: {SCHOOL['phone']}")
+        if is_arabic:
+            r = f"\U0001f4da \u0648\u0627\u062c\u0628\u0627\u062a {grade}\n\n"
+            for h in hw:
+                r += f"\u2022 {h.get('Subject','')}: {h.get('Assignment','')}\n"
+                if h.get('Due Date',''):
+                    r += f"  \U0001f4c5 \u0645\u0648\u0639\u062f \u0627\u0644\u062a\u0633\u0644\u064a\u0645: {h.get('Due Date','')}\n"
+                r += "\n"
+        else:
+            r = f"\U0001f4da {grade} Homework\n\n"
+            for h in hw:
+                r += f"\u2022 {h.get('Subject','')}: {h.get('Assignment','')}\n"
+                if h.get('Due Date',''):
+                    r += f"  \U0001f4c5 Due: {h.get('Due Date','')}\n"
+                r += "\n"
         return r.strip()
 
-    if any(w in m for w in ['schedule','timetable','جدول','حصص']):
-        grade = None
-        for g in ['12','11','10','9','8','7','6','5','4','3','2','1']:
-            if f'grade {g}' in m or f'الصف {g}' in m:
-                grade = f'Grade {g}'; break
+    sched_kw = ['schedule','timetable','\u062c\u062f\u0648\u0644','\u062d\u0635\u0635','\u0627\u0644\u062c\u062f\u0648\u0644','\u0627\u0644\u0645\u0648\u0627\u062f','\u062d\u0635\u0629']
+    if any(w in m for w in sched_kw):
+        grade = extract_grade(m)
         if not grade:
-            return "حدد الصف" if is_arabic else "Specify grade\nExample: Grade 7 schedule"
+            return ("\U0001f4c5 \u062d\u062f\u062f \u0627\u0644\u0635\u0641 \u0645\u0646 \u0641\u0636\u0644\u0643\n"
+                    "\u0645\u062b\u0627\u0644: *\u062c\u062f\u0648\u0644 \u0627\u0644\u0635\u0641 \u0627\u0644\u0633\u0627\u062f\u0633*") if is_arabic else \
+                   ("\U0001f4c5 Please specify the grade\n"
+                    "Example: *Grade 6 schedule*")
         rows = read_tab("Schedule")
         sched = [r for r in rows if grade.lower() in str(r.get("Grade","")).lower()]
         if not sched:
-            return f"No schedule for {grade}"
-        r = f"📅 {grade} Schedule\n\n"
+            return (f"\U0001f4c5 \u0644\u0627 \u064a\u0648\u062c\u062f \u062c\u062f\u0648\u0644 \u0644\u0640 {grade}\n\U0001f4de {SCHOOL['phone']}") if is_arabic else \
+                   (f"\U0001f4c5 No schedule found for {grade}\n\U0001f4de {SCHOOL['phone']}")
+        title = f"\U0001f4c5 \u062c\u062f\u0648\u0644 {grade}\n\n" if is_arabic else f"\U0001f4c5 {grade} Schedule\n\n"
+        r = title
         for s in sched:
             ps = [str(s.get(f'Period {i}','')) for i in range(1,6) if s.get(f'Period {i}','')]
-            r += f"{s.get('Day','')}: {' → '.join(ps)}\n"
+            r += f"{s.get('Day','')}: {' \u2192 '.join(ps)}\n"
         return r.strip()
 
     id_match = re.search(r'STU\d+', msg.upper())
@@ -157,233 +224,113 @@ def process_message(msg):
         rows = read_tab("Students")
         s = next((r for r in rows if str(r.get("Student ID","")).upper() == sid), None)
         if not s:
-            return f"ID {sid} not found\n📞 {SCHOOL['phone']}"
-        name = s.get('Student Name',''); grade = s.get('Grade','')
-        if any(w in m for w in ['attendance','absent','حضور','غياب']):
+            return (f"\u274c \u0644\u0645 \u064a\u062a\u0645 \u0627\u0644\u0639\u062b\u0648\u0631 \u0639\u0644\u0649 \u0627\u0644\u0637\u0627\u0644\u0628 {sid}\n\U0001f4de {SCHOOL['phone']}") if is_arabic else \
+                   (f"\u274c Student {sid} not found\n\U0001f4de {SCHOOL['phone']}")
+        name = s.get('Student Name','')
+        grade = s.get('Grade','')
+        if any(w in m for w in ['attendance','absent','\u062d\u0636\u0648\u0631','\u063a\u064a\u0627\u0628','\u0627\u0644\u063a\u064a\u0627\u0628','\u0627\u0644\u062d\u0636\u0648\u0631']):
             present = int(s.get('Days Present',0) or 0)
             total = int(s.get('Total School Days',0) or 0)
-            pct = round((present/total*100) if total > 0 else 0, 1)
-            return f"👤 {name} ({grade})\nPresent: {present}/{total}\nRate: {pct}%"
-        total = int(s.get('Total Fees',0) or 0)
+            pct = round((present/total*100) if total>0 else 0,1)
+            if is_arabic:
+                return f"\U0001f464 {name} ({grade})\n\u2705 \u062d\u0627\u0636\u0631: {present} \u064a\u0648\u0645\n\U0001f4c5 \u0627\u0644\u0625\u062c\u0645\u0627\u0644\u064a: {total} \u064a\u0648\u0645\n\U0001f4ca \u0646\u0633\u0628\u0629 \u0627\u0644\u062d\u0636\u0648\u0631: {pct}%"
+            return f"\U0001f464 {name} ({grade})\n\u2705 Present: {present} days\n\U0001f4c5 Total: {total} days\n\U0001f4ca Rate: {pct}%"
+        total_fees = int(s.get('Total Fees',0) or 0)
         paid = int(s.get('Amount Paid',0) or 0)
         remaining = int(s.get('Remaining',0) or 0)
-        return (f"👤 {name} ({grade})\n💰 Total: {total:,} EGP\nPaid: {paid:,} EGP ✅\n"
-                f"Remaining: {remaining:,} EGP\n📞 {SCHOOL['phone']}")
+        if is_arabic:
+            return (f"\U0001f464 {name} ({grade})\n"
+                    f"\U0001f4b0 \u0625\u062c\u0645\u0627\u0644\u064a \u0627\u0644\u0631\u0633\u0648\u0645: {total_fees:,} \u062c\u0646\u064a\u0647\n"
+                    f"\u2705 \u0627\u0644\u0645\u062f\u0641\u0648\u0639: {paid:,} \u062c\u0646\u064a\u0647\n"
+                    f"\u23f3 \u0627\u0644\u0645\u062a\u0628\u0642\u064a: {remaining:,} \u062c\u0646\u064a\u0647\n"
+                    f"\U0001f4de {SCHOOL['phone']}")
+        return (f"\U0001f464 {name} ({grade})\n"
+                f"\U0001f4b0 Total: {total_fees:,} EGP\n"
+                f"\u2705 Paid: {paid:,} EGP\n"
+                f"\u23f3 Remaining: {remaining:,} EGP\n"
+                f"\U0001f4de {SCHOOL['phone']}")
 
-    if any(w in m for w in ['fee','fees','cost','how much','رسوم','مصاريف','كام']):
+    fees_kw = ['fee','fees','cost','how much','price',
+               '\u0631\u0633\u0648\u0645','\u0645\u0635\u0627\u0631\u064a\u0641','\u0643\u0627\u0645','\u0633\u0639\u0631','\u062a\u0643\u0644\u0641\u0629','\u0627\u0644\u0631\u0633\u0648\u0645','\u0627\u0644\u0645\u0635\u0627\u0631\u064a\u0641',
+               '\u0628\u0643\u0627\u0645','\u0628\u0642\u062f \u0627\u064a\u0647','\u0642\u062f\u064a\u0647','\u0642\u062f \u0627\u064a\u0647']
+    if any(w in m for w in fees_kw):
         rows = read_tab("Admissions")
         info = {r.get("Item",""): r.get("Value","") for r in rows}
-        return (f"💰 Modern Infinity Fees 2025/2026\n\n"
-                f"🔸 KG: {info.get('KG1 Fees','42,000 EGP')}\n"
-                f"🔸 Grade 1-3: {info.get('Grade 1-3 Fees','48,000 EGP')}\n"
-                f"🔸 Grade 4-6: {info.get('Grade 4-6 Fees','55,000 EGP')}\n"
-                f"🔸 Grade 7-9: {info.get('Grade 7-9 Fees','62,000 EGP')}\n"
-                f"🔸 Grade 10-12: {info.get('Grade 10-12 Fees','70,000 EGP')}\n\n"
-                f"📅 3 installments\n📞 {SCHOOL['phone']}")
+        if is_arabic:
+            return (f"\U0001f4b0 \u0631\u0633\u0648\u0645 \u0645\u062f\u0631\u0633\u0629 Modern Infinity 2025/2026\n\n"
+                    f"\U0001f538 KG: {info.get('KG1 Fees','42,000 \u062c\u0646\u064a\u0647')}\n"
+                    f"\U0001f538 \u0627\u0644\u0635\u0641 1-3: {info.get('Grade 1-3 Fees','48,000 \u062c\u0646\u064a\u0647')}\n"
+                    f"\U0001f538 \u0627\u0644\u0635\u0641 4-6: {info.get('Grade 4-6 Fees','55,000 \u062c\u0646\u064a\u0647')}\n"
+                    f"\U0001f538 \u0627\u0644\u0635\u0641 7-9: {info.get('Grade 7-9 Fees','62,000 \u062c\u0646\u064a\u0647')}\n"
+                    f"\U0001f538 \u0627\u0644\u0635\u0641 10-12: {info.get('Grade 10-12 Fees','70,000 \u062c\u0646\u064a\u0647')}\n\n"
+                    f"\U0001f4c5 \u062a\u0642\u0633\u064a\u0645 \u0639\u0644\u0649 3 \u0623\u0642\u0633\u0627\u0637\n"
+                    f"\U0001f4de \u0644\u0644\u0627\u0633\u062a\u0641\u0633\u0627\u0631: {SCHOOL['phone']}")
+        return (f"\U0001f4b0 Modern Infinity Fees 2025/2026\n\n"
+                f"\U0001f538 KG: {info.get('KG1 Fees','42,000 EGP')}\n"
+                f"\U0001f538 Grade 1-3: {info.get('Grade 1-3 Fees','48,000 EGP')}\n"
+                f"\U0001f538 Grade 4-6: {info.get('Grade 4-6 Fees','55,000 EGP')}\n"
+                f"\U0001f538 Grade 7-9: {info.get('Grade 7-9 Fees','62,000 EGP')}\n"
+                f"\U0001f538 Grade 10-12: {info.get('Grade 10-12 Fees','70,000 EGP')}\n\n"
+                f"\U0001f4c5 3 installments available\n"
+                f"\U0001f4de {SCHOOL['phone']}")
 
-    if any(w in m for w in ['announcement','news','holiday','exam','إعلان','امتحان']):
+    ann_kw = ['announcement','news','holiday','exam','\u0625\u0639\u0644\u0627\u0646','\u0627\u0645\u062a\u062d\u0627\u0646',
+              '\u0625\u0639\u0644\u0627\u0646\u0627\u062a','\u0627\u0639\u0644\u0627\u0646\u0627\u062a','\u0627\u062e\u0628\u0627\u0631','\u0623\u062e\u0628\u0627\u0631','\u0627\u0645\u062a\u062d\u0627\u0646\u0627\u062a','\u0627\u062c\u0627\u0632\u0629','\u0625\u062c\u0627\u0632\u0629','\u0645\u0648\u0639\u062f','\u062c\u062f\u064a\u062f']
+    if any(w in m for w in ann_kw):
         rows = read_tab("Announcements")
         active = [r for r in rows if str(r.get("Status","")).lower() == "active"]
         if not active:
-            return "No announcements" if not is_arabic else "لا توجد إعلانات"
-        r = "📢 School Announcements\n\n"
+            return "\U0001f4e2 \u0644\u0627 \u062a\u0648\u062c\u062f \u0625\u0639\u0644\u0627\u0646\u0627\u062a \u062d\u0627\u0644\u064a\u0627\u064b" if is_arabic else "\U0001f4e2 No announcements at this time"
+        r = "\U0001f4e2 \u0625\u0639\u0644\u0627\u0646\u0627\u062a \u0627\u0644\u0645\u062f\u0631\u0633\u0629\n\n" if is_arabic else "\U0001f4e2 School Announcements\n\n"
         for a in active:
-            r += f"🔔 {a.get('Title','')}\n{a.get('Message','')}\n📅 {a.get('Date','')}\n\n"
+            r += f"\U0001f514 {a.get('Title','')}\n{a.get('Message','')}\n\U0001f4c5 {a.get('Date','')}\n\n"
         return r.strip()
 
-    if any(w in m for w in ['admission','enroll','register','قبول','تسجيل']):
+    admit_kw = ['admission','enroll','register','apply',
+                '\u0642\u0628\u0648\u0644','\u062a\u0633\u062c\u064a\u0644','\u0627\u0644\u062a\u0633\u062c\u064a\u0644','\u0627\u0644\u0642\u0628\u0648\u0644','\u0627\u0633\u062c\u0644',
+                '\u062a\u0642\u062f\u064a\u0645','\u0627\u0644\u0627\u0644\u062a\u062d\u0627\u0642','\u0627\u0628\u0646\u064a','\u0628\u0646\u062a\u064a']
+    if any(w in m for w in admit_kw):
         rows = read_tab("Admissions")
         info = {r.get("Item",""): r.get("Value","") for r in rows}
-        return (f"📋 Admissions at Modern Infinity\n\n"
-                f"✅ {info.get('Registration Status','Open')}\n"
-                f"📅 Deadline: {info.get('Application Deadline','')}\n\n📞 {SCHOOL['phone']}")
+        if is_arabic:
+            return (f"\U0001f4cb \u0627\u0644\u062a\u0633\u062c\u064a\u0644 \u0641\u064a Modern Infinity\n\n"
+                    f"\u2705 \u0627\u0644\u062d\u0627\u0644\u0629: {info.get('Registration Status','\u0645\u0641\u062a\u0648\u062d')}\n"
+                    f"\U0001f4c5 \u0622\u062e\u0631 \u0645\u0648\u0639\u062f: {info.get('Application Deadline','')}\n\n"
+                    f"\U0001f4de \u0644\u0644\u062a\u0648\u0627\u0635\u0644: {SCHOOL['phone']}\n"
+                    f"\U0001f4cd \u0627\u0644\u0639\u0646\u0648\u0627\u0646: {SCHOOL['address']}")
+        return (f"\U0001f4cb Admissions at Modern Infinity\n\n"
+                f"\u2705 Status: {info.get('Registration Status','Open')}\n"
+                f"\U0001f4c5 Deadline: {info.get('Application Deadline','')}\n\n"
+                f"\U0001f4de {SCHOOL['phone']}\n"
+                f"\U0001f4cd {SCHOOL['address']}")
 
-    if any(w in m for w in ['location','address','where','map','عنوان','فين','موقع']):
-        return f"📍 {SCHOOL['address']}\n📞 {SCHOOL['phone']}\nHours: {SCHOOL['admin_hours']}"
+    loc_kw = ['location','address','where','map','directions',
+              '\u0639\u0646\u0648\u0627\u0646','\u0641\u064a\u0646','\u0645\u0648\u0642\u0639','\u0627\u0644\u0639\u0646\u0648\u0627\u0646','\u0627\u0644\u0645\u0648\u0642\u0639','\u0643\u064a\u0641 \u0627\u0648\u0635\u0644','\u0645\u0643\u0627\u0646\u0643\u0645']
+    if any(w in m for w in loc_kw):
+        if is_arabic:
+            return (f"\U0001f4cd *\u0639\u0646\u0648\u0627\u0646 \u0627\u0644\u0645\u062f\u0631\u0633\u0629*\n{SCHOOL['address']}\n\n"
+                    f"\U0001f4de {SCHOOL['phone']}\n"
+                    f"\u23f0 \u0645\u0648\u0627\u0639\u064a\u062f \u0627\u0644\u0639\u0645\u0644: {SCHOOL['admin_hours']}")
+        return (f"\U0001f4cd *School Location*\n{SCHOOL['address']}\n\n"
+                f"\U0001f4de {SCHOOL['phone']}\n"
+                f"\u23f0 Hours: {SCHOOL['admin_hours']}")
 
-    return (f"Welcome to Modern Infinity! 👋\n\n"
-            f"📚 Homework for Grade 7\n"
-            f"📅 Grade 8 schedule\n"
-            f"💰 Fees for Grade 5\n"
-            f"💳 Balance STU001\n"
-            f"📢 Announcements\n"
-            f"📋 Admissions\n"
-            f"📍 Location\n\n📞 {SCHOOL['phone']}")
-
-
-# ── ROUTES ────────────────────────────────────────────────────────────────────
-
-@app.route("/webhook", methods=["GET"])
-def verify():
-    mode = request.args.get("hub.mode")
-    token = request.args.get("hub.verify_token")
-    challenge = request.args.get("hub.challenge")
-    if mode == "subscribe" and token == VERIFY_TOKEN:
-        return challenge, 200
-    return "Forbidden", 403
-
-@app.route("/webhook", methods=["POST"])
-def receive():
-    sig = request.headers.get("X-Hub-Signature-256", "")
-    if not verify_webhook_signature(request.get_data(), sig):
-        return "Forbidden", 403
-    try:
-        data = request.get_json(force=True, silent=True) or {}
-        entry = data.get("entry", [])
-        if not entry: return "OK", 200
-        changes = entry[0].get("changes", [])
-        if not changes: return "OK", 200
-        value = changes[0].get("value", {})
-        messages = value.get("messages", [])
-        if not messages: return "OK", 200
-        msg = messages[0]
-        if msg.get("type") != "text": return "OK", 200
-        phone = msg.get("from", "")
-        text = msg.get("text", {}).get("body", "")
-        if not phone or not text: return "OK", 200
-        if is_rate_limited(phone): return "OK", 200
-        text = sanitize(text)
-        logger.info(f"[wa] received from {phone[:6]}***: {text[:50]}")
-        response = process_message(text)
-        send_whatsapp(phone, response)
-        return "OK", 200
-    except Exception as e:
-        logger.error(f"[webhook] error: {e}")
-        return "OK", 200
-
-
-# ── ADMIN PANEL ───────────────────────────────────────────────────────────────
-
-@app.route("/admin")
-def admin_panel():
-    with open("admin_panel.html", "r") as f:
-        return f.read()
-
-
-@app.route("/api/parents")
-def api_parents():
-    """Load parents from Google Sheet for admin panel."""
-    try:
-        rows = read_tab("Parents")
-        parents = [
-            {
-                "name": r.get("Name", ""),
-                "phone": str(r.get("Phone", "")),
-                "grade": r.get("Grade", ""),
-                "active": str(r.get("Active", "yes")).lower() == "yes"
-            }
-            for r in rows
-            if str(r.get("Active", "yes")).lower() == "yes" and r.get("Phone", "")
-        ]
-        return jsonify({"parents": parents, "count": len(parents)})
-    except Exception as e:
-        logger.error(f"[api/parents] {e}")
-        return jsonify({"parents": [], "count": 0, "error": str(e)})
-
-
-@app.route("/broadcast", methods=["POST"])
-def broadcast():
-    """Send announcement to all parents (or filtered by grade)."""
-    # Verify admin password
-    data = request.get_json(force=True, silent=True) or {}
-    password = data.get("password", "")
-    # Password checked client-side but also verify here
-    message = data.get("message", "").strip()
-    grades = data.get("grades", ["All"])
-
-    if not message:
-        return jsonify({"error": "No message provided"}), 400
-
-    # Load parents from sheet
-    try:
-        rows = read_tab("Parents")
-        all_parents = [
-            r for r in rows
-            if str(r.get("Active", "yes")).lower() == "yes" and r.get("Phone", "")
-        ]
-    except Exception as e:
-        return jsonify({"error": f"Could not load parents: {e}"}), 500
-
-    # Filter by grade
-    if "All" not in grades:
-        all_parents = [
-            p for p in all_parents
-            if any(g.lower() in str(p.get("Grade", "")).lower() for g in grades)
-        ]
-
-    # Format the broadcast message
-    broadcast_msg = f"📢 Modern Infinity School\n\n{message}\n\n📞 For more info: {SCHOOL['phone']}"
-
-    # Send to each parent
-    sent = 0
-    failed = 0
-    for parent in all_parents:
-        phone = str(parent.get("Phone", "")).strip()
-        if not phone:
-            continue
-        # Ensure phone starts with country code
-        if not phone.startswith("20") and not phone.startswith("+"):
-            phone = "20" + phone.lstrip("0")
-        phone = phone.lstrip("+")
-
-        success = send_whatsapp(phone, broadcast_msg)
-        if success:
-            sent += 1
-        else:
-            failed += 1
-        time.sleep(0.5)  # Rate limit: 2 messages/second max
-
-    logger.info(f"[broadcast] Sent: {sent}, Failed: {failed}, Total: {len(all_parents)}")
-
-    # Log to Announcements sheet
-    try:
-        wb = get_client().open_by_key(SHEET_ID)
-        ws = wb.worksheet("Announcements")
-        from datetime import datetime
-        ws.append_row([
-            message[:100],
-            message,
-            datetime.now().strftime("%Y-%m-%d %H:%M"),
-            "active",
-            f"Broadcast to {sent} parents"
-        ])
-    except Exception as e:
-        logger.error(f"[broadcast] Could not log to sheet: {e}")
-
-    return jsonify({"sent": sent, "failed": failed, "total": len(all_parents)})
-
-
-@app.route("/api/homework")
-def homework_api():
-    grade = request.args.get("grade", "")
-    rows = read_tab("Homework")
-    result = [r for r in rows if grade.lower() in str(r.get("Grade","")).lower() and str(r.get("Assignment","")).strip()]
-    return jsonify({"homework": result, "count": len(result)})
-
-@app.route("/api/announcements")
-def announcements_api():
-    rows = read_tab("Announcements")
-    active = [r for r in rows if str(r.get("Status","")).lower() == "active"]
-    return jsonify({"announcements": active, "count": len(active)})
-
-@app.route("/")
-def index():
-    return send_from_directory(".", "live_demo.html")
-
-@app.route("/health")
-def health():
-    rows = read_tab("Homework")
-    parents = read_tab("Parents")
-    return jsonify({
-        "status": "running",
-        "school": SCHOOL["name"],
-        "whatsapp_configured": bool(ACCESS_TOKEN),
-        "sheets_connected": len(rows) > 0,
-        "homework_rows": len(rows),
-        "parents_registered": len(parents),
-    })
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    logger.info(f"Starting on port {port}")
-    app.run(debug=False, port=port, host="0.0.0.0")
+    if is_arabic:
+        return (f"\u0623\u0647\u0644\u0627\u064b! \U0001f44b \u0643\u064a\u0641 \u0623\u0642\u062f\u0631 \u0623\u0633\u0627\u0639\u062f\u0643\u061f\n\n"
+                f"\U0001f4da *\u0627\u0644\u0648\u0627\u062c\u0628\u0627\u062a* \u2014 \u0645\u062b\u0627\u0644: \u0648\u0627\u062c\u0628 \u0627\u0644\u0635\u0641 \u0627\u0644\u0633\u0627\u0628\u0639\n"
+                f"\U0001f4c5 *\u0627\u0644\u062c\u062f\u0648\u0644* \u2014 \u0645\u062b\u0627\u0644: \u062c\u062f\u0648\u0644 \u0627\u0644\u0635\u0641 \u0627\u0644\u062e\u0627\u0645\u0633\n"
+                f"\U0001f4b0 *\u0627\u0644\u0631\u0633\u0648\u0645 \u0627\u0644\u062f\u0631\u0627\u0633\u064a\u0629*\n"
+                f"\U0001f4b3 *\u0631\u0635\u064a\u062f \u0627\u0644\u0637\u0627\u0644\u0628* \u2014 \u0645\u062b\u0627\u0644: STU001\n"
+                f"\U0001f4e2 *\u0627\u0644\u0625\u0639\u0644\u0627\u0646\u0627\u062a*\n"
+                f"\U0001f4cb *\u0627\u0644\u062a\u0633\u062c\u064a\u0644 \u0648\u0627\u0644\u0642\u0628\u0648\u0644*\n"
+                f"\U0001f4cd *\u0645\u0648\u0642\u0639 \u0627\u0644\u0645\u062f\u0631\u0633\u0629*\n\n"
+                f"\U0001f4de {SCHOOL['phone']}")
+    return (f"Welcome to Modern Infinity! \U0001f44b\n\n"
+            f"\U0001f4da *Homework* \u2014 e.g. Homework for Grade 7\n"
+            f"\U0001f4c5 *Schedule* \u2014 e.g. Grade 5 schedule\n"
+            f"\U0001f4b0 *Fees*\n"
+            f"\U0001f4b3 *Balance* \u2014 e.g. STU001\n"
+            f"\U0001f4e2 *Announcements*\n"
+            f"\U0001f4cb *Admissions*\n"
+            f"\U0001f4cd *Location*\n\n"
+            f"\U0001f4de {SCHOOL['phone']}")
