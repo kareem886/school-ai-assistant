@@ -21,7 +21,6 @@ PHONE_NUMBER_ID = os.environ.get("PHONE_NUMBER_ID", "1358537447338280")
 ACCESS_TOKEN    = os.environ.get("ACCESS_TOKEN", "")
 VERIFY_TOKEN    = os.environ.get("VERIFY_TOKEN", "schoolai2026")
 APP_SECRET      = os.environ.get("APP_SECRET", "")
-ADMIN_USER      = "admin"
 ADMIN_PASSWORD  = "moderninfinity2026"
 META_API_URL    = f"https://graph.facebook.com/v18.0/{PHONE_NUMBER_ID}/messages"
 
@@ -370,16 +369,6 @@ def webhook():
         logger.error(f"Webhook error: {e}")
     return 'OK', 200
 
-def send_whatsapp(to, text):
-    url = f"https://graph.facebook.com/v18.0/{PHONE_NUMBER_ID}/messages"
-    headers = {"Authorization": f"Bearer {ACCESS_TOKEN}", "Content-Type": "application/json"}
-    payload = {"messaging_product": "whatsapp", "to": to, "type": "text", "text": {"body": text[:4096]}}
-    try:
-        r = requests.post(url, headers=headers, json=payload, timeout=10)
-        return r.status_code == 200
-    except Exception as e:
-        logger.error(f"Send error: {e}")
-        return False
 
 @app.route('/admin', methods=['GET','POST'])
 def admin():
@@ -405,7 +394,11 @@ def admin():
             if msg:
                 rows = read_tab('Parents')
                 targets = rows if grade_filter == 'all' else [r for r in rows if r.get('Grade','') == grade_filter]
-                sent = sum(1 for r in targets if send_whatsapp((r.get('WhatsApp','') or r.get('Phone','')).strip(), msg) if r.get('WhatsApp','') or r.get('Phone',''))
+                sent = 0
+                for r in targets:
+                    num = (r.get('WhatsApp','') or r.get('Phone','')).strip()
+                    if num and send_whatsapp(num, msg):
+                        sent += 1
                 success = f"Sent! Sent to {sent} parents successfully"
     if not session.get('admin'):
         return render_template_string("""<!DOCTYPE html><html><head><title>Admin</title>
