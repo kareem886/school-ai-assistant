@@ -21,6 +21,7 @@ PHONE_NUMBER_ID = os.environ.get("PHONE_NUMBER_ID", "1358537447338280")
 ACCESS_TOKEN    = os.environ.get("ACCESS_TOKEN", "")
 VERIFY_TOKEN    = os.environ.get("VERIFY_TOKEN", "schoolai2026")
 APP_SECRET      = os.environ.get("APP_SECRET", "")
+ADMIN_USER      = "admin"
 ADMIN_PASSWORD  = "moderninfinity2026"
 META_API_URL    = f"https://graph.facebook.com/v18.0/{PHONE_NUMBER_ID}/messages"
 
