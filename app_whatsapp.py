@@ -259,6 +259,11 @@ def process_message(msg):
         info = {r.get("Item",""): r.get("Value","") for r in rows}
         if is_arabic:
             return (f"\U0001f4b0 \u0631\u0633\u0648\u0645 \u0645\u062f\u0631\u0633\u0629 Modern Infinity 2025/2026\n\n"
+            _kg_default = 'جنيه 42,000'
+            _g13_default = 'جنيه 48,000'
+            _g46_default = 'جنيه 55,000'
+            _g79_default = 'جنيه 62,000'
+            _g1012_default = 'جنيه 70,000'
                     f"\U0001f538 KG: {info.get('KG1 Fees','42,000 \u062c\u0646\u064a\u0647')}\n"
                     f"\U0001f538 \u0627\u0644\u0635\u0641 1-3: {info.get('Grade 1-3 Fees','48,000 \u062c\u0646\u064a\u0647')}\n"
                     f"\U0001f538 \u0627\u0644\u0635\u0641 4-6: {info.get('Grade 4-6 Fees','55,000 \u062c\u0646\u064a\u0647')}\n"
@@ -295,6 +300,7 @@ def process_message(msg):
         info = {r.get("Item",""): r.get("Value","") for r in rows}
         if is_arabic:
             return (f"\U0001f4cb \u0627\u0644\u062a\u0633\u062c\u064a\u0644 \u0641\u064a Modern Infinity\n\n"
+                    _open_default = 'مفتوح'
                     f"\u2705 \u0627\u0644\u062d\u0627\u0644\u0629: {info.get('Registration Status','\u0645\u0641\u062a\u0648\u062d')}\n"
                     f"\U0001f4c5 \u0622\u062e\u0631 \u0645\u0648\u0639\u062f: {info.get('Application Deadline','')}\n\n"
                     f"\U0001f4de \u0644\u0644\u062a\u0648\u0627\u0635\u0644: {SCHOOL['phone']}\n"
