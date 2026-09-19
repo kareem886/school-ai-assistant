@@ -4,7 +4,7 @@ Includes: WhatsApp webhook + Admin Panel + Broadcast announcements
 """
 import os, json, re, base64, requests, logging, time, hmac, hashlib
 from collections import defaultdict
-from flask import Flask, request, jsonify, send_from_directory, render_template_string, session, redirect
+from flask import Flask, request, jsonify, send_from_directory
 import gspread
 from google.oauth2.service_account import Credentials
 
@@ -12,7 +12,6 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(mess
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("SECRET_KEY", "school-bot-secret-2026")
 app.config["MAX_CONTENT_LENGTH"] = 64 * 1024
 
 # ── Config ─────────────────────────────────────────────────────────────────────────────
@@ -370,60 +369,105 @@ def webhook():
     return 'OK', 200
 
 
-@app.route('/admin', methods=['GET','POST'])
-def admin():
-    error = None
-    success = None
-    if request.method == 'POST':
-        action = request.form.get('action')
-        if action == 'login':
-            u = request.form.get('username','')
-            p = request.form.get('password','')
-            if u == ADMIN_USER and hmac.compare_digest(p, ADMIN_PASSWORD):
-                session['admin'] = True
-                return redirect('/admin')
-            error = 'Invalid credentials'
-        elif not session.get('admin'):
-            return redirect('/admin')
-        elif action == 'logout':
-            session.pop('admin', None)
-            return redirect('/admin')
-        elif action == 'broadcast':
-            msg = request.form.get('message','').strip()
-            grade_filter = request.form.get('grade_filter','all')
-            if msg:
-                rows = read_tab('Parents')
-                targets = rows if grade_filter == 'all' else [r for r in rows if r.get('Grade','') == grade_filter]
-                sent = 0
-                for r in targets:
-                    num = (r.get('WhatsApp','') or r.get('Phone','')).strip()
-                    if num and send_whatsapp(num, msg):
-                        sent += 1
-                success = f"Sent! Sent to {sent} parents successfully"
-    if not session.get('admin'):
-        return render_template_string("""<!DOCTYPE html><html><head><title>Admin</title>
-<style>body{font-family:Arial;max-width:400px;margin:80px auto;padding:20px}input{width:100%;padding:8px;margin:5px 0;box-sizing:border-box}button{background:#25D366;color:white;border:none;padding:10px;width:100%;cursor:pointer}.err{color:red}</style></head>
-<body><h2>&#x1F916; School Bot Admin</h2>{% if error %}<p class="err">{{error}}</p>{% endif %}
-<form method="POST"><input type="hidden" name="action" value="login">
-<input name="username" placeholder="Username" required><input type="password" name="password" placeholder="Password" required>
-<button>Login</button></form></body></html>""", error=error)
-    rows = read_tab('Parents')
-    grades = sorted(set(r.get('Grade','') for r in rows if r.get('Grade','')))
-    return render_template_string("""<!DOCTYPE html><html><head><title>Bot Admin</title>
-<style>body{font-family:Arial;max-width:600px;margin:30px auto;padding:20px}textarea{width:100%;height:100px;padding:8px;box-sizing:border-box}
-.btn{background:#25D366;color:white;border:none;padding:10px 20px;cursor:pointer;border-radius:4px}.btn2{background:#e74c3c}
-.ok{color:green}.info{background:#f5f5f5;padding:10px;border-radius:4px;margin:10px 0}</style></head>
-<body><h2>&#x1F916; Modern Infinity Admin</h2>
-<div class="info">&#x1F4CA; Parents: {{total}} | &#x1F3EB; Sent Today: {{sent_today}}</div>
-{% if success %}<p class="ok">&#x2705; {{success}}</p>{% endif %}
-<form method="POST"><input type="hidden" name="action" value="broadcast">
-<b>&#x1F4E2; Broadcast</b><br>
-Grade: <select name="grade_filter"><option value="all">All</option>{% for g in grades %}<option>{{g}}</option>{% endfor %}</select><br><br>
-<textarea name="message" placeholder="Message..." required></textarea><br>
-<button class="btn">Send to WhatsApp</button></form>
-<form method="POST" style="margin-top:15px"><input type="hidden" name="action" value="logout">
-<button class="btn btn2">Logout</button></form></body></html>""",
-        total=len(rows), grades=grades, success=success, sent_today=app.config.get('SENT_TODAY',0))
+@app.route('/admin')
+def admin_panel():
+    return send_from_directory('.', 'admin_panel.html')
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
+@app.route('/api/parents')
+def api_parents():
+    """Load parents from Google Sheet for admin panel."""
+    try:
+        rows = read_tab("Parents")
+        parents = [
+            {
+                "name": r.get("Name", ""),
+                "phone": str(r.get("Phone", "")),
+                "grade": r.get("Grade", ""),
+                "active": str(r.get("Active", "yes")).lower() == "yes"
+            }
+            for r in rows
+            if str(r.get("Active", "yes")).lower() == "yes" and r.get("Phone", "")
+        ]
+        return jsonify({"parents": parents, "count": len(parents)})
+    except Exception as e:
+        logger.error(f"[api/parents] {e}")
+        return jsonify({"parents": [], "count": 0, "error": str(e)})
+
+
+@app.route('/broadcast', methods=['POST'])
+def broadcast():
+    """Send announcement to all parents (or filtered by grade)."""
+    data = request.get_json(force=True, silent=True) or {}
+    message = data.get("message", "").strip()
+    grades = data.get("grades", ["All"])
+
+    if not message:
+        return jsonify({"error": "No message provided"}), 400
+
+    try:
+        rows = read_tab("Parents")
+        all_parents = [
+            r for r in rows
+            if str(r.get("Active", "yes")).lower() == "yes" and r.get("Phone", "")
+        ]
+    except Exception as e:
+        return jsonify({"error": f"Could not load parents: {e}"}), 500
+
+    if "All" not in grades:
+        all_parents = [
+            p for p in all_parents
+            if any(g.lower() in str(p.get("Grade", "")).lower() for g in grades)
+        ]
+
+    broadcast_msg = f"\U0001f4e2 Modern Infinity School\n\n{message}\n\n\U0001f4de For more info: {SCHOOL['phone']}"
+
+    sent = 0
+    failed = 0
+    for parent in all_parents:
+        phone = str(parent.get("Phone", "")).strip()
+        if not phone:
+            continue
+        if not phone.startswith("20") and not phone.startswith("+"):
+            phone = "20" + phone.lstrip("0")
+        phone = phone.lstrip("+")
+        if send_whatsapp(phone, broadcast_msg):
+            sent += 1
+        else:
+            failed += 1
+        import time as _t; _t.sleep(0.5)
+
+    logger.info(f"[broadcast] Sent: {sent}, Failed: {failed}, Total: {len(all_parents)}")
+    return jsonify({"sent": sent, "failed": failed, "total": len(all_parents)})
+
+
+@app.route('/api/homework')
+def homework_api():
+    grade = request.args.get("grade", "")
+    rows = read_tab("Homework")
+    result = [r for r in rows if grade.lower() in str(r.get("Grade","")).lower() and str(r.get("Assignment","")).strip()]
+    return jsonify({"homework": result, "count": len(result)})
+
+@app.route('/api/announcements')
+def announcements_api():
+    rows = read_tab("Announcements")
+    active = [r for r in rows if str(r.get("Status","")).lower() == "active"]
+    return jsonify({"announcements": active, "count": len(active)})
+
+@app.route('/health')
+def health():
+    rows = read_tab("Homework")
+    parents = read_tab("Parents")
+    return jsonify({
+        "status": "running",
+        "school": SCHOOL["name"],
+        "whatsapp_configured": bool(ACCESS_TOKEN),
+        "sheets_connected": len(rows) > 0,
+        "homework_rows": len(rows),
+        "parents_registered": len(parents),
+    })
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    logger.info(f"Starting on port {port}")
+    app.run(debug=False, port=port, host="0.0.0.0")
