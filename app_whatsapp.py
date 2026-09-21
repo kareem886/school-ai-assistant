@@ -568,6 +568,111 @@ def announcements_api():
     active = [r for r in rows if str(r.get("Status","")).lower() == "active"]
     return jsonify({"announcements": active, "count": len(active)})
 
+
+
+@app.route('/setup-sheet', methods=['POST'])
+def setup_sheet():
+    """One-time setup: add Student ID to Parents tab and ensure exam tab exists."""
+    try:
+        client = get_client()
+        wb = client.open_by_key(SHEET_ID)
+        
+        results = {}
+        
+        # 1. Update Parents tab - add Student ID column
+        try:
+            ws = wb.worksheet('Parents')
+            headers = ws.row_values(1)
+            
+            if 'Student ID' not in headers:
+                # Add Student ID header
+                next_col = len(headers) + 1
+                ws.update_cell(1, next_col, 'Student ID')
+                # Add STU001 for first parent (Ahmed Mohamed - Kareem's number)
+                ws.update_cell(2, next_col, 'STU001')
+                # Add STU002 for Sara Khaled
+                ws.update_cell(3, next_col, 'STU002')
+                # Add STU003 for Test Parent 2
+                ws.update_cell(4, next_col, 'STU003')
+                results['parents'] = f'Added Student ID column at col {next_col}'
+            else:
+                results['parents'] = 'Student ID column already exists'
+        except Exception as e:
+            results['parents_error'] = str(e)
+        
+        # 2. Check/create exam tab
+        try:
+            try:
+                exam_ws = wb.worksheet('exam')
+                headers = exam_ws.row_values(1)
+                results['exam'] = f'Tab exists, headers: {headers}'
+            except:
+                exam_ws = wb.add_worksheet(title='exam', rows=50, cols=10)
+                exam_ws.update('A1:E1', [['Student ID', 'Subject', 'Score', 'Grade', 'Rank']])
+                exam_ws.update('A2:E4', [
+                    ['STU001', 'Math', '95', 'A', '1st'],
+                    ['STU001', 'Arabic', '88', 'B+', '3rd'],
+                    ['STU001', 'English', '92', 'A-', '2nd'],
+                ])
+                results['exam'] = 'Created exam tab with sample data for STU001'
+        except Exception as e:
+            results['exam_error'] = str(e)
+        
+        # 3. Check/create BusRoutes tab
+        try:
+            try:
+                wb.worksheet('BusRoutes')
+                results['bus'] = 'Already exists'
+            except:
+                bus_ws = wb.add_worksheet(title='BusRoutes', rows=20, cols=6)
+                bus_ws.update('A1:F1', [['Route', 'Area', 'Pickup Time', 'Drop-off Time', 'Driver Contact', 'Active']])
+                bus_ws.update('A2:F3', [
+                    ['Route 1', 'Maadi', '7:00 AM', '2:30 PM', '01012345678', 'yes'],
+                    ['Route 2', 'Heliopolis', '7:15 AM', '2:45 PM', '01098765432', 'yes'],
+                ])
+                results['bus'] = 'Created BusRoutes tab with sample data'
+        except Exception as e:
+            results['bus_error'] = str(e)
+        
+        # 4. Check/create Canteen tab
+        try:
+            try:
+                wb.worksheet('Canteen')
+                results['canteen'] = 'Already exists'
+            except:
+                can_ws = wb.add_worksheet(title='Canteen', rows=20, cols=4)
+                can_ws.update('A1:C1', [['Day', 'Item', 'Price']])
+                can_ws.update('A2:C5', [
+                    ['Daily', 'Sandwich', '15'],
+                    ['Daily', 'Juice', '10'],
+                    ['Daily', 'Water', '5'],
+                    ['Daily', 'Pizza Slice', '20'],
+                ])
+                results['canteen'] = 'Created Canteen tab with sample data'
+        except Exception as e:
+            results['canteen_error'] = str(e)
+        
+        # 5. Check/create Library tab
+        try:
+            try:
+                wb.worksheet('Library')
+                results['library'] = 'Already exists'
+            except:
+                lib_ws = wb.add_worksheet(title='Library', rows=30, cols=5)
+                lib_ws.update('A1:E1', [['Book Title', 'Author', 'Status', 'Due Date', 'Category']])
+                lib_ws.update('A2:E4', [
+                    ['Harry Potter', 'J.K. Rowling', 'Available', '', 'Fiction'],
+                    ['The Alchemist', 'Paulo Coelho', 'Available', '', 'Fiction'],
+                    ['Sapiens', 'Yuval Noah Harari', 'Borrowed', '2026-10-01', 'Non-Fiction'],
+                ])
+                results['library'] = 'Created Library tab with sample data'
+        except Exception as e:
+            results['library_error'] = str(e)
+        
+        return jsonify({'status': 'done', 'results': results})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/health')
 def health():
     rows = read_tab("Homework")
