@@ -316,11 +316,11 @@ def process_message(msg, from_phone=""):
         info = {r.get("Item",""): r.get("Value","") for r in rows}
         if is_arabic:
             return (f"\U0001f4b0 \u0631\u0633\u0648\u0645 Modern Infinity 2025/2026\n\n"
-                    f"\U0001f538 KG: {info.get('KG1 Fees','42,000 \u062c\u0646\u064a\u0647')}\n"
-                    f"\U0001f538 \u0627\u0644\u0635\u0641 1-3: {info.get('Grade 1-3 Fees','48,000 \u062c\u0646\u064a\u0647')}\n"
-                    f"\U0001f538 \u0627\u0644\u0635\u0641 4-6: {info.get('Grade 4-6 Fees','55,000 \u062c\u0646\u064a\u0647')}\n"
-                    f"\U0001f538 \u0627\u0644\u0635\u0641 7-9: {info.get('Grade 7-9 Fees','62,000 \u062c\u0646\u064a\u0647')}\n"
-                    f"\U0001f538 \u0627\u0644\u0635\u0641 10-12: {info.get('Grade 10-12 Fees','70,000 \u062c\u0646\u064a\u0647')}\n\n"
+                    f"\U0001f538 KG: {info.get('KG1 Fees','42,000 جنيه')}\n"
+                    f"\U0001f538 \u0627\u0644\u0635\u0641 1-3: {info.get('Grade 1-3 Fees','48,000 جنيه')}\n"
+                    f"\U0001f538 \u0627\u0644\u0635\u0641 4-6: {info.get('Grade 4-6 Fees','55,000 جنيه')}\n"
+                    f"\U0001f538 \u0627\u0644\u0635\u0641 7-9: {info.get('Grade 7-9 Fees','62,000 جنيه')}\n"
+                    f"\U0001f538 \u0627\u0644\u0635\u0641 10-12: {info.get('Grade 10-12 Fees','70,000 جنيه')}\n\n"
                     f"\U0001f4c5 \u062a\u0642\u0633\u064a\u0645 \u0639\u0644\u0649 3 \u0623\u0642\u0633\u0627\u0637\n"
                     f"\U0001f4de {SCHOOL['phone']}")
         return (f"\U0001f4b0 Modern Infinity Fees 2025/2026\n\n"
@@ -408,7 +408,7 @@ def process_message(msg, from_phone=""):
         info = {r.get("Item",""): r.get("Value","") for r in rows}
         if is_arabic:
             return (f"\U0001f4cb \u0627\u0644\u062a\u0633\u062c\u064a\u0644 \u0641\u064a Modern Infinity\n\n"
-                    f"\u2705 \u0627\u0644\u062d\u0627\u0644\u0629: {info.get('Registration Status','\u0645\u0641\u062a\u0648\u062d')}\n"
+                    f"\u2705 \u0627\u0644\u062d\u0627\u0644\u0629: {info.get('Registration Status','مفتوح')}\n"
                     f"\U0001f4c5 \u0622\u062e\u0631 \u0645\u0648\u0639\u062f: {info.get('Application Deadline','')}\n\n"
                     f"\U0001f4de {SCHOOL['phone']}\n"
                     f"\U0001f4cd {SCHOOL['address']}")
