@@ -1,4 +1,4 @@
-"""
+Includes: WhatsApp webhook + Admin Panel + All Features v2.1
 School AI Assistant - Modern Infinity Language School
 Includes: WhatsApp webhook + Admin Panel + Broadcast announcements
 """
