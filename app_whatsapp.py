@@ -629,7 +629,7 @@ if __name__ == "__main__":
 def rebuild_sheet():
     """One-time endpoint to rebuild all sheet tabs. DELETE AFTER USE."""
     try:
-        gc = get_gspread()
+        gc = get_client()
         sh = gc.open_by_key(SHEET_ID)
 
         C = {"dk":"#0F1C2E","gr":"#25D366","lgr":"#DCFCE7","amb":"#FEF3C7",
