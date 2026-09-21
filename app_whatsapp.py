@@ -20,7 +20,12 @@ PHONE_NUMBER_ID = os.environ.get("PHONE_NUMBER_ID", "1358537447338280")
 ACCESS_TOKEN    = os.environ.get("ACCESS_TOKEN", "")
 VERIFY_TOKEN    = os.environ.get("VERIFY_TOKEN", "schoolai2026")
 APP_SECRET      = os.environ.get("APP_SECRET", "")
-ADMIN_PASSWORD  = "moderninfinity2026"
+# ── Admin accounts ─────────────────────────────────────────────────────────────────────
+ADMINS = {
+    "admin":        {"password": "moderninfinity2026", "label": "Super Admin",   "grades": []},
+    "admin_junior": {"password": "junior2026",         "label": "Junior Admin",  "grades": ["KG1","KG2","Grade 1","Grade 2","Grade 3","Grade 4","Grade 5","Grade 6"]},
+    "admin_senior": {"password": "senior2026",         "label": "Senior Admin",  "grades": ["Grade 7","Grade 8","Grade 9","Grade 10","Grade 11","Grade 12"]},
+}
 META_API_URL    = f"https://graph.facebook.com/v18.0/{PHONE_NUMBER_ID}/messages"
 
 SCHOOL = {
@@ -251,7 +256,7 @@ def process_message(msg, from_phone=""):
                 return (f"🔒 \u0639\u0630\u0631\u0627\u064b\u060c \u064a\u0645\u0643\u0646\u0643 \u0641\u0642\u0637 \u0627\u0644\u0627\u0637\u0644\u0627\u0639 \u0639\u0644\u0649 \u0646\u062a\u0627\u0626\u062c \u0623\u0628\u0646\u0627\u0626\u0643 \u0627\u0644\u0645\u0633\u062c\u0644\u064a\u0646 \u0628\u0631\u0642\u0645\u0643.\n"
                         f"📞 {SCHOOL['phone']}") if is_arabic else                        (f"🔒 Sorry, you can only access results for students registered under your phone number.\n"
                         f"📞 {SCHOOL['phone']}")
-            result_rows = read_tab("exam")
+            result_rows = read_tab("Results")
             student_results = [r for r in result_rows if str(r.get("Student ID","")).upper() == sid]
             if not student_results:
                 return (f"📝 \u0644\u0627 \u062a\u0648\u062c\u062f \u0646\u062a\u0627\u0626\u062c \u0644\u0640 {name} \u062d\u0627\u0644\u064a\u0627\u064b\n📞 {SCHOOL['phone']}") if is_arabic else                        (f"📝 No results found for {name} yet\n📞 {SCHOOL['phone']}")
@@ -488,21 +493,44 @@ def admin_panel():
     return send_from_directory('.', 'admin_panel.html')
 
 
+@app.route('/api/login', methods=['POST'])
+def api_login():
+    """Validate admin credentials and return role info."""
+    data = request.get_json(force=True, silent=True) or {}
+    username = data.get("username", "").strip()
+    password = data.get("password", "").strip()
+    admin = ADMINS.get(username)
+    if admin and admin["password"] == password:
+        return jsonify({
+            "ok": True,
+            "username": username,
+            "label": admin["label"],
+            "grades": admin["grades"]   # empty list = all grades
+        })
+    return jsonify({"ok": False}), 401
+
+
 @app.route('/api/parents')
 def api_parents():
-    """Load parents from Google Sheet for admin panel."""
+    """Load parents from Google Sheet, optionally filtered by admin grade scope."""
     try:
+        grades_param = request.args.get("grades", "")          # comma-separated or empty
+        allowed = [g.strip() for g in grades_param.split(",") if g.strip()]
         rows = read_tab("Parents")
-        parents = [
-            {
-                "name": r.get("Name", ""),
+        parents = []
+        for r in rows:
+            if not (str(r.get("Active", "yes")).lower() == "yes" and r.get("Phone", "")):
+                continue
+            grade = r.get("Grade", "")
+            if allowed:
+                if not any(a.lower() in grade.lower() for a in allowed):
+                    continue
+            parents.append({
+                "name":  r.get("Name", ""),
                 "phone": str(r.get("Phone", "")),
-                "grade": r.get("Grade", ""),
-                "active": str(r.get("Active", "yes")).lower() == "yes"
-            }
-            for r in rows
-            if str(r.get("Active", "yes")).lower() == "yes" and r.get("Phone", "")
-        ]
+                "grade": grade,
+                "active": True
+            })
         return jsonify({"parents": parents, "count": len(parents)})
     except Exception as e:
         logger.error(f"[api/parents] {e}")
@@ -511,10 +539,11 @@ def api_parents():
 
 @app.route('/broadcast', methods=['POST'])
 def broadcast():
-    """Send announcement to all parents (or filtered by grade)."""
+    """Send announcement to parents filtered by selected grades AND admin scope."""
     data = request.get_json(force=True, silent=True) or {}
-    message = data.get("message", "").strip()
-    grades = data.get("grades", ["All"])
+    message      = data.get("message", "").strip()
+    grades       = data.get("grades", ["All"])        # grades chosen in UI
+    admin_scope  = data.get("admin_scope", [])        # grades this admin is allowed (empty=all)
 
     if not message:
         return jsonify({"error": "No message provided"}), 400
@@ -528,6 +557,14 @@ def broadcast():
     except Exception as e:
         return jsonify({"error": f"Could not load parents: {e}"}), 500
 
+    # Enforce admin scope first (server-side security)
+    if admin_scope:
+        all_parents = [
+            p for p in all_parents
+            if any(s.lower() in str(p.get("Grade", "")).lower() for s in admin_scope)
+        ]
+
+    # Then apply the UI grade selection
     if "All" not in grades:
         all_parents = [
             p for p in all_parents
@@ -567,111 +604,6 @@ def announcements_api():
     rows = read_tab("Announcements")
     active = [r for r in rows if str(r.get("Status","")).lower() == "active"]
     return jsonify({"announcements": active, "count": len(active)})
-
-
-
-@app.route('/setup-sheet', methods=['POST'])
-def setup_sheet():
-    """One-time setup: add Student ID to Parents tab and ensure exam tab exists."""
-    try:
-        client = get_client()
-        wb = client.open_by_key(SHEET_ID)
-        
-        results = {}
-        
-        # 1. Update Parents tab - add Student ID column
-        try:
-            ws = wb.worksheet('Parents')
-            headers = ws.row_values(1)
-            
-            if 'Student ID' not in headers:
-                # Add Student ID header
-                next_col = len(headers) + 1
-                ws.update_cell(1, next_col, 'Student ID')
-                # Add STU001 for first parent (Ahmed Mohamed - Kareem's number)
-                ws.update_cell(2, next_col, 'STU001')
-                # Add STU002 for Sara Khaled
-                ws.update_cell(3, next_col, 'STU002')
-                # Add STU003 for Test Parent 2
-                ws.update_cell(4, next_col, 'STU003')
-                results['parents'] = f'Added Student ID column at col {next_col}'
-            else:
-                results['parents'] = 'Student ID column already exists'
-        except Exception as e:
-            results['parents_error'] = str(e)
-        
-        # 2. Check/create exam tab
-        try:
-            try:
-                exam_ws = wb.worksheet('exam')
-                headers = exam_ws.row_values(1)
-                results['exam'] = f'Tab exists, headers: {headers}'
-            except:
-                exam_ws = wb.add_worksheet(title='exam', rows=50, cols=10)
-                exam_ws.update('A1:E1', [['Student ID', 'Subject', 'Score', 'Grade', 'Rank']])
-                exam_ws.update('A2:E4', [
-                    ['STU001', 'Math', '95', 'A', '1st'],
-                    ['STU001', 'Arabic', '88', 'B+', '3rd'],
-                    ['STU001', 'English', '92', 'A-', '2nd'],
-                ])
-                results['exam'] = 'Created exam tab with sample data for STU001'
-        except Exception as e:
-            results['exam_error'] = str(e)
-        
-        # 3. Check/create BusRoutes tab
-        try:
-            try:
-                wb.worksheet('BusRoutes')
-                results['bus'] = 'Already exists'
-            except:
-                bus_ws = wb.add_worksheet(title='BusRoutes', rows=20, cols=6)
-                bus_ws.update('A1:F1', [['Route', 'Area', 'Pickup Time', 'Drop-off Time', 'Driver Contact', 'Active']])
-                bus_ws.update('A2:F3', [
-                    ['Route 1', 'Maadi', '7:00 AM', '2:30 PM', '01012345678', 'yes'],
-                    ['Route 2', 'Heliopolis', '7:15 AM', '2:45 PM', '01098765432', 'yes'],
-                ])
-                results['bus'] = 'Created BusRoutes tab with sample data'
-        except Exception as e:
-            results['bus_error'] = str(e)
-        
-        # 4. Check/create Canteen tab
-        try:
-            try:
-                wb.worksheet('Canteen')
-                results['canteen'] = 'Already exists'
-            except:
-                can_ws = wb.add_worksheet(title='Canteen', rows=20, cols=4)
-                can_ws.update('A1:C1', [['Day', 'Item', 'Price']])
-                can_ws.update('A2:C5', [
-                    ['Daily', 'Sandwich', '15'],
-                    ['Daily', 'Juice', '10'],
-                    ['Daily', 'Water', '5'],
-                    ['Daily', 'Pizza Slice', '20'],
-                ])
-                results['canteen'] = 'Created Canteen tab with sample data'
-        except Exception as e:
-            results['canteen_error'] = str(e)
-        
-        # 5. Check/create Library tab
-        try:
-            try:
-                wb.worksheet('Library')
-                results['library'] = 'Already exists'
-            except:
-                lib_ws = wb.add_worksheet(title='Library', rows=30, cols=5)
-                lib_ws.update('A1:E1', [['Book Title', 'Author', 'Status', 'Due Date', 'Category']])
-                lib_ws.update('A2:E4', [
-                    ['Harry Potter', 'J.K. Rowling', 'Available', '', 'Fiction'],
-                    ['The Alchemist', 'Paulo Coelho', 'Available', '', 'Fiction'],
-                    ['Sapiens', 'Yuval Noah Harari', 'Borrowed', '2026-10-01', 'Non-Fiction'],
-                ])
-                results['library'] = 'Created Library tab with sample data'
-        except Exception as e:
-            results['library_error'] = str(e)
-        
-        return jsonify({'status': 'done', 'results': results})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
 
 @app.route('/health')
 def health():
