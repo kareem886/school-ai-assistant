@@ -624,6 +624,373 @@ if __name__ == "__main__":
     app.run(debug=False, port=port, host="0.0.0.0")
 
 
+
+# ── ONE-TIME SHEET REBUILD ENDPOINT ─────────────────────────────────────────
+@app.route('/rebuild-sheet-x7k2', methods=['GET'])
+def rebuild_sheet():
+    """One-time endpoint to rebuild all sheet tabs with data + headers only."""
+    import time
+    try:
+        gc = get_client()
+        sh = gc.open_by_key(SHEET_ID)
+        results = []
+
+        def tab(name, header, rows, hdr_color):
+            try: s = sh.worksheet(name)
+            except: s = sh.add_worksheet(name, 500, 30)
+            s.clear()
+            time.sleep(3)
+            s.update([header] + rows, value_input_option="USER_ENTERED")
+            time.sleep(3)
+            n = len(header)
+            r = ord('A') + n - 1
+            cell = f"A1:{chr(r)}1"
+            rgb = {"red": int(hdr_color[1:3],16)/255, "green": int(hdr_color[3:5],16)/255, "blue": int(hdr_color[5:7],16)/255}
+            s.format(cell, {"backgroundColor": rgb, "textFormat": {"bold": True, "foregroundColor": {"red":1,"green":1,"blue":1}, "fontSize":11}, "verticalAlignment":"MIDDLE"})
+            s.freeze(rows=1)
+            time.sleep(5)
+            return s
+
+        # 1. HOMEWORK
+        tab("Homework",
+            ["Grade","Subject","Assignment","Due Date","Teacher","Type","Notes","Status"],
+            [
+                ["KG1","Activities","Color the butterfly worksheet","2026-09-23","Ms. Noha","Coloring","Use crayons","Active"],
+                ["KG1","Arabic","Trace letters: a b t th — page 5","2026-09-24","Ms. Fatima","Tracing","Pencil only","Active"],
+                ["KG2","English","Write your name 3 times on dotted lines","2026-09-23","Ms. Sara","Writing","","Active"],
+                ["KG2","Math","Count and circle groups of 5 — worksheet page 8","2026-09-24","Ms. Noha","Worksheet","","Active"],
+                ["Grade 1","Math","Addition up to 20 — workbook page 14-15","2026-09-23","Ms. Hana","Workbook","","Active"],
+                ["Grade 1","Arabic","Read lesson 2 and answer questions 1-3","2026-09-24","Mr. Tarek","Reading","Handwritten","Active"],
+                ["Grade 1","English","Write 5 sentences: cat, dog, sun, run, big","2026-09-25","Ms. Sara","Writing","","Active"],
+                ["Grade 2","Math","Subtraction worksheet page 22 questions 1-10","2026-09-23","Ms. Hana","Worksheet","","Active"],
+                ["Grade 2","Arabic","Memorize poem on page 18 — 4 lines","2026-09-24","Mr. Tarek","Memorization","","Active"],
+                ["Grade 2","Science","Draw and label: sun, cloud, rain, wind","2026-09-25","Ms. Hana","Drawing","Use colors","Active"],
+                ["Grade 3","Math","Multiplication tables 3 and 4 — page 30","2026-09-23","Ms. Hana","Tables","","Active"],
+                ["Grade 3","Arabic","Essay: My School — 5 sentences minimum","2026-09-24","Mr. Tarek","Essay","Handwritten","Active"],
+                ["Grade 3","English","Read unit 3 story — answer comprehension Qs 1-5","2026-09-25","Ms. Sara","Reading","","Active"],
+                ["Grade 4","Math","Long division exercises page 45 Qs 1-8","2026-09-23","Ms. Hana","Exercises","Show work","Active"],
+                ["Grade 4","Science","Research: 3 facts about the solar system","2026-09-24","Mr. Omar","Research","Typed or handwritten","Active"],
+                ["Grade 4","Arabic","Grammar: identify nouns in 10 sentences page 52","2026-09-25","Ms. Fatima","Grammar","","Active"],
+                ["Grade 5","Math","Fractions practice workbook page 52-53","2026-09-23","Ms. Hana","Workbook","","Active"],
+                ["Grade 5","Arabic","Read and summarize lesson 4 in your own words","2026-09-24","Mr. Tarek","Summary","Handwritten","Active"],
+                ["Grade 5","English","Vocabulary list 20 words — memorize for test Thursday","2026-09-25","Ms. Sara","Memorization","","Active"],
+                ["Grade 5","Science","Draw and label parts of a plant","2026-09-26","Ms. Hana","Drawing","Use colors","Active"],
+                ["Grade 6","Math","Ratio and proportion — page 61 Qs 1-12","2026-09-23","Mr. Khaled","Exercises","Show work","Active"],
+                ["Grade 6","Arabic","Essay: The importance of reading — 150 words","2026-09-24","Ms. Fatima","Essay","Handwritten","Active"],
+                ["Grade 6","English","Read chapter 4 of the reader — answer Qs 1-6","2026-09-25","Ms. Sara","Reading","","Active"],
+                ["Grade 6","Science","Research report: Water cycle — 1 page with diagram","2026-09-26","Mr. Omar","Report","Include diagram","Active"],
+                ["Grade 7","Math","Chapter 4 exercises page 67 questions 1-15","2026-09-23","Mr. Ahmed","Exercises","Bring calculator","Active"],
+                ["Grade 7","Arabic","Essay on importance of education — 200 words","2026-09-24","Ms. Fatima","Essay","Handwritten","Active"],
+                ["Grade 7","English","Read unit 5 pages 34-40 answer comprehension questions","2026-09-25","Ms. Sara","Reading","","Active"],
+                ["Grade 7","Science","Research report on digestive system — 1 page","2026-09-26","Mr. Omar","Report","Typed or handwritten","Active"],
+                ["Grade 7","Social Studies","Study chapter 6 for quiz on Thursday","2026-09-25","Ms. Nadia","Study","","Active"],
+                ["Grade 7","French","Learn vocabulary list unit 2 — 15 words","2026-09-24","Ms. Claire","Memorization","","Active"],
+                ["Grade 8","Math","Algebra worksheet — equations and inequalities page 44","2026-09-23","Mr. Khaled","Worksheet","Show all steps","Active"],
+                ["Grade 8","Physics","Lab report on electricity experiment","2026-09-24","Mr. Hassan","Lab Report","Include diagrams","Active"],
+                ["Grade 8","English","Finish reading chapter 7 — 10 lines summary","2026-09-25","Ms. Sara","Reading","","Active"],
+                ["Grade 8","Chemistry","Study periodic table groups 1-3 — quiz Sunday","2026-09-28","Mr. Hassan","Study","","Active"],
+                ["Grade 8","Biology","Draw and label the cell: animal and plant","2026-09-26","Mr. Omar","Drawing","Use colors + labels","Active"],
+                ["Grade 9","Math","Quadratic equations worksheet page 78 Qs 1-10","2026-09-23","Mr. Ahmed","Worksheet","Show all steps","Active"],
+                ["Grade 9","Physics","Newton's laws — summarize and give 2 examples each","2026-09-24","Mr. Hassan","Summary","","Active"],
+                ["Grade 9","Arabic","Literary analysis of poem — page 90 (2 paragraphs)","2026-09-25","Ms. Fatima","Analysis","Handwritten","Active"],
+                ["Grade 9","Chemistry","Balancing chemical equations — worksheet page 55","2026-09-26","Mr. Hassan","Worksheet","Show work","Active"],
+                ["Grade 10","Math","Trigonometry — sin/cos/tan exercises page 92 Qs 1-8","2026-09-23","Mr. Ahmed","Exercises","Use calculator","Active"],
+                ["Grade 10","Physics","Momentum and energy — problems page 110 Qs 1-5","2026-09-24","Mr. Hassan","Problems","Show full solution","Active"],
+                ["Grade 10","English","300-word argumentative essay: Social media pros/cons","2026-09-25","Ms. Sara","Essay","Typed preferred","Active"],
+                ["Grade 11","Math","Calculus — differentiation exercises chapter 3","2026-09-23","Mr. Ahmed","Exercises","Show all steps","Active"],
+                ["Grade 11","Chemistry","Organic chemistry — naming compounds worksheet","2026-09-24","Mr. Hassan","Worksheet","","Active"],
+                ["Grade 11","Arabic","Research: An Egyptian literary figure — 2 pages","2026-09-25","Ms. Fatima","Research","Handwritten","Active"],
+                ["Grade 12","Math","Past exam paper 2025 — full paper attempt","2026-09-23","Mr. Ahmed","Exam Practice","Timed: 3 hours","Active"],
+                ["Grade 12","Physics","Revision: Electricity chapter summary notes","2026-09-24","Mr. Hassan","Revision","","Active"],
+                ["Grade 12","English","University application essay — topic of your choice","2026-09-25","Ms. Sara","Essay","500 words","Active"],
+            ], "#0F1C2E")
+        results.append("Homework: 48 rows")
+        time.sleep(20)
+
+        # 2. STUDENTS
+        tab("Students",
+            ["Student ID","Full Name","Grade","Section","Gender","Parent Name","Parent Phone","Total Fees","Paid","Remaining","Payment Status","Next Due","Days Present","Days Absent","Attendance%","Bus Route","Active"],
+            [
+                ["STU001","Lina Hany El-Shafei","KG1","A","F","Hany El-Shafei","201506667788",42000,14000,28000,"On Track","2026-03-01",17,3,"85%","Route 5","yes"],
+                ["STU002","Adam Sherif Mansour","KG1","A","M","Sherif Mansour","201607001122",42000,42000,0,"Paid in Full","N/A",19,1,"95%","Route 6","yes"],
+                ["STU003","Kareem Adel Nasser","KG2","A","M","Adel Nasser","201118900880",42000,21000,21000,"On Track","2026-03-01",16,4,"80%","Route 8","yes"],
+                ["STU004","Nada Wael Ibrahim","KG2","B","F","Wael Ibrahim","201203110044",42000,42000,0,"Paid in Full","N/A",20,0,"100%","Route 3","yes"],
+                ["STU005","Youssef Bassem Reda","Grade 1","A","M","Bassem Reda","201223334455",48000,16000,32000,"On Track","2026-03-01",18,2,"90%","Route 1","yes"],
+                ["STU006","Salma Ibrahim Mostafa","Grade 1","A","F","Ibrahim Mostafa","201556667788",48000,48000,0,"Paid in Full","N/A",20,0,"100%","Route 4","yes"],
+                ["STU007","Fares Magdy Helal","Grade 2","A","M","Magdy Helal","201203334455",48000,48000,0,"Paid in Full","N/A",20,0,"100%","Route 2","yes"],
+                ["STU008","Rana Osama Shawky","Grade 2","B","F","Osama Shawky","201990001122",48000,16000,32000,"Overdue","2025-12-15",12,8,"60%","Route 7","yes"],
+                ["STU009","Adam Sherif Gouda","Grade 3","A","M","Sherif Gouda","201405556677",48000,32000,16000,"On Track","2026-03-01",19,1,"95%","Route 5","yes"],
+                ["STU010","Noura Khaled Abdallah","Grade 3","A","F","Khaled Abdallah","201778889900",48000,16000,32000,"Overdue","2025-11-01",13,7,"65%","Route 1","yes"],
+                ["STU011","Salma Tarek Samir","Grade 4","A","F","Tarek Samir","201112223344",55000,55000,0,"Paid in Full","N/A",20,0,"100%","Route 3","yes"],
+                ["STU012","Karim Ehab Mansour","Grade 4","B","M","Ehab Mansour","201102223334",55000,36667,18333,"Payment Due Soon","2026-02-10",16,4,"80%","Route 6","yes"],
+                ["STU013","Esraa Sayed Hassan","Grade 5","A","F","Sayed Hassan","201035551012",55000,36667,18333,"On Track","2026-03-01",19,1,"95%","Route 4","yes"],
+                ["STU014","Ziad Amr El-Sayed","Grade 5","A","M","Amr El-Sayed","201445556677",55000,36667,18333,"Payment Due Soon","2026-02-01",17,3,"85%","Route 2","yes"],
+                ["STU015","Mariam Hassan Farouk","Grade 5","B","F","Hassan Farouk","201334445566",55000,55000,0,"Paid in Full","N/A",20,0,"100%","Route 7","yes"],
+                ["STU016","Dina Nader El-Masry","Grade 6","A","F","Nader El-Masry","201001112233",55000,36667,18333,"On Track","2026-03-01",18,2,"90%","Route 8","yes"],
+                ["STU017","Hassan Taher Barakat","Grade 6","A","M","Taher Barakat","201607778899",55000,55000,0,"Paid in Full","N/A",20,0,"100%","Route 5","yes"],
+                ["STU018","Ahmed Mohamed Hassan","Grade 7","A","M","Mohamed Hassan","201118900880",62000,41334,20666,"On Track","2026-03-01",18,2,"90%","Route 1","yes"],
+                ["STU019","Hana Walid Farouk","Grade 7","A","F","Walid Farouk","201334440066",62000,41334,20666,"On Track","2026-03-01",19,1,"95%","Route 3","yes"],
+                ["STU020","Karim Nader Soliman","Grade 7","B","M","Nader Soliman","201001112234",62000,41334,20666,"On Track","2026-03-01",20,0,"100%","Route 6","yes"],
+                ["STU021","Omar Youssef Ali","Grade 7","B","M","Youssef Ali","201007778888",62000,62000,0,"Paid in Full","N/A",20,0,"100%","Route 2","yes"],
+                ["STU022","Nour Ahmed Ibrahim","Grade 8","A","F","Ahmed Ibrahim","201234567890",62000,41334,20666,"Payment Due Soon","2026-02-15",20,0,"100%","Route 4","yes"],
+                ["STU023","Mahmoud Sameh Fathy","Grade 8","A","M","Sameh Fathy","201889990011",62000,62000,0,"Paid in Full","N/A",20,0,"100%","Route 7","yes"],
+                ["STU024","Layla Khaled Mahmoud","Grade 8","B","F","Khaled Mahmoud","201035551013",62000,20667,41333,"Overdue","2025-12-01",14,6,"70%","Route 1","yes"],
+                ["STU025","Ali Hassan El-Gohary","Grade 9","A","M","Hassan El-Gohary","201667778899",62000,41334,20666,"On Track","2026-03-01",18,2,"90%","Route 3","yes"],
+                ["STU026","Sara Mostafa El-Khatib","Grade 9","A","F","Mostafa El-Khatib","201304445566",62000,20667,41333,"Overdue","2025-11-15",11,9,"55%","Route 8","yes"],
+                ["STU027","Marwa Tarek Helmy","Grade 10","A","F","Tarek Helmy","201503334455",70000,46667,23333,"On Track","2026-03-01",19,1,"95%","Route 5","yes"],
+                ["STU028","Badr Amr Khalifa","Grade 10","A","M","Amr Khalifa","201604445566",70000,70000,0,"Paid in Full","N/A",20,0,"100%","Route 2","yes"],
+                ["STU029","Nadia Sherif El-Wakil","Grade 11","A","F","Sherif El-Wakil","201705556677",70000,46667,23333,"Payment Due Soon","2026-02-20",17,3,"85%","Route 4","yes"],
+                ["STU030","Karim Hassan Sabry","Grade 11","A","M","Hassan Sabry","201806667788",70000,70000,0,"Paid in Full","N/A",20,0,"100%","Route 6","yes"],
+                ["STU031","Farah Mahmoud Zaki","Grade 12","A","F","Mahmoud Zaki","201907778899",70000,70000,0,"Paid in Full","N/A",20,0,"100%","Route 1","yes"],
+                ["STU032","Omar Khaled El-Sayed","Grade 12","A","M","Khaled El-Sayed","201008889900",70000,23334,46666,"Overdue","2025-10-01",15,5,"75%","Route 3","yes"],
+            ], "#14532D")
+        results.append("Students: 32 rows")
+        time.sleep(20)
+
+        # 3. PARENTS
+        tab("Parents",
+            ["Name","Phone","Grade","Active","Student ID","Student Name","Relationship"],
+            [
+                ["Hany El-Shafei","201506667788","KG1","yes","STU001","Lina Hany El-Shafei","Father"],
+                ["Sherif Mansour","201607001122","KG1","yes","STU002","Adam Sherif Mansour","Father"],
+                ["Adel Nasser","201118900880","KG2","yes","STU003","Kareem Adel Nasser","Father"],
+                ["Wael Ibrahim","201203110044","KG2","yes","STU004","Nada Wael Ibrahim","Father"],
+                ["Bassem Reda","201223334455","Grade 1","yes","STU005","Youssef Bassem Reda","Father"],
+                ["Ibrahim Mostafa","201556667788","Grade 1","yes","STU006","Salma Ibrahim Mostafa","Father"],
+                ["Magdy Helal","201203334455","Grade 2","yes","STU007","Fares Magdy Helal","Father"],
+                ["Osama Shawky","201990001122","Grade 2","yes","STU008","Rana Osama Shawky","Father"],
+                ["Sherif Gouda","201405556677","Grade 3","yes","STU009","Adam Sherif Gouda","Father"],
+                ["Khaled Abdallah","201778889900","Grade 3","yes","STU010","Noura Khaled Abdallah","Father"],
+                ["Tarek Samir","201112223344","Grade 4","yes","STU011","Salma Tarek Samir","Father"],
+                ["Ehab Mansour","201102223334","Grade 4","yes","STU012","Karim Ehab Mansour","Father"],
+                ["Sayed Hassan","201035551012","Grade 5","yes","STU013","Esraa Sayed Hassan","Father"],
+                ["Amr El-Sayed","201445556677","Grade 5","yes","STU014","Ziad Amr El-Sayed","Father"],
+                ["Hassan Farouk","201334445566","Grade 5","yes","STU015","Mariam Hassan Farouk","Father"],
+                ["Nader El-Masry","201001112233","Grade 6","yes","STU016","Dina Nader El-Masry","Father"],
+                ["Taher Barakat","201607778899","Grade 6","yes","STU017","Hassan Taher Barakat","Father"],
+                ["Mohamed Hassan","201118900880","Grade 7","yes","STU018","Ahmed Mohamed Hassan","Father"],
+                ["Walid Farouk","201334440066","Grade 7","yes","STU019","Hana Walid Farouk","Father"],
+                ["Youssef Ali","201007778888","Grade 7","yes","STU021","Omar Youssef Ali","Father"],
+                ["Ahmed Ibrahim","201234567890","Grade 8","yes","STU022","Nour Ahmed Ibrahim","Father"],
+                ["Sameh Fathy","201889990011","Grade 8","yes","STU023","Mahmoud Sameh Fathy","Father"],
+                ["Hassan El-Gohary","201667778899","Grade 9","yes","STU025","Ali Hassan El-Gohary","Father"],
+                ["Tarek Helmy","201503334455","Grade 10","yes","STU027","Marwa Tarek Helmy","Father"],
+                ["Sherif El-Wakil","201705556677","Grade 11","yes","STU029","Nadia Sherif El-Wakil","Father"],
+                ["Mahmoud Zaki","201907778899","Grade 12","yes","STU031","Farah Mahmoud Zaki","Father"],
+                ["Ahmed Mohamed (Test)","201118900880","Grade 7","yes","STU018","Ahmed Mohamed Hassan","Father"],
+                ["Sara Khaled (Test)","201234567890","Grade 8","yes","STU022","Nour Ahmed Ibrahim","Mother"],
+                ["Test Parent","201035551012","Grade 5","yes","STU013","Esraa Sayed Hassan","Father"],
+            ], "#1D4ED8")
+        results.append("Parents: 29 rows")
+        time.sleep(20)
+
+        # 4. EXAM
+        tab("exam",
+            ["Student ID","Student Name","Grade","Subject","Score","Total","Percentage","Grade Letter","Rank","Exam Date","Term","Teacher Notes"],
+            [
+                ["STU018","Ahmed Mohamed Hassan","Grade 7","Math",95,100,"95%","A","1st","2026-09-15","Term 1","Excellent performance"],
+                ["STU018","Ahmed Mohamed Hassan","Grade 7","Arabic",88,100,"88%","B+","3rd","2026-09-15","Term 1","Good essay writing"],
+                ["STU018","Ahmed Mohamed Hassan","Grade 7","English",92,100,"92%","A-","2nd","2026-09-15","Term 1","Strong comprehension"],
+                ["STU018","Ahmed Mohamed Hassan","Grade 7","Science",85,100,"85%","B","4th","2026-09-15","Term 1","Needs more lab practice"],
+                ["STU018","Ahmed Mohamed Hassan","Grade 7","Social Studies",79,100,"79%","C+","6th","2026-09-15","Term 1","Study maps more"],
+                ["STU021","Omar Youssef Ali","Grade 7","Math",98,100,"98%","A+","1st","2026-09-15","Term 1","Top of class"],
+                ["STU021","Omar Youssef Ali","Grade 7","Arabic",94,100,"94%","A","1st","2026-09-15","Term 1","Exceptional"],
+                ["STU021","Omar Youssef Ali","Grade 7","English",96,100,"96%","A","1st","2026-09-15","Term 1","Exceptional writing"],
+                ["STU021","Omar Youssef Ali","Grade 7","Science",91,100,"91%","A-","1st","2026-09-15","Term 1","Strong analytical skills"],
+                ["STU022","Nour Ahmed Ibrahim","Grade 8","Math",78,100,"78%","C+","8th","2026-09-15","Term 1","Needs algebra practice"],
+                ["STU022","Nour Ahmed Ibrahim","Grade 8","Arabic",91,100,"91%","A-","2nd","2026-09-15","Term 1","Excellent writing"],
+                ["STU022","Nour Ahmed Ibrahim","Grade 8","English",84,100,"84%","B","5th","2026-09-15","Term 1","Good reader"],
+                ["STU022","Nour Ahmed Ibrahim","Grade 8","Physics",76,100,"76%","C+","9th","2026-09-15","Term 1","Review electricity chapter"],
+                ["STU022","Nour Ahmed Ibrahim","Grade 8","Chemistry",82,100,"82%","B-","6th","2026-09-15","Term 1","Periodic table needs work"],
+                ["STU023","Mahmoud Sameh Fathy","Grade 8","Math",96,100,"96%","A","1st","2026-09-15","Term 1","Top of class"],
+                ["STU023","Mahmoud Sameh Fathy","Grade 8","Physics",90,100,"90%","A-","2nd","2026-09-15","Term 1","Excellent lab skills"],
+                ["STU023","Mahmoud Sameh Fathy","Grade 8","English",93,100,"93%","A","1st","2026-09-15","Term 1","Strong writing"],
+                ["STU013","Esraa Sayed Hassan","Grade 5","Math",90,100,"90%","A-","2nd","2026-09-15","Term 1","Great improvement"],
+                ["STU013","Esraa Sayed Hassan","Grade 5","Arabic",83,100,"83%","B","4th","2026-09-15","Term 1","Good handwriting"],
+                ["STU013","Esraa Sayed Hassan","Grade 5","English",88,100,"88%","B+","3rd","2026-09-15","Term 1","Excellent vocabulary"],
+                ["STU013","Esraa Sayed Hassan","Grade 5","Science",77,100,"77%","C+","7th","2026-09-15","Term 1","Review plant unit"],
+                ["STU025","Ali Hassan El-Gohary","Grade 9","Math",88,100,"88%","B+","3rd","2026-09-15","Term 1","Good problem solver"],
+                ["STU025","Ali Hassan El-Gohary","Grade 9","Physics",79,100,"79%","C+","7th","2026-09-15","Term 1","Review Newton's laws"],
+                ["STU025","Ali Hassan El-Gohary","Grade 9","English",95,100,"95%","A","1st","2026-09-15","Term 1","Best in class English"],
+                ["STU025","Ali Hassan El-Gohary","Grade 9","Arabic",92,100,"92%","A-","2nd","2026-09-15","Term 1","Strong literature skills"],
+                ["STU025","Ali Hassan El-Gohary","Grade 9","Chemistry",84,100,"84%","B","4th","2026-09-15","Term 1","Good lab work"],
+                ["STU027","Marwa Tarek Helmy","Grade 10","Math",91,100,"91%","A-","2nd","2026-09-15","Term 1","Strong in trigonometry"],
+                ["STU027","Marwa Tarek Helmy","Grade 10","English",94,100,"94%","A","1st","2026-09-15","Term 1","Excellent essay writer"],
+                ["STU027","Marwa Tarek Helmy","Grade 10","Physics",82,100,"82%","B-","5th","2026-09-15","Term 1","Work on momentum unit"],
+            ], "#065F46")
+        results.append("exam: 29 rows")
+        time.sleep(20)
+
+        # 5. FEES
+        tab("Fees",
+            ["Student ID","Student Name","Grade","Parent Name","Parent Phone","Total Fees","Amount Paid","Remaining","Payment Status","Next Payment Due","Last Payment Date","Days Present","Total School Days"],
+            [
+                ["STU001","Lina Hany El-Shafei","KG1","Hany El-Shafei","201506667788",42000,14000,28000,"On Track","2026-03-01","2025-11-01",17,20],
+                ["STU002","Adam Sherif Mansour","KG1","Sherif Mansour","201607001122",42000,42000,0,"Paid in Full","N/A","2025-09-01",19,20],
+                ["STU003","Kareem Adel Nasser","KG2","Adel Nasser","201118900880",42000,21000,21000,"On Track","2026-03-01","2025-11-01",16,20],
+                ["STU004","Nada Wael Ibrahim","KG2","Wael Ibrahim","201203110044",42000,42000,0,"Paid in Full","N/A","2025-09-01",20,20],
+                ["STU005","Youssef Bassem Reda","Grade 1","Bassem Reda","201223334455",48000,16000,32000,"On Track","2026-03-01","2025-11-01",18,20],
+                ["STU006","Salma Ibrahim Mostafa","Grade 1","Ibrahim Mostafa","201556667788",48000,48000,0,"Paid in Full","N/A","2025-09-20",20,20],
+                ["STU007","Fares Magdy Helal","Grade 2","Magdy Helal","201203334455",48000,48000,0,"Paid in Full","N/A","2025-09-25",20,20],
+                ["STU008","Rana Osama Shawky","Grade 2","Osama Shawky","201990001122",48000,16000,32000,"Overdue","2025-12-15","2025-09-15",12,20],
+                ["STU009","Adam Sherif Gouda","Grade 3","Sherif Gouda","201405556677",48000,32000,16000,"On Track","2026-03-01","2025-11-01",19,20],
+                ["STU010","Noura Khaled Abdallah","Grade 3","Khaled Abdallah","201778889900",48000,16000,32000,"Overdue","2025-11-01","2025-09-01",13,20],
+                ["STU011","Salma Tarek Samir","Grade 4","Tarek Samir","201112223344",55000,55000,0,"Paid in Full","N/A","2025-09-15",20,20],
+                ["STU012","Karim Ehab Mansour","Grade 4","Ehab Mansour","201102223334",55000,36667,18333,"Payment Due Soon","2026-02-10","2025-10-10",16,20],
+                ["STU013","Esraa Sayed Hassan","Grade 5","Sayed Hassan","201035551012",55000,36667,18333,"On Track","2026-03-01","2025-11-01",19,20],
+                ["STU014","Ziad Amr El-Sayed","Grade 5","Amr El-Sayed","201445556677",55000,36667,18333,"Payment Due Soon","2026-02-01","2025-10-20",17,20],
+                ["STU015","Mariam Hassan Farouk","Grade 5","Hassan Farouk","201334445566",55000,55000,0,"Paid in Full","N/A","2025-09-15",20,20],
+                ["STU016","Dina Nader El-Masry","Grade 6","Nader El-Masry","201001112233",55000,36667,18333,"On Track","2026-03-01","2025-11-01",18,20],
+                ["STU017","Hassan Taher Barakat","Grade 6","Taher Barakat","201607778899",55000,55000,0,"Paid in Full","N/A","2025-09-01",20,20],
+                ["STU018","Ahmed Mohamed Hassan","Grade 7","Mohamed Hassan","201118900880",62000,41334,20666,"On Track","2026-03-01","2025-11-01",18,20],
+                ["STU019","Hana Walid Farouk","Grade 7","Walid Farouk","201334440066",62000,41334,20666,"On Track","2026-03-01","2025-11-01",19,20],
+                ["STU020","Karim Nader Soliman","Grade 7","Nader Soliman","201001112234",62000,41334,20666,"On Track","2026-03-01","2025-11-01",20,20],
+                ["STU021","Omar Youssef Ali","Grade 7","Youssef Ali","201007778888",62000,62000,0,"Paid in Full","N/A","2025-10-01",20,20],
+                ["STU022","Nour Ahmed Ibrahim","Grade 8","Ahmed Ibrahim","201234567890",62000,41334,20666,"Payment Due Soon","2026-02-15","2025-10-15",20,20],
+                ["STU023","Mahmoud Sameh Fathy","Grade 8","Sameh Fathy","201889990011",62000,62000,0,"Paid in Full","N/A","2025-10-05",20,20],
+                ["STU024","Layla Khaled Mahmoud","Grade 8","Khaled Mahmoud","201035551013",62000,20667,41333,"Overdue","2025-12-01","2025-09-01",14,20],
+                ["STU025","Ali Hassan El-Gohary","Grade 9","Hassan El-Gohary","201667778899",62000,41334,20666,"On Track","2026-03-01","2025-11-01",18,20],
+                ["STU026","Sara Mostafa El-Khatib","Grade 9","Mostafa El-Khatib","201304445566",62000,20667,41333,"Overdue","2025-11-15","2025-09-10",11,20],
+                ["STU027","Marwa Tarek Helmy","Grade 10","Tarek Helmy","201503334455",70000,46667,23333,"On Track","2026-03-01","2025-11-01",19,20],
+                ["STU028","Badr Amr Khalifa","Grade 10","Amr Khalifa","201604445566",70000,70000,0,"Paid in Full","N/A","2025-09-01",20,20],
+                ["STU029","Nadia Sherif El-Wakil","Grade 11","Sherif El-Wakil","201705556677",70000,46667,23333,"Payment Due Soon","2026-02-20","2025-10-20",17,20],
+                ["STU030","Karim Hassan Sabry","Grade 11","Hassan Sabry","201806667788",70000,70000,0,"Paid in Full","N/A","2025-09-01",20,20],
+                ["STU031","Farah Mahmoud Zaki","Grade 12","Mahmoud Zaki","201907778899",70000,70000,0,"Paid in Full","N/A","2025-09-01",20,20],
+                ["STU032","Omar Khaled El-Sayed","Grade 12","Khaled El-Sayed","201008889900",70000,23334,46666,"Overdue","2025-10-01","2025-09-01",15,20],
+            ], "#92400E")
+        results.append("Fees: 32 rows")
+        time.sleep(20)
+
+        # 6. BUS ROUTES
+        tab("BusRoutes",
+            ["Route","Area / Stops","Morning Pickup","Arrives School","Departs School","Home Dropoff","Driver Name","Driver Phone","Capacity","Registered","Active"],
+            [
+                ["Route 1","Maadi - Degla - Zahraa - School","6:45 AM","7:30 AM","2:15 PM","3:00 PM","Ahmed Saber","01012345678",45,12,"yes"],
+                ["Route 2","Heliopolis - Roxy - Sheraton - School","6:50 AM","7:30 AM","2:15 PM","3:00 PM","Hassan Nour","01098765432",45,18,"yes"],
+                ["Route 3","Zamalek - Mohandessin - Agouza - School","7:00 AM","7:35 AM","2:15 PM","3:10 PM","Mohamed Saad","01123456789",40,10,"yes"],
+                ["Route 4","Nasr City - Abbas El Akkad - School","6:40 AM","7:25 AM","2:15 PM","3:00 PM","Khaled Omar","01234567890",45,15,"yes"],
+                ["Route 5","6th October - Palm Hills - School","7:15 AM","7:35 AM","2:15 PM","2:35 PM","Samer Fouad","01345678901",50,22,"yes"],
+                ["Route 6","Dokki - Giza Square - Sheikh Zayed - School","6:55 AM","7:30 AM","2:15 PM","2:50 PM","Tarek Moussa","01456789012",45,14,"yes"],
+                ["Route 7","New Cairo - 5th Settlement - School","6:30 AM","7:25 AM","2:15 PM","3:10 PM","Ayman Rashad","01567890123",45,9,"yes"],
+                ["Route 8","Sheikh Zayed - Beverly Hills - School","7:10 AM","7:30 AM","2:15 PM","2:40 PM","Walid Kamal","01678901234",50,20,"yes"],
+            ], "#1E40AF")
+        results.append("BusRoutes: 8 rows")
+        time.sleep(20)
+
+        # 7. CANTEEN
+        tab("Canteen",
+            ["Category","Item","Description","Price (EGP)","Available Days","Allergens","Halal"],
+            [
+                ["Main Meal","Koshary","Classic Egyptian koshary with lentils, rice, pasta",20,"Mon & Wed","Gluten","Yes"],
+                ["Main Meal","Macaroni Bechamel","Baked pasta with bechamel sauce and minced meat",22,"Tuesday","Gluten, Dairy","Yes"],
+                ["Main Meal","Molokhia & Rice","Green molokhia soup with white rice",20,"Wednesday","None","Yes"],
+                ["Main Meal","Grilled Kofta","Grilled beef kofta with bread and salad",30,"Thursday","None","Yes"],
+                ["Main Meal","Grilled Chicken","Quarter grilled chicken with rice or bread",35,"Daily","None","Yes"],
+                ["Snacks","Cheese Sandwich","Baladi bread with white cheese and tomato",12,"Daily","Gluten, Dairy","Yes"],
+                ["Snacks","Falafel Wrap","Falafel in bread with tahini and veggies",12,"Daily","Gluten, Sesame","Yes"],
+                ["Snacks","Pizza Slice","Cheese pizza - tomato sauce and mozzarella",20,"Daily","Gluten, Dairy","Yes"],
+                ["Snacks","Pasta Box","Pasta with tomato sauce",18,"Daily","Gluten","Yes"],
+                ["Drinks","Water Bottle","500ml chilled water",5,"Daily","None","Yes"],
+                ["Drinks","Fresh Juice","Orange or mango fresh juice",15,"Daily","None","Yes"],
+                ["Drinks","Chocolate Milk","200ml chocolate flavored milk",12,"Daily","Dairy","Yes"],
+                ["Drinks","Yogurt Drink","Activia yogurt drink",10,"Daily","Dairy","Yes"],
+                ["Dessert","Fruit Cup","Seasonal fresh fruit mix",15,"Daily","None","Yes"],
+                ["Dessert","Cake Slice","Homemade sponge cake - changes daily",18,"Daily","Gluten, Dairy, Eggs","Yes"],
+                ["Dessert","Chocolate Bar","Kit Kat or similar wafer bar",10,"Daily","Gluten, Dairy, Nuts","Yes"],
+            ], "#B45309")
+        results.append("Canteen: 16 rows")
+        time.sleep(20)
+
+        # 8. LIBRARY
+        tab("Library",
+            ["Book ID","Book Title","Author","Category","Grade Level","Language","Copies","Available","Status","Borrower ID","Due Date","Shelf"],
+            [
+                ["LIB001","Harry Potter and the Philosopher's Stone","J.K. Rowling","Fantasy","Grade 4-8","English",2,2,"Available","—","—","Shelf A1"],
+                ["LIB002","The Alchemist","Paulo Coelho","Fiction","Grade 9-12","English",1,1,"Available","—","—","Shelf A2"],
+                ["LIB003","Sapiens","Yuval Noah Harari","Non-Fiction","Grade 10-12","English",1,0,"Borrowed","STU025","2026-10-01","Shelf B1"],
+                ["LIB004","The Little Prince","Antoine de St-Exupery","Classic","Grade 5-9","English",2,2,"Available","—","—","Shelf A3"],
+                ["LIB005","Diary of a Wimpy Kid","Jeff Kinney","Children","Grade 3-6","English",2,1,"Borrowed","STU013","2026-09-28","Shelf C1"],
+                ["LIB006","Wonder","R.J. Palacio","Children","Grade 4-7","English",1,1,"Available","—","—","Shelf C2"],
+                ["LIB007","Percy Jackson: Lightning Thief","Rick Riordan","Fantasy","Grade 4-8","English",2,1,"Borrowed","STU021","2026-10-05","Shelf A4"],
+                ["LIB008","Animal Farm","George Orwell","Classic","Grade 8-12","English",2,2,"Available","—","—","Shelf B2"],
+                ["LIB009","Matilda","Roald Dahl","Children","Grade 3-6","English",2,2,"Available","—","—","Shelf C3"],
+                ["LIB010","A Brief History of Time","Stephen Hawking","Science","Grade 10-12","English",1,1,"Available","—","—","Shelf D1"],
+                ["LIB011","Rich Dad Poor Dad","Robert Kiyosaki","Finance","Grade 10-12","English",1,1,"Available","—","—","Shelf D2"],
+                ["LIB012","Rehlet Ibn Battuta","Ibn Battuta","History","Grade 6-12","Arabic",2,2,"Available","—","—","Shelf E1"],
+                ["LIB013","Kalila wa Dimna","Ibn Al-Muqaffa","Classic","Grade 5-9","Arabic",2,2,"Available","—","—","Shelf E2"],
+                ["LIB014","Al-Ayyam","Taha Hussein","Literature","Grade 9-12","Arabic",1,1,"Available","—","—","Shelf E3"],
+                ["LIB015","Zuqaq Al-Middaq","Naguib Mahfouz","Literature","Grade 10-12","Arabic",1,0,"Borrowed","STU027","2026-10-10","Shelf E4"],
+            ], "#5B21B6")
+        results.append("Library: 15 rows")
+        time.sleep(20)
+
+        # 9. ADMISSIONS
+        tab("Admissions",
+            ["Item","Value"],
+            [
+                ["Registration Status","Open for 2025/2026"],
+                ["Application Deadline","March 31, 2026"],
+                ["Available Grades","KG1, KG2, Grade 1, Grade 4, Grade 7"],
+                ["Waitlist Grades","Grade 3, Grade 6, Grade 10"],
+                ["Full Grades","Grade 5, Grade 8, Grade 11, Grade 12"],
+                ["-- FEES STRUCTURE --",""],
+                ["KG1 and KG2 Fees","42,000 EGP per year"],
+                ["Grade 1-3 Fees","48,000 EGP per year"],
+                ["Grade 4-6 Fees","55,000 EGP per year"],
+                ["Grade 7-9 Fees","62,000 EGP per year"],
+                ["Grade 10-12 Fees","70,000 EGP per year"],
+                ["Registration Deposit","5,000 EGP (non-refundable)"],
+                ["Payment Plan","3 installments per year"],
+                ["-- REQUIRED DOCUMENTS --",""],
+                ["Documents Needed","Birth certificate, previous report card, parent ID, 4 photos, medical certificate"],
+                ["Application Process","Apply online - submit docs - assessment - management meeting - decision in 5 days"],
+                ["-- CONTACT AND LOCATION --",""],
+                ["School Location","El Yasmeen Compound, Entrance 1, El Sheikh Zayed, 6th of October City"],
+                ["School Phone","02-3796-9155 / 02-3796-9166"],
+                ["School WhatsApp","01066253331"],
+                ["School Hours","Sunday to Thursday, 7:30 AM to 2:30 PM"],
+            ], "#047857")
+        results.append("Admissions: 21 rows")
+        time.sleep(20)
+
+        # 10. HOW TO USE
+        tab("HOW TO USE",
+            ["TAB","PURPOSE","WHO UPDATES IT","HOW BOT USES IT","NOTE"],
+            [
+                ["Homework","Daily homework per grade","Class Teachers","Parents ask: homework grade 7","Update daily"],
+                ["Students","Full student roster","Admin Office","All student data","Source of truth"],
+                ["Parents","Parent WhatsApp numbers","Admin Office","WhatsApp broadcasts","Never delete rows"],
+                ["Schedule","Weekly timetable","Academic Coordinator","Parents ask: schedule grade 5","Update each term"],
+                ["exam","Exam results per student","Subject Teachers","Parents ask: STU018 results","Keep exact tab name"],
+                ["Fees","Fee and attendance data","Accounts Dept","Parents ask: fees status","BOT TAB - do not rename"],
+                ["Announcements","School announcements","Admin Panel only","Auto WhatsApp broadcast","Via admin panel only"],
+                ["BusRoutes","Bus routes and times","Transport Dept","Parents ask: bus route","BOT TAB - do not rename"],
+                ["Canteen","Daily menu and prices","Canteen Manager","Parents ask: canteen menu","BOT TAB - do not rename"],
+                ["Library","Book catalog","Librarian","Parents ask: library books","BOT TAB - do not rename"],
+                ["Admissions","Enrollment info and fees","Admissions Office","Parents ask: admissions","Update each year"],
+                ["","","","",""],
+                ["RULE 1","Never change column headers - breaks the bot","","","CRITICAL"],
+                ["RULE 2","Student IDs: STU001, STU002 ... STU999","","","CRITICAL"],
+                ["RULE 3","Grade names: KG1, KG2, Grade 1 ... Grade 12","","","CRITICAL"],
+                ["RULE 4","Date format: YYYY-MM-DD (example: 2026-10-15)","","","CRITICAL"],
+                ["RULE 5","Active column: yes or no (lowercase only)","","","CRITICAL"],
+                ["RULE 6","Payment Status: Paid in Full / On Track / Payment Due Soon / Overdue","","","CRITICAL"],
+                ["RULE 7","Phone numbers include country code: 201118900880 (no + sign)","","","CRITICAL"],
+            ], "#0F1C2E")
+        results.append("HOW TO USE: 19 rows")
+
+        return jsonify({"status": "ALL DONE", "tabs_updated": len(results), "results": results})
+
+    except Exception as e:
+        import traceback
+        return jsonify({"status": "ERROR", "error": str(e), "trace": traceback.format_exc()[-800:]}), 500
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    logger.info(f"Starting on port {port}")
+    app.run(debug=False, port=port, host="0.0.0.0")
+
+
 # ── ONE-TIME SHEET REBUILD ENDPOINT ─────────────────────────────────────────
 @app.route('/rebuild-sheet-x7k2', methods=['GET'])
 def rebuild_sheet():
