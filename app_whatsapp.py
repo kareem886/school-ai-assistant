@@ -720,6 +720,7 @@ def rebuild_sheet():
             if row[7]=="Active": color_range(s,i,8,i,8,C["lgr"],"#15803D",True)
         s.set_basic_filter()
         results.append("Homework: 48 rows")
+        import time; time.sleep(15)
 
         # ── 2. STUDENTS ──────────────────────────────────────────────────────
         s = tab("Students")
@@ -776,6 +777,7 @@ def rebuild_sheet():
             color_range(s,i,3,i,3,bg,"#000000",True)
         s.set_basic_filter()
         results.append("Students: 32 rows")
+        time.sleep(15)
 
         # ── 3. PARENTS ───────────────────────────────────────────────────────
         s = tab("Parents")
@@ -819,6 +821,7 @@ def rebuild_sheet():
             color_range(s,i,3,i,3,bg,"#000000",True)
             color_range(s,i,4,i,4,C["lgr"] if row[3]=="yes" else C["rd"],"#000000",True)
         results.append("Parents: 29 rows")
+        time.sleep(15)
 
         # ── 4. EXAM RESULTS ──────────────────────────────────────────────────
         s = tab("exam")
@@ -862,6 +865,7 @@ def rebuild_sheet():
             lg=row[7]; bg2=gc_map2.get(lg); fc2=fc_map2.get(lg)
             if bg2: color_range(s,i,8,i,8,bg2,fc2,True)
         results.append("Exam Results: 29 rows")
+        time.sleep(15)
 
         # ── 5. FEES (bot-compatible) ──────────────────────────────────────────
         s = tab("Fees")
@@ -906,6 +910,7 @@ def rebuild_sheet():
             c=sc_colors.get(row[8])
             if c: color_range(s,i,9,i,9,c[0],c[1],True)
         results.append("Fees: 32 rows")
+        time.sleep(15)
 
         # ── 6. BUS ROUTES ────────────────────────────────────────────────────
         s = tab("BusRoutes")
@@ -926,6 +931,7 @@ def rebuild_sheet():
         for i,row in enumerate(rows6,2):
             color_range(s,i,1,i,1,bcolors[(i-2)%8],"#000000",True)
         results.append("BusRoutes: 8 rows")
+        time.sleep(15)
 
         # ── 7. CANTEEN ───────────────────────────────────────────────────────
         s = tab("Canteen")
@@ -955,6 +961,7 @@ def rebuild_sheet():
             bg=cat_col.get(row[0],C["wh"])
             color_range(s,i,1,i,1,bg,"#000000",True)
         results.append("Canteen: 16 rows")
+        time.sleep(15)
 
         # ── 8. LIBRARY ───────────────────────────────────────────────────────
         s = tab("Library")
@@ -982,6 +989,7 @@ def rebuild_sheet():
             if row[8]=="Available": color_range(s,i,9,i,9,C["lgr"],"#14532D",True)
             else: color_range(s,i,9,i,9,C["rd"],"#7F1D1D",True)
         results.append("Library: 15 rows")
+        time.sleep(15)
 
         # ── 9. ADMISSIONS ────────────────────────────────────────────────────
         s = tab("Admissions")
@@ -1019,6 +1027,7 @@ def rebuild_sheet():
             else:
                 color_range(s,i,1,i,1,C["wh"],"#000000",True)
         results.append("Admissions: 24 rows")
+        time.sleep(15)
 
         # ── 10. HOW TO USE ───────────────────────────────────────────────────
         s = tab("HOW TO USE")
