@@ -619,203 +619,22 @@ def health():
     })
 
 
-@app.route('/rebuild-sheet-x7k2', methods=['GET'])
-def rebuild_sheet():
+# ─── SHEET REBUILD: Part A — exam + Fees + BusRoutes ────────────────────────
+@app.route('/rebuild-a', methods=['GET'])
+def rebuild_a():
     import time
     try:
-        gc = get_client()
-        sh = gc.open_by_key(SHEET_ID)
-
-        def wt(name, header, rows, hc):
-            try: s = sh.worksheet(name)
-            except: s = sh.add_worksheet(name, 300, 25)
+        gc = get_client(); sh = gc.open_by_key(SHEET_ID)
+        def wt(name,header,rows,hc):
+            try: s=sh.worksheet(name)
+            except: s=sh.add_worksheet(name,300,25)
             s.clear(); time.sleep(2)
-            s.update([header]+rows, value_input_option="USER_ENTERED"); time.sleep(2)
+            s.update([header]+rows,value_input_option="USER_ENTERED"); time.sleep(2)
             n=len(header); cell="A1:"+chr(64+n)+"1"
             rgb={"red":int(hc[1:3],16)/255,"green":int(hc[3:5],16)/255,"blue":int(hc[5:7],16)/255}
             s.format(cell,{"backgroundColor":rgb,"textFormat":{"bold":True,"foregroundColor":{"red":1,"green":1,"blue":1},"fontSize":10},"verticalAlignment":"MIDDLE"})
-            s.freeze(rows=1); time.sleep(8)
-            return s
+            s.freeze(rows=1); time.sleep(5)
 
-        # ── HOMEWORK with dropdowns ──────────────────────────────────────────
-        s = wt("Homework",
-            ["Grade","Subject","Assignment","Due Date","Teacher","Type","Notes","Status"],
-            [
-                ["KG1","Activities","Color the butterfly worksheet","2026-09-23","Ms. Noha","Coloring","Use crayons","Active"],
-                ["KG1","Arabic","Trace letters page 5","2026-09-24","Ms. Fatima","Tracing","Pencil only","Active"],
-                ["KG2","English","Write your name 3 times","2026-09-23","Ms. Sara","Writing","","Active"],
-                ["KG2","Math","Count and circle groups of 5 page 8","2026-09-24","Ms. Noha","Worksheet","","Active"],
-                ["Grade 1","Math","Addition up to 20 workbook page 14-15","2026-09-23","Ms. Hana","Workbook","","Active"],
-                ["Grade 1","Arabic","Read lesson 2 answer questions 1-3","2026-09-24","Mr. Tarek","Reading","Handwritten","Active"],
-                ["Grade 1","English","Write 5 sentences: cat dog sun run big","2026-09-25","Ms. Sara","Writing","","Active"],
-                ["Grade 2","Math","Subtraction worksheet page 22 Qs 1-10","2026-09-23","Ms. Hana","Worksheet","","Active"],
-                ["Grade 2","Arabic","Memorize poem page 18 4 lines","2026-09-24","Mr. Tarek","Memorization","","Active"],
-                ["Grade 2","Science","Draw and label: sun cloud rain wind","2026-09-25","Ms. Hana","Drawing","Use colors","Active"],
-                ["Grade 3","Math","Multiplication tables 3 and 4 page 30","2026-09-23","Ms. Hana","Tables","","Active"],
-                ["Grade 3","Arabic","Essay: My School 5 sentences minimum","2026-09-24","Mr. Tarek","Essay","Handwritten","Active"],
-                ["Grade 3","English","Read unit 3 story answer Qs 1-5","2026-09-25","Ms. Sara","Reading","","Active"],
-                ["Grade 4","Math","Long division exercises page 45 Qs 1-8","2026-09-23","Ms. Hana","Exercises","Show work","Active"],
-                ["Grade 4","Science","Research 3 facts about the solar system","2026-09-24","Mr. Omar","Research","","Active"],
-                ["Grade 4","Arabic","Grammar identify nouns page 52","2026-09-25","Ms. Fatima","Grammar","","Active"],
-                ["Grade 5","Math","Fractions practice page 52-53","2026-09-23","Ms. Hana","Workbook","","Active"],
-                ["Grade 5","Arabic","Read and summarize lesson 4","2026-09-24","Mr. Tarek","Summary","Handwritten","Active"],
-                ["Grade 5","English","Vocab 20 words memorize for Thursday","2026-09-25","Ms. Sara","Memorization","","Active"],
-                ["Grade 5","Science","Draw and label parts of a plant","2026-09-26","Ms. Hana","Drawing","Use colors","Active"],
-                ["Grade 6","Math","Ratio and proportion page 61 Qs 1-12","2026-09-23","Mr. Khaled","Exercises","Show work","Active"],
-                ["Grade 6","Arabic","Essay importance of reading 150 words","2026-09-24","Ms. Fatima","Essay","Handwritten","Active"],
-                ["Grade 6","English","Read chapter 4 answer Qs 1-6","2026-09-25","Ms. Sara","Reading","","Active"],
-                ["Grade 6","Science","Water cycle report 1 page with diagram","2026-09-26","Mr. Omar","Report","Include diagram","Active"],
-                ["Grade 7","Math","Chapter 4 exercises page 67 Qs 1-15","2026-09-23","Mr. Ahmed","Exercises","Bring calculator","Active"],
-                ["Grade 7","Arabic","Essay importance of education 200 words","2026-09-24","Ms. Fatima","Essay","Handwritten","Active"],
-                ["Grade 7","English","Read unit 5 pages 34-40","2026-09-25","Ms. Sara","Reading","","Active"],
-                ["Grade 7","Science","Digestive system report 1 page","2026-09-26","Mr. Omar","Report","","Active"],
-                ["Grade 7","Social Studies","Study chapter 6 for quiz Thursday","2026-09-25","Ms. Nadia","Study","","Active"],
-                ["Grade 7","French","Vocab list unit 2 - 15 words","2026-09-24","Ms. Claire","Memorization","","Active"],
-                ["Grade 8","Math","Algebra equations page 44","2026-09-23","Mr. Khaled","Worksheet","Show steps","Active"],
-                ["Grade 8","Physics","Lab report electricity experiment","2026-09-24","Mr. Hassan","Lab Report","Include diagrams","Active"],
-                ["Grade 8","English","Finish chapter 7 - 10 lines summary","2026-09-25","Ms. Sara","Reading","","Active"],
-                ["Grade 8","Chemistry","Study periodic table groups 1-3 quiz Sunday","2026-09-28","Mr. Hassan","Study","","Active"],
-                ["Grade 8","Biology","Draw and label cell animal and plant","2026-09-26","Mr. Omar","Drawing","Use colors","Active"],
-                ["Grade 9","Math","Quadratic equations page 78 Qs 1-10","2026-09-23","Mr. Ahmed","Worksheet","Show steps","Active"],
-                ["Grade 9","Physics","Newton laws summarize 2 examples each","2026-09-24","Mr. Hassan","Summary","","Active"],
-                ["Grade 9","Arabic","Literary analysis poem page 90","2026-09-25","Ms. Fatima","Analysis","Handwritten","Active"],
-                ["Grade 9","Chemistry","Balancing equations worksheet page 55","2026-09-26","Mr. Hassan","Worksheet","Show work","Active"],
-                ["Grade 10","Math","Trigonometry page 92 Qs 1-8","2026-09-23","Mr. Ahmed","Exercises","Use calculator","Active"],
-                ["Grade 10","Physics","Momentum and energy page 110 Qs 1-5","2026-09-24","Mr. Hassan","Problems","Show solution","Active"],
-                ["Grade 10","English","300-word essay social media pros cons","2026-09-25","Ms. Sara","Essay","Typed","Active"],
-                ["Grade 11","Math","Calculus differentiation chapter 3","2026-09-23","Mr. Ahmed","Exercises","Show steps","Active"],
-                ["Grade 11","Chemistry","Organic naming compounds worksheet","2026-09-24","Mr. Hassan","Worksheet","","Active"],
-                ["Grade 11","Arabic","Research Egyptian literary figure 2 pages","2026-09-25","Ms. Fatima","Research","Handwritten","Active"],
-                ["Grade 12","Math","Past exam paper 2025 full attempt","2026-09-23","Mr. Ahmed","Exam Practice","Timed 3 hours","Active"],
-                ["Grade 12","Physics","Revision electricity chapter summary","2026-09-24","Mr. Hassan","Revision","","Active"],
-                ["Grade 12","English","University application essay","2026-09-25","Ms. Sara","Essay","500 words","Active"],
-            ], "#0F1C2E")
-
-        # ── ADD DROPDOWNS VIA BATCH UPDATE ───────────────────────────────────
-        time.sleep(5)
-        sheet_id = s.id
-
-        # Grade dropdown (column A, rows 2-200)
-        grade_list = "KG1,KG2,Grade 1,Grade 2,Grade 3,Grade 4,Grade 5,Grade 6,Grade 7,Grade 8,Grade 9,Grade 10,Grade 11,Grade 12"
-
-        # Subject dropdown (column B, rows 2-200) — all subjects combined
-        subject_list = "Math,Arabic,English,Science,Social Studies,Physics,Chemistry,Biology,French,Activities,Tracing,Drawing,Coloring,History,Geography,Computer,Art,Music,PE,Islamic Studies"
-
-        # Type dropdown (column F, rows 2-200)
-        type_list = "Workbook,Worksheet,Essay,Reading,Summary,Research,Memorization,Drawing,Coloring,Tracing,Tables,Exercises,Problems,Lab Report,Study,Revision,Exam Practice,Grammar,Analysis,Report"
-
-        # Status dropdown (column H, rows 2-200)
-        status_list = "Active,Completed,Cancelled"
-
-        requests_body = {
-            "requests": [
-                # Grade dropdown - column A
-                {"setDataValidation": {"range": {"sheetId": sheet_id, "startRowIndex": 1, "endRowIndex": 200, "startColumnIndex": 0, "endColumnIndex": 1},
-                    "rule": {"condition": {"type": "ONE_OF_LIST", "values": [{"userEnteredValue": g} for g in grade_list.split(",")]},
-                             "showCustomUi": True, "strict": True}}},
-                # Subject dropdown - column B
-                {"setDataValidation": {"range": {"sheetId": sheet_id, "startRowIndex": 1, "endRowIndex": 200, "startColumnIndex": 1, "endColumnIndex": 2},
-                    "rule": {"condition": {"type": "ONE_OF_LIST", "values": [{"userEnteredValue": s_} for s_ in subject_list.split(",")]},
-                             "showCustomUi": True, "strict": False}}},
-                # Type dropdown - column F
-                {"setDataValidation": {"range": {"sheetId": sheet_id, "startRowIndex": 1, "endRowIndex": 200, "startColumnIndex": 5, "endColumnIndex": 6},
-                    "rule": {"condition": {"type": "ONE_OF_LIST", "values": [{"userEnteredValue": t} for t in type_list.split(",")]},
-                             "showCustomUi": True, "strict": False}}},
-                # Status dropdown - column H
-                {"setDataValidation": {"range": {"sheetId": sheet_id, "startRowIndex": 1, "endRowIndex": 200, "startColumnIndex": 7, "endColumnIndex": 8},
-                    "rule": {"condition": {"type": "ONE_OF_LIST", "values": [{"userEnteredValue": st} for st in status_list.split(",")]},
-                             "showCustomUi": True, "strict": True}}},
-                # Conditional formatting: Active rows = light green, Completed = light blue
-                {"addConditionalFormatRule": {"rule": {"ranges": [{"sheetId": sheet_id, "startRowIndex": 1, "endRowIndex": 200}],
-                    "booleanRule": {"condition": {"type": "TEXT_EQ", "values": [{"userEnteredValue": "Active"}]},
-                                   "format": {"backgroundColor": {"red": 0.85, "green": 0.96, "blue": 0.87}}}}, "index": 0}},
-                {"addConditionalFormatRule": {"rule": {"ranges": [{"sheetId": sheet_id, "startRowIndex": 1, "endRowIndex": 200}],
-                    "booleanRule": {"condition": {"type": "TEXT_EQ", "values": [{"userEnteredValue": "Completed"}]},
-                                   "format": {"backgroundColor": {"red": 0.86, "green": 0.93, "blue": 0.99}}}}, "index": 1}},
-                # Column widths
-                {"updateDimensionProperties": {"range": {"sheetId": sheet_id, "dimension": "COLUMNS", "startIndex": 0, "endIndex": 1}, "properties": {"pixelSize": 110}, "fields": "pixelSize"}},
-                {"updateDimensionProperties": {"range": {"sheetId": sheet_id, "dimension": "COLUMNS", "startIndex": 1, "endIndex": 2}, "properties": {"pixelSize": 130}, "fields": "pixelSize"}},
-                {"updateDimensionProperties": {"range": {"sheetId": sheet_id, "dimension": "COLUMNS", "startIndex": 2, "endIndex": 3}, "properties": {"pixelSize": 380}, "fields": "pixelSize"}},
-                {"updateDimensionProperties": {"range": {"sheetId": sheet_id, "dimension": "COLUMNS", "startIndex": 3, "endIndex": 4}, "properties": {"pixelSize": 110}, "fields": "pixelSize"}},
-                {"updateDimensionProperties": {"range": {"sheetId": sheet_id, "dimension": "COLUMNS", "startIndex": 4, "endIndex": 5}, "properties": {"pixelSize": 110}, "fields": "pixelSize"}},
-                {"updateDimensionProperties": {"range": {"sheetId": sheet_id, "dimension": "COLUMNS", "startIndex": 5, "endIndex": 6}, "properties": {"pixelSize": 130}, "fields": "pixelSize"}},
-                {"updateDimensionProperties": {"range": {"sheetId": sheet_id, "dimension": "COLUMNS", "startIndex": 6, "endIndex": 7}, "properties": {"pixelSize": 180}, "fields": "pixelSize"}},
-                {"updateDimensionProperties": {"range": {"sheetId": sheet_id, "dimension": "COLUMNS", "startIndex": 7, "endIndex": 8}, "properties": {"pixelSize": 100}, "fields": "pixelSize"}},
-            ]
-        }
-        sh.batch_update(requests_body)
-        time.sleep(8)
-
-        # ── STUDENTS ─────────────────────────────────────────────────────────
-        wt("Students",["Student ID","Full Name","Grade","Section","Gender","Parent Name","Parent Phone","Total Fees","Paid","Remaining","Payment Status","Next Due","Days Present","Days Absent","Attendance%","Bus Route","Active"],[
-            ["STU001","Lina Hany El-Shafei","KG1","A","F","Hany El-Shafei","201506667788",42000,14000,28000,"On Track","2026-03-01",17,3,"85%","Route 5","yes"],
-            ["STU002","Adam Sherif Mansour","KG1","A","M","Sherif Mansour","201607001122",42000,42000,0,"Paid in Full","N/A",19,1,"95%","Route 6","yes"],
-            ["STU003","Kareem Adel Nasser","KG2","A","M","Adel Nasser","201118900880",42000,21000,21000,"On Track","2026-03-01",16,4,"80%","Route 8","yes"],
-            ["STU004","Nada Wael Ibrahim","KG2","B","F","Wael Ibrahim","201203110044",42000,42000,0,"Paid in Full","N/A",20,0,"100%","Route 3","yes"],
-            ["STU005","Youssef Bassem Reda","Grade 1","A","M","Bassem Reda","201223334455",48000,16000,32000,"On Track","2026-03-01",18,2,"90%","Route 1","yes"],
-            ["STU006","Salma Ibrahim Mostafa","Grade 1","A","F","Ibrahim Mostafa","201556667788",48000,48000,0,"Paid in Full","N/A",20,0,"100%","Route 4","yes"],
-            ["STU007","Fares Magdy Helal","Grade 2","A","M","Magdy Helal","201203334455",48000,48000,0,"Paid in Full","N/A",20,0,"100%","Route 2","yes"],
-            ["STU008","Rana Osama Shawky","Grade 2","B","F","Osama Shawky","201990001122",48000,16000,32000,"Overdue","2025-12-15",12,8,"60%","Route 7","yes"],
-            ["STU009","Adam Sherif Gouda","Grade 3","A","M","Sherif Gouda","201405556677",48000,32000,16000,"On Track","2026-03-01",19,1,"95%","Route 5","yes"],
-            ["STU010","Noura Khaled Abdallah","Grade 3","A","F","Khaled Abdallah","201778889900",48000,16000,32000,"Overdue","2025-11-01",13,7,"65%","Route 1","yes"],
-            ["STU011","Salma Tarek Samir","Grade 4","A","F","Tarek Samir","201112223344",55000,55000,0,"Paid in Full","N/A",20,0,"100%","Route 3","yes"],
-            ["STU012","Karim Ehab Mansour","Grade 4","B","M","Ehab Mansour","201102223334",55000,36667,18333,"Payment Due Soon","2026-02-10",16,4,"80%","Route 6","yes"],
-            ["STU013","Esraa Sayed Hassan","Grade 5","A","F","Sayed Hassan","201035551012",55000,36667,18333,"On Track","2026-03-01",19,1,"95%","Route 4","yes"],
-            ["STU014","Ziad Amr El-Sayed","Grade 5","A","M","Amr El-Sayed","201445556677",55000,36667,18333,"Payment Due Soon","2026-02-01",17,3,"85%","Route 2","yes"],
-            ["STU015","Mariam Hassan Farouk","Grade 5","B","F","Hassan Farouk","201334445566",55000,55000,0,"Paid in Full","N/A",20,0,"100%","Route 7","yes"],
-            ["STU016","Dina Nader El-Masry","Grade 6","A","F","Nader El-Masry","201001112233",55000,36667,18333,"On Track","2026-03-01",18,2,"90%","Route 8","yes"],
-            ["STU017","Hassan Taher Barakat","Grade 6","A","M","Taher Barakat","201607778899",55000,55000,0,"Paid in Full","N/A",20,0,"100%","Route 5","yes"],
-            ["STU018","Ahmed Mohamed Hassan","Grade 7","A","M","Mohamed Hassan","201118900880",62000,41334,20666,"On Track","2026-03-01",18,2,"90%","Route 1","yes"],
-            ["STU019","Hana Walid Farouk","Grade 7","A","F","Walid Farouk","201334440066",62000,41334,20666,"On Track","2026-03-01",19,1,"95%","Route 3","yes"],
-            ["STU020","Karim Nader Soliman","Grade 7","B","M","Nader Soliman","201001112234",62000,41334,20666,"On Track","2026-03-01",20,0,"100%","Route 6","yes"],
-            ["STU021","Omar Youssef Ali","Grade 7","B","M","Youssef Ali","201007778888",62000,62000,0,"Paid in Full","N/A",20,0,"100%","Route 2","yes"],
-            ["STU022","Nour Ahmed Ibrahim","Grade 8","A","F","Ahmed Ibrahim","201234567890",62000,41334,20666,"Payment Due Soon","2026-02-15",20,0,"100%","Route 4","yes"],
-            ["STU023","Mahmoud Sameh Fathy","Grade 8","A","M","Sameh Fathy","201889990011",62000,62000,0,"Paid in Full","N/A",20,0,"100%","Route 7","yes"],
-            ["STU024","Layla Khaled Mahmoud","Grade 8","B","F","Khaled Mahmoud","201035551013",62000,20667,41333,"Overdue","2025-12-01",14,6,"70%","Route 1","yes"],
-            ["STU025","Ali Hassan El-Gohary","Grade 9","A","M","Hassan El-Gohary","201667778899",62000,41334,20666,"On Track","2026-03-01",18,2,"90%","Route 3","yes"],
-            ["STU026","Sara Mostafa El-Khatib","Grade 9","A","F","Mostafa El-Khatib","201304445566",62000,20667,41333,"Overdue","2025-11-15",11,9,"55%","Route 8","yes"],
-            ["STU027","Marwa Tarek Helmy","Grade 10","A","F","Tarek Helmy","201503334455",70000,46667,23333,"On Track","2026-03-01",19,1,"95%","Route 5","yes"],
-            ["STU028","Badr Amr Khalifa","Grade 10","A","M","Amr Khalifa","201604445566",70000,70000,0,"Paid in Full","N/A",20,0,"100%","Route 2","yes"],
-            ["STU029","Nadia Sherif El-Wakil","Grade 11","A","F","Sherif El-Wakil","201705556677",70000,46667,23333,"Payment Due Soon","2026-02-20",17,3,"85%","Route 4","yes"],
-            ["STU030","Karim Hassan Sabry","Grade 11","A","M","Hassan Sabry","201806667788",70000,70000,0,"Paid in Full","N/A",20,0,"100%","Route 6","yes"],
-            ["STU031","Farah Mahmoud Zaki","Grade 12","A","F","Mahmoud Zaki","201907778899",70000,70000,0,"Paid in Full","N/A",20,0,"100%","Route 1","yes"],
-            ["STU032","Omar Khaled El-Sayed","Grade 12","A","M","Khaled El-Sayed","201008889900",70000,23334,46666,"Overdue","2025-10-01",15,5,"75%","Route 3","yes"],
-        ],"#14532D")
-
-        # ── PARENTS ──────────────────────────────────────────────────────────
-        wt("Parents",["Name","Phone","Grade","Active","Student ID","Student Name","Relationship"],[
-            ["Hany El-Shafei","201506667788","KG1","yes","STU001","Lina Hany El-Shafei","Father"],
-            ["Sherif Mansour","201607001122","KG1","yes","STU002","Adam Sherif Mansour","Father"],
-            ["Adel Nasser","201118900880","KG2","yes","STU003","Kareem Adel Nasser","Father"],
-            ["Wael Ibrahim","201203110044","KG2","yes","STU004","Nada Wael Ibrahim","Father"],
-            ["Bassem Reda","201223334455","Grade 1","yes","STU005","Youssef Bassem Reda","Father"],
-            ["Ibrahim Mostafa","201556667788","Grade 1","yes","STU006","Salma Ibrahim Mostafa","Father"],
-            ["Magdy Helal","201203334455","Grade 2","yes","STU007","Fares Magdy Helal","Father"],
-            ["Osama Shawky","201990001122","Grade 2","yes","STU008","Rana Osama Shawky","Father"],
-            ["Sherif Gouda","201405556677","Grade 3","yes","STU009","Adam Sherif Gouda","Father"],
-            ["Khaled Abdallah","201778889900","Grade 3","yes","STU010","Noura Khaled Abdallah","Father"],
-            ["Tarek Samir","201112223344","Grade 4","yes","STU011","Salma Tarek Samir","Father"],
-            ["Ehab Mansour","201102223334","Grade 4","yes","STU012","Karim Ehab Mansour","Father"],
-            ["Sayed Hassan","201035551012","Grade 5","yes","STU013","Esraa Sayed Hassan","Father"],
-            ["Amr El-Sayed","201445556677","Grade 5","yes","STU014","Ziad Amr El-Sayed","Father"],
-            ["Hassan Farouk","201334445566","Grade 5","yes","STU015","Mariam Hassan Farouk","Father"],
-            ["Nader El-Masry","201001112233","Grade 6","yes","STU016","Dina Nader El-Masry","Father"],
-            ["Taher Barakat","201607778899","Grade 6","yes","STU017","Hassan Taher Barakat","Father"],
-            ["Mohamed Hassan","201118900880","Grade 7","yes","STU018","Ahmed Mohamed Hassan","Father"],
-            ["Walid Farouk","201334440066","Grade 7","yes","STU019","Hana Walid Farouk","Father"],
-            ["Youssef Ali","201007778888","Grade 7","yes","STU021","Omar Youssef Ali","Father"],
-            ["Ahmed Ibrahim","201234567890","Grade 8","yes","STU022","Nour Ahmed Ibrahim","Father"],
-            ["Sameh Fathy","201889990011","Grade 8","yes","STU023","Mahmoud Sameh Fathy","Father"],
-            ["Hassan El-Gohary","201667778899","Grade 9","yes","STU025","Ali Hassan El-Gohary","Father"],
-            ["Tarek Helmy","201503334455","Grade 10","yes","STU027","Marwa Tarek Helmy","Father"],
-            ["Sherif El-Wakil","201705556677","Grade 11","yes","STU029","Nadia Sherif El-Wakil","Father"],
-            ["Mahmoud Zaki","201907778899","Grade 12","yes","STU031","Farah Mahmoud Zaki","Father"],
-            ["Ahmed Mohamed (Test)","201118900880","Grade 7","yes","STU018","Ahmed Mohamed Hassan","Father"],
-            ["Sara Khaled (Test)","201234567890","Grade 8","yes","STU022","Nour Ahmed Ibrahim","Mother"],
-            ["Test Parent","201035551012","Grade 5","yes","STU013","Esraa Sayed Hassan","Father"],
-        ],"#1D4ED8")
-
-        # ── EXAM ─────────────────────────────────────────────────────────────
         wt("exam",["Student ID","Student Name","Grade","Subject","Score","Total","Percentage","Grade Letter","Rank","Exam Date","Term","Teacher Notes"],[
             ["STU018","Ahmed Mohamed Hassan","Grade 7","Math",95,100,"95%","A","1st","2026-09-15","Term 1","Excellent"],
             ["STU018","Ahmed Mohamed Hassan","Grade 7","Arabic",88,100,"88%","B+","3rd","2026-09-15","Term 1","Good essay"],
@@ -848,7 +667,6 @@ def rebuild_sheet():
             ["STU027","Marwa Tarek Helmy","Grade 10","Physics",82,100,"82%","B-","5th","2026-09-15","Term 1","Work on momentum"],
         ],"#065F46")
 
-        # ── FEES ─────────────────────────────────────────────────────────────
         wt("Fees",["Student ID","Student Name","Grade","Parent Name","Parent Phone","Total Fees","Amount Paid","Remaining","Payment Status","Next Payment Due","Last Payment Date","Days Present","Total School Days"],[
             ["STU001","Lina Hany El-Shafei","KG1","Hany El-Shafei","201506667788",42000,14000,28000,"On Track","2026-03-01","2025-11-01",17,20],
             ["STU002","Adam Sherif Mansour","KG1","Sherif Mansour","201607001122",42000,42000,0,"Paid in Full","N/A","2025-09-01",19,20],
@@ -884,7 +702,6 @@ def rebuild_sheet():
             ["STU032","Omar Khaled El-Sayed","Grade 12","Khaled El-Sayed","201008889900",70000,23334,46666,"Overdue","2025-10-01","2025-09-01",15,20],
         ],"#92400E")
 
-        # ── BUS ROUTES ───────────────────────────────────────────────────────
         wt("BusRoutes",["Route","Area","Morning Pickup","Arrives School","Departs School","Home Dropoff","Driver Name","Driver Phone","Capacity","Registered","Active"],[
             ["Route 1","Maadi Degla Zahraa School","6:45 AM","7:30 AM","2:15 PM","3:00 PM","Ahmed Saber","01012345678",45,12,"yes"],
             ["Route 2","Heliopolis Roxy Sheraton School","6:50 AM","7:30 AM","2:15 PM","3:00 PM","Hassan Nour","01098765432",45,18,"yes"],
@@ -895,8 +712,28 @@ def rebuild_sheet():
             ["Route 7","New Cairo 5th Settlement School","6:30 AM","7:25 AM","2:15 PM","3:10 PM","Ayman Rashad","01567890123",45,9,"yes"],
             ["Route 8","Sheikh Zayed Beverly Hills School","7:10 AM","7:30 AM","2:15 PM","2:40 PM","Walid Kamal","01678901234",50,20,"yes"],
         ],"#1E40AF")
+        return jsonify({"status":"DONE","tabs":["exam","Fees","BusRoutes"]})
+    except Exception as e:
+        import traceback
+        return jsonify({"status":"ERROR","error":str(e),"trace":traceback.format_exc()[-400:]}),500
 
-        # ── CANTEEN ──────────────────────────────────────────────────────────
+
+# ─── SHEET REBUILD: Part B — Canteen + Library + Admissions + HOW TO USE ────
+@app.route('/rebuild-b', methods=['GET'])
+def rebuild_b():
+    import time
+    try:
+        gc = get_client(); sh = gc.open_by_key(SHEET_ID)
+        def wt(name,header,rows,hc):
+            try: s=sh.worksheet(name)
+            except: s=sh.add_worksheet(name,300,25)
+            s.clear(); time.sleep(2)
+            s.update([header]+rows,value_input_option="USER_ENTERED"); time.sleep(2)
+            n=len(header); cell="A1:"+chr(64+n)+"1"
+            rgb={"red":int(hc[1:3],16)/255,"green":int(hc[3:5],16)/255,"blue":int(hc[5:7],16)/255}
+            s.format(cell,{"backgroundColor":rgb,"textFormat":{"bold":True,"foregroundColor":{"red":1,"green":1,"blue":1},"fontSize":10},"verticalAlignment":"MIDDLE"})
+            s.freeze(rows=1); time.sleep(5)
+
         wt("Canteen",["Category","Item","Description","Price","Available Days","Allergens","Halal"],[
             ["Main Meal","Koshary","Egyptian koshary lentils rice pasta",20,"Mon Wed","Gluten","Yes"],
             ["Main Meal","Macaroni Bechamel","Baked pasta bechamel minced meat",22,"Tuesday","Gluten Dairy","Yes"],
@@ -916,7 +753,6 @@ def rebuild_sheet():
             ["Dessert","Chocolate Bar","Kit Kat wafer",10,"Daily","Gluten Dairy Nuts","Yes"],
         ],"#B45309")
 
-        # ── LIBRARY ──────────────────────────────────────────────────────────
         wt("Library",["Book ID","Title","Author","Category","Grade Level","Language","Copies","Available","Status","Borrower","Due Date","Shelf"],[
             ["LIB001","Harry Potter Philosopher Stone","J.K. Rowling","Fantasy","Grade 4-8","English",2,2,"Available","","","Shelf A1"],
             ["LIB002","The Alchemist","Paulo Coelho","Fiction","Grade 9-12","English",1,1,"Available","","","Shelf A2"],
@@ -935,29 +771,20 @@ def rebuild_sheet():
             ["LIB015","Zuqaq Al-Middaq","Naguib Mahfouz","Literature","Grade 10-12","Arabic",1,0,"Borrowed","STU027","2026-10-10","Shelf E4"],
         ],"#5B21B6")
 
-        # ── ADMISSIONS ───────────────────────────────────────────────────────
         wt("Admissions",["Item","Value"],[
-            ["Registration Status","Open for 2025/2026"],
-            ["Application Deadline","March 31 2026"],
-            ["Available Grades","KG1 KG2 Grade 1 Grade 4 Grade 7"],
-            ["Waitlist Grades","Grade 3 Grade 6 Grade 10"],
-            ["Full Grades","Grade 5 Grade 8 Grade 11 Grade 12"],
-            ["KG Fees","42000 EGP per year"],
-            ["Grade 1-3 Fees","48000 EGP per year"],
-            ["Grade 4-6 Fees","55000 EGP per year"],
-            ["Grade 7-9 Fees","62000 EGP per year"],
-            ["Grade 10-12 Fees","70000 EGP per year"],
-            ["Registration Deposit","5000 EGP non-refundable"],
-            ["Payment Plan","3 installments per year"],
+            ["Registration Status","Open for 2025/2026"],["Application Deadline","March 31 2026"],
+            ["Available Grades","KG1 KG2 Grade 1 Grade 4 Grade 7"],["Waitlist Grades","Grade 3 Grade 6 Grade 10"],
+            ["Full Grades","Grade 5 Grade 8 Grade 11 Grade 12"],["KG Fees","42000 EGP per year"],
+            ["Grade 1-3 Fees","48000 EGP per year"],["Grade 4-6 Fees","55000 EGP per year"],
+            ["Grade 7-9 Fees","62000 EGP per year"],["Grade 10-12 Fees","70000 EGP per year"],
+            ["Registration Deposit","5000 EGP non-refundable"],["Payment Plan","3 installments per year"],
             ["Documents","Birth cert previous report card parent ID 4 photos medical cert"],
             ["Process","Apply online submit docs assessment meeting decision in 5 days"],
             ["Location","El Yasmeen Compound Entrance 1 El Sheikh Zayed 6th October"],
-            ["Phone","02-3796-9155 / 02-3796-9166"],
-            ["WhatsApp","01066253331"],
+            ["Phone","02-3796-9155 / 02-3796-9166"],["WhatsApp","01066253331"],
             ["Hours","Sun-Thu 7:30 AM - 2:30 PM"],
         ],"#047857")
 
-        # ── HOW TO USE ───────────────────────────────────────────────────────
         wt("HOW TO USE",["TAB","PURPOSE","WHO UPDATES","BOT USAGE","NOTE"],[
             ["Homework","Daily homework per grade","Class Teachers","Parents ask homework grade 7","Update daily"],
             ["Students","Full student roster","Admin Office","All student data","Source of truth"],
@@ -978,11 +805,10 @@ def rebuild_sheet():
             ["RULE 6","Payment Status: Paid in Full / On Track / Payment Due Soon / Overdue","","","CRITICAL"],
             ["RULE 7","Phone numbers include country code 201118900880 no plus sign","","","CRITICAL"],
         ],"#0F1C2E")
-
-        return jsonify({"status":"ALL DONE","message":"10 tabs updated with dropdowns on Homework tab"})
+        return jsonify({"status":"DONE","tabs":["Canteen","Library","Admissions","HOW TO USE"]})
     except Exception as e:
         import traceback
-        return jsonify({"status":"ERROR","error":str(e),"trace":traceback.format_exc()[-600:]}),500
+        return jsonify({"status":"ERROR","error":str(e),"trace":traceback.format_exc()[-400:]}),500
 
 
 if __name__ == "__main__":
