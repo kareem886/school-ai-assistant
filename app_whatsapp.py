@@ -143,13 +143,13 @@ def extract_grade(m):
     return None
 
 def get_parent_students(from_phone):
-    """Return list of student IDs linked to this parent phone number."""
+    """Return list of student IDs linked to this parent phone (reads Students tab)."""
     try:
-        rows = read_tab("Parents")
+        rows = read_tab("Students")
         norm = from_phone.lstrip('+').strip()
         matched = []
         for r in rows:
-            p = str(r.get("Phone", "")).lstrip('+').strip()
+            p = str(r.get("Parent Phone", "")).lstrip('+').strip()
             if p and p == norm:
                 sid = str(r.get("Student ID", "")).strip().upper()
                 if sid:
@@ -512,22 +512,27 @@ def api_login():
 
 @app.route('/api/parents')
 def api_parents():
-    """Load parents from Google Sheet, optionally filtered by admin grade scope."""
+    """Load parents from Students tab, optionally filtered by admin grade scope."""
     try:
-        grades_param = request.args.get("grades", "")          # comma-separated or empty
+        grades_param = request.args.get("grades", "")
         allowed = [g.strip() for g in grades_param.split(",") if g.strip()]
-        rows = read_tab("Parents")
+        rows = read_tab("Students")
         parents = []
+        seen = set()
         for r in rows:
-            if not (str(r.get("Active", "yes")).lower() == "yes" and r.get("Phone", "")):
+            if not (str(r.get("Active", "yes")).lower() == "yes" and r.get("Parent Phone", "")):
                 continue
             grade = r.get("Grade", "")
             if allowed:
                 if not any(a.lower() in grade.lower() for a in allowed):
                     continue
+            phone = str(r.get("Parent Phone", "")).strip()
+            if phone in seen:
+                continue
+            seen.add(phone)
             parents.append({
-                "name":  r.get("Name", ""),
-                "phone": str(r.get("Phone", "")),
+                "name":  r.get("Parent Name", ""),
+                "phone": phone,
                 "grade": grade,
                 "active": True
             })
@@ -549,11 +554,21 @@ def broadcast():
         return jsonify({"error": "No message provided"}), 400
 
     try:
-        rows = read_tab("Parents")
-        all_parents = [
-            r for r in rows
-            if str(r.get("Active", "yes")).lower() == "yes" and r.get("Phone", "")
-        ]
+        rows = read_tab("Students")
+        seen_phones = set()
+        all_parents = []
+        for r in rows:
+            if not (str(r.get("Active", "yes")).lower() == "yes" and r.get("Parent Phone", "")):
+                continue
+            ph = str(r.get("Parent Phone", "")).strip()
+            if ph in seen_phones:
+                continue
+            seen_phones.add(ph)
+            all_parents.append({
+                "Name": r.get("Parent Name", ""),
+                "Phone": ph,
+                "Grade": r.get("Grade", "")
+            })
     except Exception as e:
         return jsonify({"error": f"Could not load parents: {e}"}), 500
 
@@ -608,7 +623,7 @@ def announcements_api():
 @app.route('/health')
 def health():
     rows = read_tab("Homework")
-    parents = read_tab("Parents")
+    parents = read_tab("Students")
     return jsonify({
         "status": "running",
         "school": SCHOOL["name"],
