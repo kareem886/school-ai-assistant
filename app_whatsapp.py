@@ -83,9 +83,36 @@ def get_client():
     return gspread.authorize(creds)
 
 def read_tab(tab_name):
+    """Read a sheet tab safely — tolerates duplicate/empty headers."""
     try:
         wb = get_client().open_by_key(SHEET_ID)
-        rows = wb.worksheet(tab_name).get_all_records()
+        ws = wb.worksheet(tab_name)
+        values = ws.get_all_values()
+        if not values:
+            return []
+        # Build unique headers — if duplicate, append _2, _3 etc.
+        raw_headers = values[0]
+        seen = {}
+        headers = []
+        for h in raw_headers:
+            h = h.strip()
+            if not h:
+                h = "_blank"
+            if h in seen:
+                seen[h] += 1
+                h = f"{h}_{seen[h]}"
+            else:
+                seen[h] = 1
+            headers.append(h)
+        rows = []
+        for row in values[1:]:
+            # Skip completely empty rows
+            if not any(str(v).strip() for v in row):
+                continue
+            d = {}
+            for i, h in enumerate(headers):
+                d[h] = row[i] if i < len(row) else ""
+            rows.append(d)
         logger.info(f"[sheets] OK {tab_name}: {len(rows)} rows")
         return rows
     except Exception as e:
@@ -652,7 +679,7 @@ def debug_cols():
         # exam tab — headers + STU018 rows
         ew = sh.worksheet("exam")
         e_headers = ew.row_values(1)
-        exam_rows = ew.get_all_records()
+        exam_rows = read_tab("exam")
         stu018_exam = [r for r in exam_rows if str(r.get("Student ID","")).upper() == "STU018"]
 
         return jsonify({
