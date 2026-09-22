@@ -1098,25 +1098,45 @@ async function uploadPhoto(){
   var file = document.getElementById('photoInput').files[0];
   if(!file) return null;
   var st = document.getElementById('uploadStatus');
-  st.style.display='block'; st.textContent='⏳ Compressing photo...';
+  st.style.display='block'; st.textContent='\u23f3 Compressing photo...';
   try{
-    var b64 = await imageToBase64(file);
-    st.textContent='⏳ Uploading photo...';
-    var res = await fetch('/api/upload-image',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({image_b64: b64, filename: file.name || 'photo.jpg'})
+    // Get WA credentials from server
+    var cfg = await (await fetch('/api/wa-config')).json();
+    // Resize + compress image in browser
+    var blob = await new Promise(function(resolve){
+      var img = new Image();
+      var url = URL.createObjectURL(file);
+      img.onload = function(){
+        var c = document.createElement('canvas');
+        var MAX=800,w=img.width,h=img.height;
+        if(w>h){if(w>MAX){h=Math.round(h*MAX/w);w=MAX;}}
+        else{if(h>MAX){w=Math.round(w*MAX/h);h=MAX;}}
+        c.width=w; c.height=h;
+        c.getContext('2d').drawImage(img,0,0,w,h);
+        c.toBlob(function(b){resolve(b);},'image/jpeg',0.65);
+        URL.revokeObjectURL(url);
+      };
+      img.src=url;
     });
-    var data = await res.json();
-    if(data.ok){
-      st.textContent='✅ Photo ready to send';
-      return data.media_id;
+    st.textContent='\u23f3 Uploading photo...';
+    // Upload directly to Meta API from browser — no Railway proxy
+    var fd = new FormData();
+    fd.append('file', blob, 'photo.jpg');
+    fd.append('messaging_product','whatsapp');
+    var up = await fetch(
+      'https://graph.facebook.com/v18.0/'+cfg.phone_number_id+'/media',
+      {method:'POST',headers:{'Authorization':'Bearer '+cfg.access_token},body:fd}
+    );
+    var upd = await up.json();
+    if(upd.id){
+      st.textContent='\u2705 Photo ready to send';
+      return upd.id;
     } else {
-      st.textContent='❌ Upload failed: '+data.error;
+      st.textContent='\u274c Upload failed: '+(upd.error&&upd.error.message||JSON.stringify(upd));
       return null;
     }
   } catch(e){
-    st.textContent='❌ Upload error: '+e.message;
+    st.textContent='\u274c Upload error: '+e.message;
     return null;
   }
 }
