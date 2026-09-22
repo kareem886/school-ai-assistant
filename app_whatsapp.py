@@ -1699,21 +1699,21 @@ def upload_image():
     if not file.filename:
         return jsonify({"ok": False, "error": "Empty filename"}), 400
     try:
-        import base64 as b64
-        img_data = b64.b64encode(file.read()).decode("utf-8")
-        # Use ImgBB free API (no key needed for basic upload)
+        # Use Telegraph image upload — no API key needed, returns permanent public URL
+        file_bytes = file.read()
         res = requests.post(
-            "https://api.imgbb.com/1/upload",
-            data={"key": "a8b9c2d3e4f5a6b7c8d9e0f1a2b3c4d5", "image": img_data},
+            "https://telegra.ph/upload",
+            files={"file": (file.filename, file_bytes, file.content_type or "image/jpeg")},
             timeout=20
         )
         if res.status_code == 200:
-            url = res.json()["data"]["url"]
-            return jsonify({"ok": True, "url": url})
-        else:
-            # Fallback: use Telegraph image upload (no key needed)
-            file.seek(0) if hasattr(file, 'seek') else None
-            return jsonify({"ok": False, "error": f"Upload failed: {res.status_code}"})
+            result = res.json()
+            if isinstance(result, list) and result:
+                url = "https://telegra.ph" + result[0]["src"]
+                logger.info(f"[upload] Image uploaded: {url}")
+                return jsonify({"ok": True, "url": url})
+        logger.error(f"[upload] Telegraph failed: {res.status_code} {res.text[:200]}")
+        return jsonify({"ok": False, "error": f"Upload failed: {res.status_code}"})
     except Exception as e:
         logger.error(f"[upload] {e}")
         return jsonify({"ok": False, "error": str(e)}), 500
