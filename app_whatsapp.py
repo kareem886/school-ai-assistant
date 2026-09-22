@@ -635,6 +635,38 @@ def health():
         "parents_registered": len(parents),
     })
 
+
+@app.route('/debug-cols')
+def debug_cols():
+    """Show exact column names and STU018 row from Students + exam tabs."""
+    try:
+        gc = get_client()
+        sh = gc.open_by_key(SHEET_ID)
+
+        # Students tab — headers + STU018 row
+        sw = sh.worksheet("Students")
+        s_headers = sw.row_values(1)
+        all_rows = sw.get_all_records()
+        stu018 = next((r for r in all_rows if str(r.get("Student ID","")).upper() == "STU018"), None)
+
+        # exam tab — headers + STU018 rows
+        ew = sh.worksheet("exam")
+        e_headers = ew.row_values(1)
+        exam_rows = ew.get_all_records()
+        stu018_exam = [r for r in exam_rows if str(r.get("Student ID","")).upper() == "STU018"]
+
+        return jsonify({
+            "students_headers": s_headers,
+            "stu018_row": stu018,
+            "exam_headers": e_headers,
+            "stu018_exam_count": len(stu018_exam),
+            "stu018_exam_sample": stu018_exam[:2] if stu018_exam else []
+        })
+    except Exception as e:
+        import traceback
+        return jsonify({"error": str(e), "trace": traceback.format_exc()[-500:]}), 500
+
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     logger.info(f"Starting on port {port}")
