@@ -138,6 +138,30 @@ def send_whatsapp(to_phone, message):
         logger.error(f"[wa] error: {e}")
         return False
 
+
+def send_whatsapp_image(to_phone, image_url, caption=""):
+    """Send an image via WhatsApp using a public URL."""
+    if not ACCESS_TOKEN:
+        return False
+    hdrs = {"Authorization": f"Bearer {ACCESS_TOKEN}", "Content-Type": "application/json"}
+    payload = {
+        "messaging_product": "whatsapp",
+        "recipient_type": "individual",
+        "to": to_phone,
+        "type": "image",
+        "image": {
+            "link": image_url,
+            "caption": caption[:1024] if caption else ""
+        },
+    }
+    try:
+        res = requests.post(META_API_URL, headers=hdrs, json=payload, timeout=10)
+        logger.info(f"[wa] image sent to {to_phone[:6]}***: {res.status_code}")
+        return res.status_code == 200
+    except Exception as e:
+        logger.error(f"[wa] image error: {e}")
+        return False
+
 # ── Arabic support ──────────────────────────────────────────────────────────────────────
 def sanitize(text, max_len=1000):
     text = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", "", text)
@@ -622,6 +646,7 @@ def broadcast():
         ]
 
     broadcast_msg = f"📢 Modern Infinity School\n\n{message}\n\n📞 For more info: {SCHOOL['phone']}"
+    image_url = data.get("image_url", "").strip()
 
     sent = 0
     failed = 0
@@ -632,7 +657,12 @@ def broadcast():
         if not phone.startswith("20") and not phone.startswith("+"):
             phone = "20" + phone.lstrip("0")
         phone = phone.lstrip("+")
-        if send_whatsapp(phone, broadcast_msg):
+        if image_url:
+            # Send image with caption (caption = full broadcast message)
+            ok = send_whatsapp_image(phone, image_url, caption=broadcast_msg)
+        else:
+            ok = send_whatsapp(phone, broadcast_msg)
+        if ok:
             sent += 1
         else:
             failed += 1
@@ -1022,6 +1052,36 @@ def api_add_homework():
         return jsonify({"ok": True, "message": f"Added: {grade} — {subject}: {assignment[:50]}"})
     except Exception as e:
         logger.error(f"[homework] {e}")
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
+
+@app.route('/api/upload-image', methods=['POST'])
+def upload_image():
+    """Upload image file and return a public URL via ImgBB."""
+    if 'image' not in request.files:
+        return jsonify({"ok": False, "error": "No image file provided"}), 400
+    file = request.files['image']
+    if not file.filename:
+        return jsonify({"ok": False, "error": "Empty filename"}), 400
+    try:
+        import base64 as b64
+        img_data = b64.b64encode(file.read()).decode("utf-8")
+        # Use ImgBB free API (no key needed for basic upload)
+        res = requests.post(
+            "https://api.imgbb.com/1/upload",
+            data={"key": "a8b9c2d3e4f5a6b7c8d9e0f1a2b3c4d5", "image": img_data},
+            timeout=20
+        )
+        if res.status_code == 200:
+            url = res.json()["data"]["url"]
+            return jsonify({"ok": True, "url": url})
+        else:
+            # Fallback: use Telegraph image upload (no key needed)
+            file.seek(0) if hasattr(file, 'seek') else None
+            return jsonify({"ok": False, "error": f"Upload failed: {res.status_code}"})
+    except Exception as e:
+        logger.error(f"[upload] {e}")
         return jsonify({"ok": False, "error": str(e)}), 500
 
 
