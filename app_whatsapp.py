@@ -1101,11 +1101,11 @@ async function doSend(){
   btn.disabled=true; btn.textContent='⏳ Sending...';
   // Upload photo first if selected
   var photoFile = document.getElementById('photoInput').files[0];
-  var imgUrl = '';
+  var mediaId = '';
   if(photoFile){
     btn.textContent='⏳ Uploading photo...';
-    imgUrl = await uploadPhoto() || '';
-    if(!imgUrl){ btn.disabled=false; btn.textContent='📤 Send to Parents'; return; }
+    mediaId = await uploadPhoto() || '';
+    if(!mediaId){ btn.disabled=false; btn.textContent='📤 Send to Parents'; return; }
   }
   btn.textContent='⏳ Sending...';
   fetch('/broadcast',{
@@ -1113,7 +1113,7 @@ async function doSend(){
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify({
       message: msg,
-      image_url: imgUrl,
+      media_id: mediaId,
       grades:  SEL_GRADES,
       admin_scope: CURRENT_USER.grades   // server enforces this
     })
