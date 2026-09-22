@@ -700,6 +700,28 @@ def debug_cols():
         return jsonify({"error": str(e), "trace": traceback.format_exc()[-500:]}), 500
 
 
+
+@app.route('/debug-auth')
+def debug_auth():
+    """Test phone auth for Kareem's number and show STU018 exam results."""
+    test_phone = "201118900880"
+    matched = get_parent_students(test_phone)
+    exam_rows = read_tab("exam")
+    stu018_results = [r for r in exam_rows if str(r.get("Student ID","")).upper() == "STU018"]
+    students = read_tab("Students")
+    stu018 = next((r for r in students if str(r.get("Student ID","")).upper() == "STU018"), None)
+    return jsonify({
+        "test_phone": test_phone,
+        "matched_student_ids": matched,
+        "stu018_authorized": "STU018" in matched,
+        "stu018_student_row_keys": list(stu018.keys()) if stu018 else [],
+        "stu018_full_name": stu018.get("Full Name","NOT FOUND") if stu018 else None,
+        "stu018_parent_phone": stu018.get("Parent Phone","NOT FOUND") if stu018 else None,
+        "exam_row_count": len(stu018_results),
+        "exam_sample": stu018_results[:1]
+    })
+
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     logger.info(f"Starting on port {port}")
