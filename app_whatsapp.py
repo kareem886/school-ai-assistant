@@ -1072,14 +1072,36 @@ function removePhotoFn(){
   updatePreview();
 }
 
+async function compressImage(file, maxSizeMB){
+  return new Promise(function(resolve){
+    var img = new Image();
+    var url = URL.createObjectURL(file);
+    img.onload = function(){
+      var canvas = document.createElement('canvas');
+      var MAX = 1600;
+      var w = img.width, h = img.height;
+      if(w > MAX){ h = Math.round(h * MAX / w); w = MAX; }
+      if(h > MAX){ w = Math.round(w * MAX / h); h = MAX; }
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      var quality = 0.82;
+      canvas.toBlob(function(blob){ resolve(blob); }, 'image/jpeg', quality);
+      URL.revokeObjectURL(url);
+    };
+    img.src = url;
+  });
+}
+
 async function uploadPhoto(){
   var file = document.getElementById('photoInput').files[0];
   if(!file) return null;
   var st = document.getElementById('uploadStatus');
-  st.style.display='block'; st.textContent='⏳ Uploading photo...';
-  var fd = new FormData();
-  fd.append('image', file);
+  st.style.display='block'; st.textContent='⏳ Compressing photo...';
   try{
+    var compressed = await compressImage(file);
+    st.textContent='⏳ Uploading photo...';
+    var fd = new FormData();
+    fd.append('image', compressed, 'photo.jpg');
     var res = await fetch('/api/upload-image',{method:'POST',body:fd});
     var data = await res.json();
     if(data.ok){
@@ -1090,7 +1112,7 @@ async function uploadPhoto(){
       return null;
     }
   } catch(e){
-    st.textContent='❌ Upload error';
+    st.textContent='❌ Upload error: '+e.message;
     return null;
   }
 }
