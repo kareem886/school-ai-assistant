@@ -1072,21 +1072,23 @@ function removePhotoFn(){
   updatePreview();
 }
 
-async function compressImage(file, maxSizeMB){
+async function imageToBase64(file){
+  // Resize to 800px max and compress to ~200KB before sending
   return new Promise(function(resolve){
     var img = new Image();
     var url = URL.createObjectURL(file);
     img.onload = function(){
       var canvas = document.createElement('canvas');
-      var MAX = 1600;
+      var MAX = 800;
       var w = img.width, h = img.height;
-      if(w > MAX){ h = Math.round(h * MAX / w); w = MAX; }
-      if(h > MAX){ w = Math.round(w * MAX / h); h = MAX; }
+      if(w > h){ if(w>MAX){h=Math.round(h*MAX/w);w=MAX;} }
+      else      { if(h>MAX){w=Math.round(w*MAX/h);h=MAX;} }
       canvas.width = w; canvas.height = h;
       canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-      var quality = 0.82;
-      canvas.toBlob(function(blob){ resolve(blob); }, 'image/jpeg', quality);
+      // Strip the data:image/jpeg;base64, prefix
+      var b64 = canvas.toDataURL('image/jpeg', 0.65).split(',')[1];
       URL.revokeObjectURL(url);
+      resolve(b64);
     };
     img.src = url;
   });
@@ -1098,11 +1100,13 @@ async function uploadPhoto(){
   var st = document.getElementById('uploadStatus');
   st.style.display='block'; st.textContent='⏳ Compressing photo...';
   try{
-    var compressed = await compressImage(file);
+    var b64 = await imageToBase64(file);
     st.textContent='⏳ Uploading photo...';
-    var fd = new FormData();
-    fd.append('image', compressed, 'photo.jpg');
-    var res = await fetch('/api/upload-image',{method:'POST',body:fd});
+    var res = await fetch('/api/upload-image',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({image_b64: b64, filename: file.name || 'photo.jpg'})
+    });
     var data = await res.json();
     if(data.ok){
       st.textContent='✅ Photo ready to send';
@@ -1719,23 +1723,25 @@ def api_add_homework():
 
 @app.route('/api/upload-image', methods=['POST'])
 def upload_image():
-    """Upload image to WhatsApp Media API and return media_id."""
-    if 'image' not in request.files:
-        return jsonify({"ok": False, "error": "No image file provided"}), 400
-    file = request.files['image']
-    if not file.filename:
-        return jsonify({"ok": False, "error": "Empty filename"}), 400
+    """Accept base64 image JSON, upload to WhatsApp Media API, return media_id."""
     if not ACCESS_TOKEN:
         return jsonify({"ok": False, "error": "WhatsApp not configured"}), 500
     try:
-        file_bytes = file.read()
-        mime = file.content_type or "image/jpeg"
+        import base64 as _b64
+        data = request.get_json(force=True, silent=True) or {}
+        b64_str = data.get("image_b64", "")
+        filename = data.get("filename", "photo.jpg")
+        if not b64_str:
+            return jsonify({"ok": False, "error": "No image data provided"}), 400
+        # Decode base64 → bytes
+        img_bytes = _b64.b64decode(b64_str)
+        logger.info(f"[upload] Image size: {len(img_bytes)/1024:.1f}KB")
         # Upload to WhatsApp Media API
         upload_url = f"https://graph.facebook.com/v18.0/{PHONE_NUMBER_ID}/media"
         res = requests.post(
             upload_url,
             headers={"Authorization": f"Bearer {ACCESS_TOKEN}"},
-            files={"file": (file.filename, file_bytes, mime)},
+            files={"file": (filename, img_bytes, "image/jpeg")},
             data={"messaging_product": "whatsapp"},
             timeout=30
         )
@@ -1744,7 +1750,7 @@ def upload_image():
             logger.info(f"[upload] WhatsApp media_id: {media_id}")
             return jsonify({"ok": True, "media_id": media_id})
         logger.error(f"[upload] WA upload failed: {res.status_code} {res.text[:300]}")
-        return jsonify({"ok": False, "error": f"Upload failed ({res.status_code}): {res.text[:200]}"}), 500
+        return jsonify({"ok": False, "error": f"WhatsApp upload failed ({res.status_code}): {res.text[:150]}"}), 500
     except Exception as e:
         logger.error(f"[upload] {e}")
         return jsonify({"ok": False, "error": str(e)}), 500
