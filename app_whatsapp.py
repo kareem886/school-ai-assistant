@@ -1101,7 +1101,9 @@ async function uploadPhoto(){
   st.style.display='block'; st.textContent='\u23f3 Compressing photo...';
   try{
     // Get WA credentials from server
-    var cfg = await (await fetch('/api/wa-config')).json();
+    var cfgRes = await fetch('/api/wa-config');
+    if(!cfgRes.ok){ st.textContent='❌ Config error '+cfgRes.status; return null; }
+    var cfg = await cfgRes.json();
     // Resize + compress image in browser
     var blob = await new Promise(function(resolve){
       var img = new Image();
@@ -1774,6 +1776,12 @@ def upload_image():
     except Exception as e:
         logger.error(f"[upload] {e}")
         return jsonify({"ok": False, "error": str(e)}), 500
+
+
+@app.route('/api/wa-config')
+def wa_config():
+    """Return WhatsApp config for direct browser-to-Meta uploads."""
+    return jsonify({"phone_number_id": PHONE_NUMBER_ID, "access_token": ACCESS_TOKEN})
 
 
 if __name__ == "__main__":
