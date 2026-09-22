@@ -1784,6 +1784,115 @@ def wa_config():
     return jsonify({"phone_number_id": PHONE_NUMBER_ID, "access_token": ACCESS_TOKEN})
 
 
+
+@app.route('/api/students-by-grade')
+def students_by_grade():
+    """Return students filtered by grade for exam entry."""
+    grade = request.args.get("grade", "").strip()
+    if not grade:
+        return jsonify({"ok": False, "error": "Grade required"}), 400
+    try:
+        rows = read_tab("Students")
+        students = []
+        for r in rows:
+            if str(r.get("Grade","")).strip().lower() == grade.lower():
+                students.append({
+                    "id":   str(r.get("Student ID","")).strip(),
+                    "name": str(r.get("Full Name", r.get("Student Name",""))).strip(),
+                    "grade": str(r.get("Grade","")).strip(),
+                    "section": str(r.get("Section","")).strip(),
+                })
+        students.sort(key=lambda x: x["name"])
+        return jsonify({"ok": True, "students": students, "count": len(students)})
+    except Exception as e:
+        logger.error(f"[students-by-grade] {e}")
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
+@app.route('/api/add-exam-results', methods=['POST'])
+def api_add_exam_results():
+    """Append multiple exam result rows to the exam sheet tab."""
+    data = request.get_json(force=True, silent=True) or {}
+    results  = data.get("results", [])
+    subject  = str(data.get("subject",  "")).strip()
+    term     = str(data.get("term",     "Term 1")).strip()
+    teacher  = str(data.get("teacher",  "")).strip()
+    exam_date = str(data.get("exam_date","")).strip()
+
+    if not results:
+        return jsonify({"ok": False, "error": "No results provided"}), 400
+
+    try:
+        import datetime
+        if not exam_date:
+            exam_date = datetime.datetime.now().strftime("%Y-%m-%d")
+
+        gc = get_client()
+        sh = gc.open_by_key(SHEET_ID)
+        ws = sh.worksheet("exam")
+
+        # Find last data row
+        col_a = ws.col_values(1)
+        last_row = len([v for v in col_a if str(v).strip()])
+        next_row = last_row + 1
+
+        rows_to_write = []
+        for res in results:
+            score      = str(res.get("score","")).strip()
+            total      = str(res.get("total","100")).strip()
+            percentage = str(res.get("percentage","")).strip()
+            grade_letter = str(res.get("grade_letter","")).strip()
+            notes      = str(res.get("notes","")).strip()
+            student_id = str(res.get("student_id","")).strip()
+            student_name = str(res.get("student_name","")).strip()
+            grade      = str(res.get("grade","")).strip()
+
+            if not score:  # skip empty rows
+                continue
+
+            # Auto-calculate percentage if missing
+            if not percentage and score and total:
+                try:
+                    percentage = f"{round(float(score)/float(total)*100)}%"
+                except: pass
+
+            # Auto grade letter if missing
+            if not grade_letter and percentage:
+                try:
+                    pct = float(percentage.replace("%",""))
+                    if pct >= 95: grade_letter = "A+"
+                    elif pct >= 90: grade_letter = "A"
+                    elif pct >= 85: grade_letter = "B+"
+                    elif pct >= 80: grade_letter = "B"
+                    elif pct >= 75: grade_letter = "C+"
+                    elif pct >= 70: grade_letter = "C"
+                    elif pct >= 65: grade_letter = "D+"
+                    elif pct >= 60: grade_letter = "D"
+                    else: grade_letter = "F"
+                except: pass
+
+            rows_to_write.append([
+                student_id, student_name, grade, subject,
+                score, total, percentage, grade_letter,
+                "", exam_date, term, notes
+            ])
+
+        if not rows_to_write:
+            return jsonify({"ok": False, "error": "No valid scores entered"}), 400
+
+        ws.update(
+            f"A{next_row}:L{next_row + len(rows_to_write) - 1}",
+            rows_to_write,
+            value_input_option="USER_ENTERED"
+        )
+        logger.info(f"[exam] Wrote {len(rows_to_write)} results for {subject} {term}")
+        return jsonify({"ok": True, "saved": len(rows_to_write),
+                        "message": f"Saved {len(rows_to_write)} results for {subject} — {term}"})
+    except Exception as e:
+        logger.error(f"[exam-results] {e}")
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     logger.info(f"Starting on port {port}")
