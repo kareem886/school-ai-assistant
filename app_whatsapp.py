@@ -173,14 +173,20 @@ def get_parent_students(from_phone):
     """Return list of student IDs linked to this parent phone (reads Students tab)."""
     try:
         rows = read_tab("Students")
+        # Normalise: strip +, spaces, leading zeros for comparison
         norm = from_phone.lstrip('+').strip()
         matched = []
         for r in rows:
             p = str(r.get("Parent Phone", "")).lstrip('+').strip()
-            if p and p == norm:
+            if not p:
+                continue
+            # Match if identical OR one is the local version of the other
+            if p == norm or p.lstrip('0') == norm.lstrip('0'):
                 sid = str(r.get("Student ID", "")).strip().upper()
                 if sid:
                     matched.append(sid)
+                    logger.info(f"[auth] matched {sid} for phone {norm}")
+        logger.info(f"[auth] from_phone={norm} matched={matched}")
         return matched
     except Exception as e:
         logger.error(f"[get_parent_students] {e}")
@@ -272,7 +278,7 @@ def process_message(msg, from_phone=""):
         s = next((r for r in rows if str(r.get("Student ID","")).upper() == sid), None)
         if not s:
             return (f"\u274c \u0644\u0645 \u064a\u062a\u0645 \u0627\u0644\u0639\u062b\u0648\u0631 \u0639\u0644\u0649 \u0627\u0644\u0637\u0627\u0644\u0628 {sid}\n📞 {SCHOOL['phone']}") if is_arabic else                    (f"\u274c Student {sid} not found\n📞 {SCHOOL['phone']}")
-        name = s.get('Student Name','')
+        name = s.get('Full Name', s.get('Student Name',''))
         grade = s.get('Grade','')
 
         # EXAM RESULTS — SECURED BY PARENT PHONE NUMBER
