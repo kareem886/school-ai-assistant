@@ -549,7 +549,641 @@ def webhook():
 
 @app.route('/admin')
 def admin_panel():
-    return send_from_directory('.', 'admin_panel.html')
+    html = """<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Modern Infinity Admin Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--g:#25D366;--g2:#128C7E;--n:#0F1C2E;--b:#e2e8f0;--r:#ef4444;--amber:#f59e0b;--blue:#3b82f6}
+body{font-family:'Inter',sans-serif;background:#f4f6f8;color:#1a202c;min-height:100vh}
+
+/* ── LOGIN ── */
+.lw{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px;background:linear-gradient(135deg,#0F1C2E 0%,#1a3a2a 100%)}
+.lc{background:#fff;border-radius:24px;padding:48px 40px;width:100%;max-width:440px;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.ll{text-align:center;margin-bottom:32px}
+.li{width:72px;height:72px;border-radius:18px;background:var(--g);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:32px}
+.ll h1{font-size:24px;font-weight:700;color:var(--n)}
+.ll p{font-size:14px;color:#64748b;margin-top:4px}
+.role-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:28px}
+.role-card{border:2px solid var(--b);border-radius:12px;padding:12px 8px;text-align:center;cursor:pointer;transition:all .2s}
+.role-card:hover{border-color:var(--g);background:#f0fdf4}
+.role-card.active{border-color:var(--g);background:#f0fdf4;box-shadow:0 0 0 3px rgba(37,211,102,.15)}
+.role-card .ri{font-size:22px;margin-bottom:6px}
+.role-card .rl{font-size:11px;font-weight:600;color:#374151}
+.role-card .rs{font-size:10px;color:#64748b;margin-top:2px}
+.fg{margin-bottom:18px}
+.fg label{display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:8px}
+.fg input{width:100%;padding:12px 16px;border:1.5px solid var(--b);border-radius:10px;font-size:15px;font-family:inherit;outline:none;transition:border-color .2s}
+.fg input:focus{border-color:var(--g)}
+.btn{width:100%;padding:14px;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;background:var(--g);color:#000;transition:all .2s}
+.btn:hover{background:var(--g2);color:#fff}
+.err{color:var(--r);font-size:13px;margin-top:12px;text-align:center;display:none;padding:10px;background:#fef2f2;border-radius:8px}
+
+/* ── ADMIN BADGE on login ── */
+.scope-hint{font-size:11px;color:#64748b;text-align:center;margin-bottom:16px;padding:8px 12px;background:#f8fafc;border-radius:8px;border:1px solid var(--b)}
+
+/* ── APP WRAPPER ── */
+.aw{display:none;min-height:100vh}
+
+/* ── SIDEBAR ── */
+.sb{width:270px;background:var(--n);position:fixed;top:0;left:0;height:100vh;padding:24px 18px;display:flex;flex-direction:column;z-index:100}
+.sl{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.si{width:40px;height:40px;border-radius:10px;background:var(--g);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.st{color:#fff;font-size:14px;font-weight:600;line-height:1.3}
+.st span{color:rgba(255,255,255,.5);font-size:11px;font-weight:400;display:block}
+
+/* Admin role badge in sidebar */
+.admin-badge{margin-bottom:24px;margin-top:4px;padding:8px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.1)}
+.admin-badge .ab-label{font-size:11px;color:rgba(255,255,255,.5);font-weight:500;margin-bottom:3px}
+.admin-badge .ab-name{font-size:13px;font-weight:700;color:#fff}
+.admin-badge .ab-scope{font-size:11px;margin-top:4px;padding:3px 8px;border-radius:20px;display:inline-block;font-weight:600}
+.scope-super{background:rgba(37,211,102,.2);color:#4ade80}
+.scope-junior{background:rgba(59,130,246,.2);color:#93c5fd}
+.scope-senior{background:rgba(245,158,11,.2);color:#fcd34d}
+
+.ni{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:10px;color:rgba(255,255,255,.6);font-size:14px;font-weight:500;cursor:pointer;margin-bottom:4px;transition:all .15s;user-select:none}
+.ni:hover,.ni.active{background:rgba(255,255,255,.10);color:#fff}
+.ni.active{background:var(--g);color:#000}
+.sb-bot{margin-top:auto}
+.lo{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:10px;color:rgba(255,255,255,.5);font-size:14px;cursor:pointer;transition:all .15s}
+.lo:hover{color:#fff;background:rgba(255,255,255,.08)}
+
+/* ── MAIN ── */
+.mn{margin-left:270px;padding:32px}
+.tb2{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;flex-wrap:wrap;gap:12px}
+.pg-t{font-size:24px;font-weight:700;color:var(--n)}
+.pg-s{font-size:14px;color:#64748b;margin-top:2px}
+.top-right{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.spl{display:flex;align-items:center;gap:6px;background:#dcfce7;color:#15803d;padding:6px 14px;border-radius:20px;font-size:13px;font-weight:500}
+.spd{width:7px;height:7px;border-radius:50%;background:#22c55e;animation:pu 2s infinite}
+@keyframes pu{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* scope tag in header */
+.scope-tag{padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600}
+
+/* ── STATS ── */
+.sr{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-bottom:28px}
+.sc{background:#fff;border-radius:16px;padding:24px;border:1px solid var(--b)}
+.sl2{font-size:13px;color:#64748b;font-weight:500;margin-bottom:8px}
+.sv{font-size:32px;font-weight:700;color:var(--n)}
+
+/* ── SECTIONS ── */
+.sec{background:#fff;border-radius:16px;padding:28px;border:1px solid var(--b);margin-bottom:24px}
+.sec-t{font-size:16px;font-weight:700;color:var(--n);margin-bottom:20px;display:flex;align-items:center;gap:8px}
+.fl{font-size:13px;font-weight:600;color:#374151;margin-bottom:8px;display:block}
+textarea{width:100%;padding:14px 16px;border:1.5px solid var(--b);border-radius:10px;font-size:14px;font-family:inherit;outline:none;resize:vertical;min-height:120px;transition:border-color .2s}
+textarea:focus{border-color:var(--g)}
+.photo-zone{border:2px dashed var(--b);border-radius:10px;padding:18px;text-align:center;cursor:pointer;transition:.2s;margin:10px 0;position:relative;}
+.photo-zone:hover{border-color:var(--g);background:#f0fdf4;}
+.photo-zone.has-img{border-color:var(--g);background:#f0fdf4;}
+.photo-preview{max-width:100%;max-height:200px;border-radius:8px;margin-top:10px;display:none;}
+.remove-photo{position:absolute;top:8px;right:8px;background:#ef4444;color:#fff;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:14px;line-height:1;display:none;}
+.cc{font-size:12px;color:#94a3b8;text-align:right;margin-top:4px}
+
+/* ── GRADE GRID ── */
+.gg{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:8px}
+.gc{padding:10px;border:2px solid var(--b);border-radius:10px;text-align:center;cursor:pointer;font-size:13px;font-weight:500;color:#64748b;transition:all .15s;user-select:none}
+.gc:hover:not(.locked){border-color:var(--g);color:var(--g)}
+.gc.sel{border-color:var(--g);background:#f0fdf4;color:#15803d;font-weight:600}
+.gc.all{grid-column:1/-1;background:var(--n);border-color:var(--n);color:#fff}
+.gc.all.sel{background:var(--g);border-color:var(--g);color:#000}
+.gc.locked{opacity:.35;cursor:not-allowed;background:#f8fafc}
+
+/* ── PREVIEW ── */
+.pb{background:#e5ddd5;border-radius:12px;padding:16px;margin-top:16px}
+.pb-l{font-size:11px;color:#64748b;margin-bottom:10px}
+.pb-b{background:#fff;border-radius:8px 8px 8px 2px;padding:10px 14px;display:inline-block;max-width:85%;font-size:14px;line-height:1.55;white-space:pre-wrap}
+.pb-t{font-size:11px;color:rgba(0,0,0,.4);text-align:right;margin-top:4px}
+.sr2{display:flex;align-items:center;gap:16px;margin-top:24px;flex-wrap:wrap}
+.snd{display:flex;align-items:center;gap:8px;padding:14px 28px;background:var(--g);color:#000;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s}
+.snd:hover{background:var(--g2);color:#fff}
+.snd:disabled{background:#94a3b8;color:#fff;cursor:not-allowed}
+.rc{font-size:14px;color:#64748b}
+.rc strong{color:var(--n)}
+
+/* ── HISTORY ── */
+.hi{display:flex;align-items:flex-start;gap:16px;padding:16px 0;border-bottom:1px solid var(--b)}
+.hi:last-child{border-bottom:none}
+.hic{flex:1;font-size:14px;line-height:1.5}
+.hm{font-size:12px;color:#94a3b8;margin-top:4px}
+.hb{font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;background:#dcfce7;color:#15803d}
+
+/* ── MODAL ── */
+.mo{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:1000;padding:20px}
+.mo.show{display:flex}
+.md{background:#fff;border-radius:20px;padding:40px;max-width:440px;width:100%;text-align:center}
+.mb2{padding:12px 32px;background:var(--g);border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;color:#000}
+
+/* ── TABLE ── */
+.ptable{width:100%;border-collapse:collapse;font-size:14px}
+.ptable th{text-align:left;padding:10px 8px;border-bottom:2px solid var(--b);font-size:12px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.5px}
+.ptable td{padding:11px 8px;border-bottom:1px solid #f1f5f9}
+.ptable tr:last-child td{border-bottom:none}
+.grade-pill{display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600}
+.g-junior{background:#dbeafe;color:#1d4ed8}
+.g-senior{background:#fef3c7;color:#92400e}
+.g-kg{background:#f3e8ff;color:#7e22ce}
+
+@media(max-width:768px){.sb{display:none}.mn{margin-left:0;padding:16px}.sr{grid-template-columns:1fr}.gg{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════ LOGIN ══ -->
+<div class="lw" id="lw">
+  <div class="lc">
+    <div class="ll">
+      <div class="li">📢</div>
+      <h1>Modern Infinity</h1>
+      <p>School Admin Panel — Sign In</p>
+    </div>
+
+    <!-- Role selector cards -->
+    <div class="role-cards" id="roleCards">
+      <div class="role-card active" data-u="admin" data-p="" onclick="pickRole(this)">
+        <div class="ri">🌐</div>
+        <div class="rl">Super Admin</div>
+        <div class="rs">All Grades</div>
+      </div>
+      <div class="role-card" data-u="admin_junior" data-p="" onclick="pickRole(this)">
+        <div class="ri">🎒</div>
+        <div class="rl">Junior Admin</div>
+        <div class="rs">KG – Grade 6</div>
+      </div>
+      <div class="role-card" data-u="admin_senior" data-p="" onclick="pickRole(this)">
+        <div class="ri">🎓</div>
+        <div class="rl">Senior Admin</div>
+        <div class="rs">Grade 7 – 12</div>
+      </div>
+    </div>
+
+    <div class="scope-hint" id="scopeHint">You are signing in as <strong>Super Admin</strong> — access to all grades</div>
+
+    <div class="fg"><label>Username</label><input type="text" id="lu" autocomplete="off" placeholder="Enter username"/></div>
+    <div class="fg"><label>Password</label><input type="password" id="lp" placeholder="Enter password" onkeydown="if(event.key==='Enter')doLogin()"/></div>
+    <button class="btn" onclick="doLogin()">Sign In →</button>
+    <div class="err" id="le">❌ Incorrect username or password</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════ APP ══ -->
+<div class="aw" id="aw">
+
+  <!-- SIDEBAR -->
+  <div class="sb">
+    <div class="sl">
+      <div class="si">📢</div>
+      <div class="st">Modern Infinity<span>Admin Panel</span></div>
+    </div>
+    <div class="admin-badge">
+      <div class="ab-label">Logged in as</div>
+      <div class="ab-name" id="sbAdminName">—</div>
+      <div class="ab-scope" id="sbAdminScope">—</div>
+    </div>
+    <div class="ni active" onclick="showTab('b')">📣 Send Announcement</div>
+    <div class="ni" onclick="showTab('h')">📋 History</div>
+    <div class="ni" onclick="showTab('p')">👥 Parents</div>
+    <div class="sb-bot">
+      <div class="lo" onclick="doLogout()">🚪 Sign out</div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="mn">
+    <div class="tb2">
+      <div>
+        <div class="pg-t" id="pt">Send Announcement</div>
+        <div class="pg-s" id="ps">Broadcast a message to parents via WhatsApp</div>
+      </div>
+      <div class="top-right">
+        <div class="scope-tag" id="headerScopeTag">—</div>
+        <div class="spl"><div class="spd"></div>Bot Online</div>
+      </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="sr" id="sr">
+      <div class="sc"><div class="sl2">Parents in My Scope</div><div class="sv" id="sp2">-</div></div>
+      <div class="sc"><div class="sl2">Sent Today</div><div class="sv" id="st2">0</div></div>
+      <div class="sc"><div class="sl2">Last Sent</div><div class="sv" id="sl3" style="font-size:18px;margin-top:6px">Never</div></div>
+    </div>
+
+    <!-- TAB: BROADCAST -->
+    <div id="tab-b">
+      <div class="sec">
+        <div class="sec-t">✍️ Write Announcement</div>
+        <label class="fl">Message</label>
+        <textarea id="mt" placeholder="Type your announcement here..." oninput="updatePreview()"></textarea>
+        <label class="fl" style="margin-top:14px">📷 Photo (optional)</label>
+        <div class="photo-zone" id="photoZone" onclick="document.getElementById('photoInput').click()">
+          <button class="remove-photo" id="removePhoto" onclick="event.stopPropagation();removePhotoFn()">✕</button>
+          <div id="photoPlaceholder">📷 Click to attach a photo<br><span style="font-size:11px;color:#94a3b8">JPG, PNG — max 5MB • Photo will be sent with your message as caption</span></div>
+          <img class="photo-preview" id="photoPreview" src="" alt="preview">
+          <input type="file" id="photoInput" accept="image/*" style="display:none" onchange="handlePhotoSelect(event)">
+        </div>
+        <div id="uploadStatus" style="font-size:12px;color:#64748b;margin-top:4px;display:none"></div>
+        <div class="cc"><span id="cc">0</span>/1000</div>
+
+        <div style="margin-top:20px">
+          <label class="fl">Send to <span id="gradeLabel" style="color:#64748b;font-weight:400;font-size:12px">— select grades below</span></label>
+          <div class="gg" id="gradeGrid"><!-- filled by JS --></div>
+        </div>
+
+        <div style="margin-top:20px">
+          <label class="fl">Preview</label>
+          <div class="pb">
+            <div class="pb-l">📱 WhatsApp Preview</div>
+            <div id="photoPreviewBadge" style="display:none;background:#dcfce7;color:#15803d;padding:6px 10px;border-radius:6px;font-size:12px;margin-bottom:8px;">📷 Photo will be included</div>
+          <div class="pb-b" id="pv">Your message will appear here...</div>
+            <div class="pb-t" id="pvt">Now</div>
+          </div>
+        </div>
+
+        <div class="sr2">
+          <button class="snd" id="sb2" onclick="doSend()" disabled>📤 Send to Parents</button>
+          <div class="rc">To <strong id="rn">-</strong> parents</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: HISTORY -->
+    <div id="tab-h" style="display:none">
+      <div class="sec">
+        <div class="sec-t">📋 Sent Announcements</div>
+        <div id="hl"><div style="color:#94a3b8;text-align:center;padding:20px 0">No announcements yet</div></div>
+      </div>
+    </div>
+
+    <!-- TAB: PARENTS -->
+    <div id="tab-p" style="display:none">
+      <div class="sec">
+        <div class="sec-t">👥 Parents in My Scope</div>
+        <p style="font-size:14px;color:#64748b;margin-bottom:16px">Showing parents from <strong>Google Sheet → Parents tab</strong> filtered to your access level.</p>
+        <div id="pl2"><div style="color:#94a3b8;text-align:center;padding:20px 0">Loading...</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="mo" id="mo">
+  <div class="md">
+    <div style="font-size:52px;margin-bottom:16px">🎉</div>
+    <div style="font-size:22px;font-weight:700;margin-bottom:8px">Sent!</div>
+    <div style="font-size:15px;color:#64748b;margin-bottom:28px" id="ms">Delivered.</div>
+    <button class="mb2" onclick="closeModal()">Done</button>
+  </div>
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────
+var CURRENT_USER = null;   // {username, label, grades}
+var ALL_PARENTS  = [];
+var SEL_GRADES   = ['All'];
+
+// Grade definitions per scope
+var JUNIOR_GRADES = ['KG1','KG2','Grade 1','Grade 2','Grade 3','Grade 4','Grade 5','Grade 6'];
+var SENIOR_GRADES = ['Grade 7','Grade 8','Grade 9','Grade 10','Grade 11','Grade 12'];
+var ALL_GRADES    = ['KG1','KG2','Grade 1','Grade 2','Grade 3','Grade 4','Grade 5','Grade 6',
+                     'Grade 7','Grade 8','Grade 9','Grade 10','Grade 11','Grade 12'];
+
+// Role card pre-fill hints
+var ROLE_HINTS = {
+  'admin':        'You are signing in as <strong>Super Admin</strong> — access to all grades',
+  'admin_junior': 'You are signing in as <strong>Junior Admin</strong> — KG to Grade 6 only',
+  'admin_senior': 'You are signing in as <strong>Senior Admin</strong> — Grade 7 to Grade 12 only'
+};
+var ROLE_USERNAMES = {
+  'admin':'admin','admin_junior':'admin_junior','admin_senior':'admin_senior'
+};
+
+// ── Role card picker ───────────────────────────────────────────
+function pickRole(card){
+  document.querySelectorAll('.role-card').forEach(function(c){c.classList.remove('active');});
+  card.classList.add('active');
+  var u = card.dataset.u;
+  document.getElementById('lu').value = u;
+  document.getElementById('lp').value = '';
+  document.getElementById('scopeHint').innerHTML = ROLE_HINTS[u] || '';
+  document.getElementById('le').style.display='none';
+}
+
+// ── Login ──────────────────────────────────────────────────────
+function doLogin(){
+  var u = document.getElementById('lu').value.trim();
+  var p = document.getElementById('lp').value.trim();
+  if(!u||!p){
+    document.getElementById('le').style.display='block';
+    document.getElementById('le').textContent='⚠️ Please enter username and password';
+    return;
+  }
+  fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({username:u,password:p})
+  }).then(function(r){
+    if(!r.ok) throw new Error('bad');
+    return r.json();
+  }).then(function(d){
+    if(d.ok){
+      CURRENT_USER = d;
+      document.getElementById('le').style.display='none';
+      document.getElementById('lw').style.display='none';
+      document.getElementById('aw').style.display='flex';
+      setupAdminUI();
+      loadStats();
+      loadParents();
+    } else {
+      document.getElementById('le').style.display='block';
+      document.getElementById('le').textContent='❌ Incorrect username or password';
+    }
+  }).catch(function(){
+    document.getElementById('le').style.display='block';
+    document.getElementById('le').textContent='❌ Incorrect username or password';
+  });
+}
+
+// ── Setup UI after login ───────────────────────────────────────
+function setupAdminUI(){
+  var u = CURRENT_USER;
+  var isSuper  = u.grades.length === 0;
+  var isJunior = !isSuper && u.grades.includes('KG1');
+  var isSenior = !isSuper && u.grades.includes('Grade 7');
+
+  // Sidebar badge
+  document.getElementById('sbAdminName').textContent = u.username;
+  var scopeEl = document.getElementById('sbAdminScope');
+  if(isSuper){  scopeEl.textContent='All Grades'; scopeEl.className='ab-scope scope-super'; }
+  else if(isJunior){ scopeEl.textContent='KG – Grade 6'; scopeEl.className='ab-scope scope-junior'; }
+  else{          scopeEl.textContent='Grade 7 – 12'; scopeEl.className='ab-scope scope-senior'; }
+
+  // Header scope tag
+  var ht = document.getElementById('headerScopeTag');
+  if(isSuper){  ht.textContent='🌐 '+u.label; ht.className='scope-tag scope-super'; }
+  else if(isJunior){ ht.textContent='🎒 '+u.label; ht.className='scope-tag scope-junior'; }
+  else{          ht.textContent='🎓 '+u.label; ht.className='scope-tag scope-senior'; }
+
+  // Build grade grid
+  buildGradeGrid(isSuper, isJunior, isSenior);
+}
+
+// ── Grade grid builder ─────────────────────────────────────────
+function buildGradeGrid(isSuper, isJunior, isSenior){
+  var gg = document.getElementById('gradeGrid');
+  var myGrades = isSuper ? ALL_GRADES : (isJunior ? JUNIOR_GRADES : SENIOR_GRADES);
+  var locked   = isSuper ? [] : (isJunior ? SENIOR_GRADES : JUNIOR_GRADES);
+
+  var html = '';
+
+  // "All" button (scoped to this admin's grades)
+  var allLabel = isSuper ? 'All Parents' : (isJunior ? 'All KG – Grade 6' : 'All Grade 7–12');
+  html += '<div class="gc all sel" data-g="All" onclick="selGrade(this)">'+allLabel+'</div>';
+
+  // Junior section
+  if(isSuper || isJunior){
+    if(isSuper) html += '<div style="grid-column:1/-1;font-size:11px;font-weight:600;color:#64748b;padding:8px 4px 2px;letter-spacing:.5px">🎒 JUNIOR — KG to Grade 6</div>';
+    JUNIOR_GRADES.forEach(function(g){
+      html += '<div class="gc" data-g="'+g+'" onclick="selGrade(this)">'+g+'</div>';
+    });
+  }
+
+  // Senior section
+  if(isSuper || isSenior){
+    if(isSuper) html += '<div style="grid-column:1/-1;font-size:11px;font-weight:600;color:#64748b;padding:8px 4px 2px;letter-spacing:.5px">🎓 SENIOR — Grade 7 to 12</div>';
+    SENIOR_GRADES.forEach(function(g){
+      html += '<div class="gc" data-g="'+g+'" onclick="selGrade(this)">'+g+'</div>';
+    });
+  }
+
+  gg.innerHTML = html;
+  SEL_GRADES = ['All'];
+}
+
+// ── Grade selection ────────────────────────────────────────────
+function selGrade(el){
+  if(el.classList.contains('locked')) return;
+  var g = el.dataset.g;
+  if(g==='All'){
+    SEL_GRADES = ['All'];
+    document.querySelectorAll('.gc').forEach(function(c){c.classList.remove('sel');});
+    el.classList.add('sel');
+  } else {
+    document.querySelector('.all').classList.remove('sel');
+    el.classList.toggle('sel');
+    SEL_GRADES = [].slice.call(document.querySelectorAll('.gc:not(.all).sel')).map(function(c){return c.dataset.g;});
+    if(!SEL_GRADES.length){ SEL_GRADES=['All']; document.querySelector('.all').classList.add('sel'); }
+  }
+  updateCount();
+}
+
+// ── Stats & parents ────────────────────────────────────────────
+function scopeParam(){
+  var g = CURRENT_USER.grades;
+  return g.length ? '?grades='+encodeURIComponent(g.join(',')) : '';
+}
+
+function loadStats(){
+  fetch('/api/parents'+scopeParam()).then(function(r){return r.json();}).then(function(d){
+    ALL_PARENTS = d.parents || [];
+    document.getElementById('sp2').textContent = ALL_PARENTS.length;
+    updateCount();
+    var h = JSON.parse(localStorage.getItem('bh_'+CURRENT_USER.username)||'[]');
+    document.getElementById('st2').textContent = h.filter(function(x){return new Date(x.t).toDateString()===new Date().toDateString();}).length;
+    if(h.length) document.getElementById('sl3').textContent = new Date(h[0].t).toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+    renderHistory(h);
+  }).catch(function(){ document.getElementById('sp2').textContent='0'; });
+}
+
+function loadParents(){
+  fetch('/api/parents'+scopeParam()).then(function(r){return r.json();}).then(function(d){
+    var pl = d.parents || [];
+    var el = document.getElementById('pl2');
+    if(!pl.length){
+      el.innerHTML='<div style="color:#94a3b8;text-align:center;padding:20px 0">No parents in your scope yet.</div>';
+      return;
+    }
+    el.innerHTML='<table class="ptable"><thead><tr><th>Name</th><th>Phone</th><th>Grade</th></tr></thead><tbody>'+
+      pl.map(function(p){
+        var grade = p.grade||'';
+        var pillCls = grade.toLowerCase().includes('kg')||parseInt(grade.replace(/\\D/g,''))<7 ? 'g-junior' : 'g-senior';
+        if(grade.toLowerCase().includes('kg')) pillCls='g-kg';
+        return '<tr><td>'+(p.name||'—')+'</td><td>'+p.phone+'</td><td><span class="grade-pill '+pillCls+'">'+grade+'</span></td></tr>';
+      }).join('')+'</tbody></table>';
+  }).catch(function(){ document.getElementById('pl2').innerHTML='<div style="color:#94a3b8;text-align:center">Could not load parents.</div>'; });
+}
+
+function updateCount(){
+  var c = SEL_GRADES.includes('All') ? ALL_PARENTS.length :
+    ALL_PARENTS.filter(function(p){
+      return SEL_GRADES.some(function(g){ return (p.grade||'').toLowerCase().includes(g.toLowerCase()); });
+    }).length;
+  document.getElementById('rn').textContent = c;
+}
+
+// ── Preview ────────────────────────────────────────────────────
+function updatePreview(){
+  var t = document.getElementById('mt').value;
+  document.getElementById('cc').textContent = t.length;
+  document.getElementById('pvt').textContent = new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true});
+  if(t.trim()){
+    document.getElementById('pv').textContent = '📢 Modern Infinity School\\n\\n'+t+'\\n\\n📞 02-3796-9155';
+    document.getElementById('sb2').disabled = false;
+  } else {
+    document.getElementById('pv').textContent = 'Your message will appear here...';
+    document.getElementById('sb2').disabled = true;
+  }
+  updateCount();
+}
+
+// ── Send ───────────────────────────────────────────────────────
+// Photo state
+var uploadedImageUrl = '';
+
+function handlePhotoSelect(e){
+  var file = e.target.files[0];
+  if(!file) return;
+  if(file.size > 5*1024*1024){ alert('Photo must be under 5MB'); return; }
+  var reader = new FileReader();
+  reader.onload = function(ev){
+    document.getElementById('photoPreview').src = ev.target.result;
+    document.getElementById('photoPreview').style.display='block';
+    document.getElementById('photoPlaceholder').style.display='none';
+    document.getElementById('photoZone').classList.add('has-img');
+    document.getElementById('removePhoto').style.display='block';
+    document.getElementById('photoPreviewBadge').style.display='block';
+    updatePreview();
+  };
+  reader.readAsDataURL(file);
+}
+
+function removePhotoFn(){
+  uploadedImageUrl='';
+  document.getElementById('photoInput').value='';
+  document.getElementById('photoPreview').src='';
+  document.getElementById('photoPreview').style.display='none';
+  document.getElementById('photoPlaceholder').style.display='block';
+  document.getElementById('photoZone').classList.remove('has-img');
+  document.getElementById('removePhoto').style.display='none';
+  document.getElementById('photoPreviewBadge').style.display='none';
+  document.getElementById('uploadStatus').style.display='none';
+  updatePreview();
+}
+
+async function uploadPhoto(){
+  var file = document.getElementById('photoInput').files[0];
+  if(!file) return null;
+  var st = document.getElementById('uploadStatus');
+  st.style.display='block'; st.textContent='⏳ Uploading photo...';
+  var fd = new FormData();
+  fd.append('image', file);
+  try{
+    var res = await fetch('/api/upload-image',{method:'POST',body:fd});
+    var data = await res.json();
+    if(data.ok){
+      st.textContent='✅ Photo ready to send';
+      return data.url;
+    } else {
+      st.textContent='❌ Upload failed: '+data.error;
+      return null;
+    }
+  } catch(e){
+    st.textContent='❌ Upload error';
+    return null;
+  }
+}
+
+async function doSend(){
+  var msg = document.getElementById('mt').value.trim();
+  if(!msg) return;
+  var btn = document.getElementById('sb2');
+  btn.disabled=true; btn.textContent='⏳ Sending...';
+  // Upload photo first if selected
+  var photoFile = document.getElementById('photoInput').files[0];
+  var imgUrl = '';
+  if(photoFile){
+    btn.textContent='⏳ Uploading photo...';
+    imgUrl = await uploadPhoto() || '';
+    if(!imgUrl){ btn.disabled=false; btn.textContent='📤 Send to Parents'; return; }
+  }
+  btn.textContent='⏳ Sending...';
+  fetch('/broadcast',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      message: msg,
+      image_url: imgUrl,
+      grades:  SEL_GRADES,
+      admin_scope: CURRENT_USER.grades   // server enforces this
+    })
+  }).then(function(r){return r.json();}).then(function(d){
+    var h = JSON.parse(localStorage.getItem('bh_'+CURRENT_USER.username)||'[]');
+    h.unshift({msg:msg,g:SEL_GRADES,s:d.sent||0,t:new Date().toISOString()});
+    localStorage.setItem('bh_'+CURRENT_USER.username, JSON.stringify(h.slice(0,50)));
+    renderHistory(h);
+    document.getElementById('ms').textContent='Sent to '+(d.sent||0)+' parents successfully.';
+    document.getElementById('mo').classList.add('show');
+    document.getElementById('mt').value='';
+    updatePreview();
+    loadStats();
+  }).catch(function(){ alert('Error sending. Please try again.'); });
+  btn.disabled=false; btn.textContent='📤 Send to Parents';
+}
+
+function closeModal(){ document.getElementById('mo').classList.remove('show'); }
+
+// ── History ────────────────────────────────────────────────────
+function renderHistory(h){
+  var l = document.getElementById('hl');
+  if(!h||!h.length){
+    l.innerHTML='<div style="color:#94a3b8;text-align:center;padding:20px 0">No announcements yet</div>';
+    return;
+  }
+  l.innerHTML = h.map(function(x){
+    return '<div class="hi">'+
+      '<div style="width:40px;height:40px;border-radius:10px;background:#f0fdf4;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">📣</div>'+
+      '<div class="hic"><div>'+x.msg+'</div>'+
+      '<div class="hm">'+
+        new Date(x.t).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})+
+        ' · '+(x.g||['All']).join(', ')+
+        ' · <span class="hb">✅ '+(x.s||0)+' sent</span>'+
+      '</div></div></div>';
+  }).join('');
+}
+
+// ── Tabs ───────────────────────────────────────────────────────
+function showTab(t){
+  document.getElementById('tab-b').style.display = t==='b'?'block':'none';
+  document.getElementById('tab-h').style.display = t==='h'?'block':'none';
+  document.getElementById('tab-p').style.display = t==='p'?'block':'none';
+  document.getElementById('sr').style.display    = t==='b'?'grid':'none';
+  var tt={b:['📣 Send Announcement','Broadcast a message to parents via WhatsApp'],
+          h:['📋 History','All announcements sent from this account'],
+          p:['👥 Parents','Parents registered within your grade scope']};
+  document.getElementById('pt').textContent = tt[t][0];
+  document.getElementById('ps').textContent = tt[t][1];
+  document.querySelectorAll('.ni').forEach(function(e,i){ e.classList.toggle('active',['b','h','p'][i]===t); });
+  if(t==='p') loadParents();
+}
+
+// ── Logout ─────────────────────────────────────────────────────
+function doLogout(){
+  CURRENT_USER=null; ALL_PARENTS=[]; SEL_GRADES=['All'];
+  document.getElementById('aw').style.display='none';
+  document.getElementById('lw').style.display='flex';
+  document.getElementById('lu').value='';
+  document.getElementById('lp').value='';
+  document.getElementById('le').style.display='none';
+  document.querySelectorAll('.role-card').forEach(function(c,i){c.classList.toggle('active',i===0);});
+  document.getElementById('scopeHint').innerHTML = ROLE_HINTS['admin'];
+  document.getElementById('mt').value='';
+}
+</script>
+</body>
+</html>
+"""
+    return html, 200, {"Content-Type": "text/html; charset=utf-8"}
 
 
 @app.route('/api/login', methods=['POST'])
