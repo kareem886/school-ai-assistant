@@ -670,6 +670,42 @@ def health():
 
 
 
+
+@app.route('/homework-panel')
+def homework_panel():
+    return open("/app/homework_panel.html").read(), 200, {"Content-Type": "text/html"}
+
+
+@app.route('/api/add-homework', methods=['POST'])
+def api_add_homework():
+    """Append a homework row to the Homework sheet tab."""
+    data = request.get_json(force=True, silent=True) or {}
+    teacher    = str(data.get("teacher",    "")).strip()
+    grade      = str(data.get("grade",      "")).strip()
+    subject    = str(data.get("subject",    "")).strip()
+    assignment = str(data.get("assignment", "")).strip()
+    due_date   = str(data.get("due_date",   "")).strip()
+    hw_type    = str(data.get("type",       "Worksheet")).strip()
+    notes      = str(data.get("notes",      "")).strip()
+
+    missing = [f for f, v in [("Teacher",teacher),("Grade",grade),
+               ("Subject",subject),("Assignment",assignment),("Due Date",due_date)] if not v]
+    if missing:
+        return jsonify({"ok": False, "error": "Missing: " + ", ".join(missing)}), 400
+
+    try:
+        gc = get_client()
+        sh = gc.open_by_key(SHEET_ID)
+        ws = sh.worksheet("Homework")
+        ws.append_row([grade, subject, assignment, due_date, teacher, hw_type, notes, "Active"],
+                      value_input_option="USER_ENTERED")
+        logger.info(f"[homework] Added: {grade} {subject} by {teacher}")
+        return jsonify({"ok": True, "message": f"Added: {grade} — {subject}: {assignment[:50]}"})
+    except Exception as e:
+        logger.error(f"[homework] {e}")
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     logger.info(f"Starting on port {port}")
