@@ -1083,7 +1083,7 @@ async function uploadPhoto(){
     var data = await res.json();
     if(data.ok){
       st.textContent='✅ Photo ready to send';
-      return data.url;
+      return data.media_id;
     } else {
       st.textContent='❌ Upload failed: '+data.error;
       return null;
