@@ -139,8 +139,8 @@ def send_whatsapp(to_phone, message):
         return False
 
 
-def send_whatsapp_image(to_phone, image_url, caption=""):
-    """Send an image via WhatsApp using a public URL."""
+def send_whatsapp_image(to_phone, media_id, caption=""):
+    """Send an image via WhatsApp using a WhatsApp media_id."""
     if not ACCESS_TOKEN:
         return False
     hdrs = {"Authorization": f"Bearer {ACCESS_TOKEN}", "Content-Type": "application/json"}
@@ -150,7 +150,7 @@ def send_whatsapp_image(to_phone, image_url, caption=""):
         "to": to_phone,
         "type": "image",
         "image": {
-            "link": image_url,
+            "id": media_id,
             "caption": caption[:1024] if caption else ""
         },
     }
@@ -1280,7 +1280,8 @@ def broadcast():
         ]
 
     broadcast_msg = f"📢 Modern Infinity School\n\n{message}\n\n📞 For more info: {SCHOOL['phone']}"
-    image_url = data.get("image_url", "").strip()
+    image_url = data.get("image_url", "").strip()   # kept for backward compat
+    media_id  = data.get("media_id", "").strip()
 
     sent = 0
     failed = 0
@@ -1291,8 +1292,11 @@ def broadcast():
         if not phone.startswith("20") and not phone.startswith("+"):
             phone = "20" + phone.lstrip("0")
         phone = phone.lstrip("+")
-        if image_url:
-            # Send image with caption (caption = full broadcast message)
+        if media_id:
+            # Send image with caption using WhatsApp media_id
+            ok = send_whatsapp_image(phone, media_id, caption=broadcast_msg)
+        elif image_url:
+            # Fallback: link-based image (less reliable)
             ok = send_whatsapp_image(phone, image_url, caption=broadcast_msg)
         else:
             ok = send_whatsapp(phone, broadcast_msg)
@@ -1692,28 +1696,32 @@ def api_add_homework():
 
 @app.route('/api/upload-image', methods=['POST'])
 def upload_image():
-    """Upload image file and return a public URL via ImgBB."""
+    """Upload image to WhatsApp Media API and return media_id."""
     if 'image' not in request.files:
         return jsonify({"ok": False, "error": "No image file provided"}), 400
     file = request.files['image']
     if not file.filename:
         return jsonify({"ok": False, "error": "Empty filename"}), 400
+    if not ACCESS_TOKEN:
+        return jsonify({"ok": False, "error": "WhatsApp not configured"}), 500
     try:
-        # Use Telegraph image upload — no API key needed, returns permanent public URL
         file_bytes = file.read()
+        mime = file.content_type or "image/jpeg"
+        # Upload to WhatsApp Media API
+        upload_url = f"https://graph.facebook.com/v18.0/{PHONE_NUMBER_ID}/media"
         res = requests.post(
-            "https://telegra.ph/upload",
-            files={"file": (file.filename, file_bytes, file.content_type or "image/jpeg")},
-            timeout=20
+            upload_url,
+            headers={"Authorization": f"Bearer {ACCESS_TOKEN}"},
+            files={"file": (file.filename, file_bytes, mime)},
+            data={"messaging_product": "whatsapp"},
+            timeout=30
         )
         if res.status_code == 200:
-            result = res.json()
-            if isinstance(result, list) and result:
-                url = "https://telegra.ph" + result[0]["src"]
-                logger.info(f"[upload] Image uploaded: {url}")
-                return jsonify({"ok": True, "url": url})
-        logger.error(f"[upload] Telegraph failed: {res.status_code} {res.text[:200]}")
-        return jsonify({"ok": False, "error": f"Upload failed: {res.status_code}"})
+            media_id = res.json().get("id")
+            logger.info(f"[upload] WhatsApp media_id: {media_id}")
+            return jsonify({"ok": True, "media_id": media_id})
+        logger.error(f"[upload] WA upload failed: {res.status_code} {res.text[:300]}")
+        return jsonify({"ok": False, "error": f"Upload failed ({res.status_code}): {res.text[:200]}"}), 500
     except Exception as e:
         logger.error(f"[upload] {e}")
         return jsonify({"ok": False, "error": str(e)}), 500
