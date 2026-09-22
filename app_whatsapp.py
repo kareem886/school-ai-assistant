@@ -261,14 +261,16 @@ def process_message(msg, from_phone=""):
             if not student_results:
                 return (f"📝 \u0644\u0627 \u062a\u0648\u062c\u062f \u0646\u062a\u0627\u0626\u062c \u0644\u0640 {name} \u062d\u0627\u0644\u064a\u0627\u064b\n📞 {SCHOOL['phone']}") if is_arabic else                        (f"📝 No results found for {name} yet\n📞 {SCHOOL['phone']}")
             if is_arabic:
-                r = f"📝 \u0646\u062a\u0627\u0626\u062c \u0627\u0645\u062a\u062d\u0627\u0646\u0627\u062a {name} ({grade})\n\n"
+                r = f"📝 نتائج امتحانات {name} ({grade})\n\n"
                 for res in student_results:
-                    r += f"\u2022 {res.get('Subject','')}: {res.get('Score','')} \u2014 {res.get('Grade','')}\n"
-                    if res.get('Rank',''): r += f"  🏆 \u0627\u0644\u062a\u0631\u062a\u064a\u0628: {res.get('Rank','')}\n"
+                    gl = res.get('Grade Letter', res.get('Grade',''))
+                    r += f"\u2022 {res.get('Subject','')}: {res.get('Score','')}/100 ({res.get('Percentage','')}) — {gl}\n"
+                    if res.get('Rank',''): r += f"  🏆 الترتيب: {res.get('Rank','')}\n"
             else:
-                r = f"📝 Exam Results \u2014 {name} ({grade})\n\n"
+                r = f"📝 Exam Results — {name} ({grade})\n\n"
                 for res in student_results:
-                    r += f"\u2022 {res.get('Subject','')}: {res.get('Score','')} \u2014 {res.get('Grade','')}\n"
+                    gl = res.get('Grade Letter', res.get('Grade',''))
+                    r += f"\u2022 {res.get('Subject','')}: {res.get('Score','')}/100 ({res.get('Percentage','')}) — {gl}\n"
                     if res.get('Rank',''): r += f"  🏆 Rank: {res.get('Rank','')}\n"
             return r.strip()
 
