@@ -1011,9 +1011,14 @@ def api_add_homework():
         gc = get_client()
         sh = gc.open_by_key(SHEET_ID)
         ws = sh.worksheet("Homework")
-        ws.append_row([grade, subject, assignment, due_date, teacher, hw_type, notes, "Active"],
-                      value_input_option="USER_ENTERED")
-        logger.info(f"[homework] Added: {grade} {subject} by {teacher}")
+        # Find the actual last data row (avoid appending after 1000 blank rows)
+        col_a = ws.col_values(1)  # Grade column — find last non-empty
+        last_row = len([v for v in col_a if str(v).strip()])
+        next_row = last_row + 1
+        ws.update(f"A{next_row}:H{next_row}",
+                  [[grade, subject, assignment, due_date, teacher, hw_type, notes, "Active"]],
+                  value_input_option="USER_ENTERED")
+        logger.info(f"[homework] Added row {next_row}: {grade} {subject} by {teacher}")
         return jsonify({"ok": True, "message": f"Added: {grade} — {subject}: {assignment[:50]}"})
     except Exception as e:
         logger.error(f"[homework] {e}")
