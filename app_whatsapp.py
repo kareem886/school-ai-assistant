@@ -1761,69 +1761,76 @@ textarea { resize: vertical; min-height: 70px; }
 
 <script>
 // ── Credentials (checked client-side + server validates on API calls) ─────
-const TEACHERS = {
-  "teacher":        "teacher2026",
-  "ms.sara":        "sara2026",
-  "mr.hassan":      "hassan2026",
-  "ms.fatima":      "fatima2026",
-  "mr.tarek":       "tarek2026",
-  "ms.hana":        "hana2026",
-  "mr.khaled":      "khaled2026",
-  "mr.omar":        "omar2026",
-  "ms.nadia":       "nadia2026",
-  "ms.claire":      "claire2026",
-  "mr.ahmed":       "ahmed2026"
-};
-
+// ── Auth state ────────────────────────────────────────────────────────────
 var CURRENT_TEACHER = "";
+var CURRENT_FULL_NAME = "";
 
 // ── Login ──────────────────────────────────────────────────────────────────
-function doTeacherLogin() {
+async function doTeacherLogin() {
   const user = document.getElementById('login-user').value.trim().toLowerCase();
   const pass = document.getElementById('login-pass').value;
   const err  = document.getElementById('login-error');
-
-  if (TEACHERS[user] && TEACHERS[user] === pass) {
-    CURRENT_TEACHER = user;
-    sessionStorage.setItem('teacher_user', user);
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('main-panel').style.display = 'block';
-    document.getElementById('teacher-badge').textContent = '👤 ' + user;
-    // Pre-fill teacher name field
-    const displayName = user.replace('.', ' ').replace(/\\b\\w/g, c => c.toUpperCase());
-    document.getElementById('teacher').value = displayName;
-    document.getElementById('ex-teacher').value = displayName;
-    localStorage.setItem('hw_teacher', displayName);
-    err.style.display = 'none';
-  } else {
-    err.style.display = 'block';
-    document.getElementById('login-pass').value = '';
-    document.getElementById('login-pass').focus();
+  const btn  = document.querySelector('.login-btn');
+  if (!user || !pass) {
+    err.textContent = '\u26a0\ufe0f Please enter username and password';
+    err.style.display = 'block'; return;
   }
+  btn.textContent = 'Signing in\u2026'; btn.disabled = true;
+  err.style.display = 'none';
+  try {
+    const res = await fetch('/api/teacher-login', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({username: user, password: pass})
+    });
+    const data = await res.json();
+    if (data.ok) {
+      CURRENT_TEACHER   = user;
+      CURRENT_FULL_NAME = data.full_name;
+      sessionStorage.setItem('teacher_user', user);
+      sessionStorage.setItem('teacher_name', data.full_name);
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('main-panel').style.display = 'block';
+      document.getElementById('teacher-badge').textContent = '\ud83d\udc64 ' + data.full_name;
+      document.getElementById('teacher').value = data.full_name;
+      document.getElementById('ex-teacher').value = data.full_name;
+      localStorage.setItem('hw_teacher', data.full_name);
+    } else {
+      err.textContent = '\u274c ' + data.error;
+      err.style.display = 'block';
+      document.getElementById('login-pass').value = '';
+      document.getElementById('login-pass').focus();
+    }
+  } catch(e) {
+    err.textContent = '\u274c Connection error. Please try again.';
+    err.style.display = 'block';
+  }
+  btn.textContent = 'Sign In \u2192'; btn.disabled = false;
 }
 
 function doLogout() {
   sessionStorage.removeItem('teacher_user');
-  CURRENT_TEACHER = "";
+  sessionStorage.removeItem('teacher_name');
+  CURRENT_TEACHER = ""; CURRENT_FULL_NAME = "";
   document.getElementById('main-panel').style.display = 'none';
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('login-user').value = '';
   document.getElementById('login-pass').value = '';
 }
 
-// Auto-login if session still active
 window.onload = function() {
-  const s = sessionStorage.getItem('teacher_user');
-  if (s && TEACHERS[s]) {
-    document.getElementById('login-user').value = s;
-    document.getElementById('login-pass').value = TEACHERS[s];
-    doTeacherLogin();
-  }
-  // Set default dates
   const tmr = new Date(); tmr.setDate(tmr.getDate()+1);
   document.getElementById('due_date').value = tmr.toISOString().split('T')[0];
   document.getElementById('ex-date').value = new Date().toISOString().split('T')[0];
-  // Restore saved teacher name
+  const s = sessionStorage.getItem('teacher_user');
+  const n = sessionStorage.getItem('teacher_name');
+  if (s && n) {
+    CURRENT_TEACHER = s; CURRENT_FULL_NAME = n;
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('main-panel').style.display = 'block';
+    document.getElementById('teacher-badge').textContent = '\ud83d\udc64 ' + n;
+    document.getElementById('teacher').value = n;
+    document.getElementById('ex-teacher').value = n;
+  }
   const saved = localStorage.getItem('hw_teacher');
   if (saved && !CURRENT_TEACHER) {
     document.getElementById('teacher').value = saved;
