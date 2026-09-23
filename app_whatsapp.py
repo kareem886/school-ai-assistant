@@ -1505,6 +1505,10 @@ input:focus, select:focus, textarea:focus {
 textarea { resize: vertical; min-height: 70px; }
 .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+@media (max-width: 480px) {
+  .row-2 { grid-template-columns: 1fr; }
+  .row-3 { grid-template-columns: 1fr 1fr; }
+}
 
 .submit-btn {
   width: 100%; padding: 15px; background: #16a34a; color: #fff;
