@@ -1775,7 +1775,7 @@ async function doTeacherLogin() {
     err.textContent = '\u26a0\ufe0f Please enter username and password';
     err.style.display = 'block'; return;
   }
-  btn.textContent = 'Signing in\u2026'; btn.disabled = true;
+  btn.textContent = 'Signing in...'; btn.disabled = true;
   err.style.display = 'none';
   try {
     const res = await fetch('/api/teacher-login', {
@@ -1790,21 +1790,21 @@ async function doTeacherLogin() {
       sessionStorage.setItem('teacher_name', data.full_name);
       document.getElementById('login-screen').style.display = 'none';
       document.getElementById('main-panel').style.display = 'block';
-      document.getElementById('teacher-badge').textContent = '\ud83d\udc64 ' + data.full_name;
+      document.getElementById('teacher-badge').textContent = '👤 ' + data.full_name;
       document.getElementById('teacher').value = data.full_name;
       document.getElementById('ex-teacher').value = data.full_name;
       localStorage.setItem('hw_teacher', data.full_name);
     } else {
-      err.textContent = '\u274c ' + data.error;
+      err.textContent = '❌ ' + data.error;
       err.style.display = 'block';
       document.getElementById('login-pass').value = '';
       document.getElementById('login-pass').focus();
     }
   } catch(e) {
-    err.textContent = '\u274c Connection error. Please try again.';
+    err.textContent = '❌ Connection error. Please try again.';
     err.style.display = 'block';
   }
-  btn.textContent = 'Sign In \u2192'; btn.disabled = false;
+  btn.textContent = 'Sign In →'; btn.disabled = false;
 }
 
 function doLogout() {
@@ -1827,7 +1827,7 @@ window.onload = function() {
     CURRENT_TEACHER = s; CURRENT_FULL_NAME = n;
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('main-panel').style.display = 'block';
-    document.getElementById('teacher-badge').textContent = '\ud83d\udc64 ' + n;
+    document.getElementById('teacher-badge').textContent = '👤 ' + n;
     document.getElementById('teacher').value = n;
     document.getElementById('ex-teacher').value = n;
   }
