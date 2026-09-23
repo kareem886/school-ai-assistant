@@ -2256,6 +2256,33 @@ def api_add_exam_results():
         return jsonify({"ok": False, "error": str(e)}), 500
 
 
+
+@app.route('/api/teacher-login', methods=['POST'])
+def teacher_login():
+    """Validate teacher credentials against the Teachers sheet tab."""
+    data = request.get_json(force=True, silent=True) or {}
+    username = str(data.get("username", "")).strip().lower()
+    password = str(data.get("password", "")).strip()
+
+    if not username or not password:
+        return jsonify({"ok": False, "error": "Username and password required"}), 400
+    try:
+        rows = read_tab("Teachers")
+        for row in rows:
+            u = str(row.get("Username", "")).strip().lower()
+            p = str(row.get("Password", "")).strip()
+            active = str(row.get("Active", "yes")).strip().lower()
+            if u == username and p == password:
+                if active != "yes":
+                    return jsonify({"ok": False, "error": "Account is inactive. Contact admin."}), 403
+                full_name = str(row.get("Full Name", username.replace(".", " ").title())).strip()
+                return jsonify({"ok": True, "full_name": full_name, "username": username})
+        return jsonify({"ok": False, "error": "Incorrect username or password"}), 401
+    except Exception as e:
+        logger.error(f"[teacher-login] {e}")
+        return jsonify({"ok": False, "error": "Login service unavailable"}), 500
+
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     logger.info(f"Starting on port {port}")
