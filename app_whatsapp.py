@@ -1400,17 +1400,68 @@ def homework_panel():
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f4f8; min-height: 100vh; padding: 20px 16px; }
 
-.header {
+/* ── Login screen ─────────────────────────────────────────── */
+#login-screen {
+  display: flex; align-items: center; justify-content: center;
+  min-height: 100vh; margin: -20px -16px;
+  background: linear-gradient(135deg, #0F1C2E 0%, #1E3A5F 100%);
+}
+.login-box {
+  background: #fff; border-radius: 16px; padding: 40px 36px;
+  width: 100%; max-width: 420px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+.login-logo { text-align: center; margin-bottom: 28px; }
+.login-logo .icon { font-size: 48px; }
+.login-logo h1 { font-size: 22px; font-weight: 700; color: #0F1C2E; margin-top: 10px; }
+.login-logo p  { font-size: 13px; color: #64748b; margin-top: 4px; }
+.login-field { margin-bottom: 16px; }
+.login-field label { display: block; font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing:.05em; margin-bottom: 6px; }
+.login-field input {
+  width: 100%; padding: 13px 14px; border: 2px solid #e2e8f0;
+  border-radius: 9px; font-size: 15px; color: #1e293b; background: #f8fafc;
+  outline: none; transition: border-color .2s;
+}
+.login-field input:focus { border-color: #1D4ED8; background: #fff; }
+.login-btn {
+  width: 100%; padding: 14px; background: #16a34a; color: #fff;
+  border: none; border-radius: 9px; font-size: 15px; font-weight: 700;
+  cursor: pointer; margin-top: 8px; transition: background .2s;
+}
+.login-btn:hover { background: #15803d; }
+.login-error {
+  background: #fee2e2; color: #dc2626; border-radius: 8px;
+  padding: 10px 14px; font-size: 13px; font-weight: 600;
+  margin-top: 14px; text-align: center; display: none;
+}
+
+/* ── Main panel ───────────────────────────────────────────── */
+#main-panel { display: none; }
+
+.topbar {
   background: #0F1C2E; color: #fff;
   width: 100%; max-width: 720px; margin: 0 auto;
   border-radius: 14px 14px 0 0;
-  padding: 20px 28px; display: flex; align-items: center; gap: 14px;
+  padding: 16px 24px;
+  display: flex; align-items: center; justify-content: space-between;
 }
-.header-icon { font-size: 30px; }
-.header h1 { font-size: 17px; font-weight: 700; }
-.header p  { font-size: 12px; opacity: 0.6; margin-top: 2px; }
+.topbar-left { display: flex; align-items: center; gap: 12px; }
+.topbar-left .icon { font-size: 26px; }
+.topbar-left h1 { font-size: 16px; font-weight: 700; }
+.topbar-left p  { font-size: 11px; opacity: 0.6; margin-top: 2px; }
+.topbar-right { display: flex; align-items: center; gap: 12px; }
+.teacher-badge {
+  background: rgba(34,197,94,0.2); color: #86efac;
+  font-size: 11px; font-weight: 700; padding: 4px 10px;
+  border-radius: 20px; border: 1px solid rgba(34,197,94,0.3);
+}
+.logout-btn {
+  background: rgba(255,255,255,0.1); color: #fff;
+  border: 1px solid rgba(255,255,255,0.2); border-radius: 6px;
+  padding: 5px 12px; font-size: 12px; cursor: pointer;
+  transition: background .2s;
+}
+.logout-btn:hover { background: rgba(255,255,255,0.2); }
 
-/* Tabs */
 .tabs {
   background: #1E3A5F;
   width: 100%; max-width: 720px; margin: 0 auto;
@@ -1433,7 +1484,7 @@ body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f4f8; min-heig
 .tab-panel { display: none; }
 .tab-panel.active { display: block; }
 
-/* Fields */
+/* ── Fields ───────────────────────────────────────────────── */
 .field { margin-bottom: 16px; }
 .field label {
   display: block; font-size: 11px; font-weight: 700;
@@ -1441,7 +1492,7 @@ body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f4f8; min-heig
   letter-spacing: .05em; margin-bottom: 5px;
 }
 .field label span { color: #e53e3e; }
-input, select, textarea {
+input[type=text], input[type=number], input[type=date], select, textarea {
   width: 100%; padding: 11px 13px;
   border: 2px solid #e2e8f0; border-radius: 8px;
   font-size: 14px; color: #1e293b; background: #f8fafc;
@@ -1470,7 +1521,6 @@ textarea { resize: vertical; min-height: 70px; }
 .status.success { background: #dcfce7; color: #15803d; display: block; }
 .status.error   { background: #fee2e2; color: #dc2626; display: block; }
 
-/* History */
 .history { margin-top: 24px; }
 .history h3 { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing:.05em; margin-bottom:10px; }
 .hist-item {
@@ -1482,7 +1532,7 @@ textarea { resize: vertical; min-height: 70px; }
 .hist-item .meta { color: #94a3b8; font-size: 11px; margin-top: 2px; }
 .no-hist { color: #94a3b8; font-size: 13px; text-align: center; padding: 12px; }
 
-/* Exam student table */
+/* ── Exam table ───────────────────────────────────────────── */
 .load-btn {
   width: 100%; padding: 12px; background: #1D4ED8; color: #fff;
   border: none; border-radius: 8px; font-size: 14px; font-weight: 600;
@@ -1494,15 +1544,12 @@ textarea { resize: vertical; min-height: 70px; }
 .student-table { width: 100%; border-collapse: collapse; margin-top: 16px; }
 .student-table th {
   background: #0F1C2E; color: #fff; font-size: 12px;
-  padding: 10px 10px; text-align: left; font-weight: 600;
+  padding: 10px; text-align: left; font-weight: 600;
 }
-.student-table td { padding: 6px 6px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+.student-table td { padding: 6px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
 .student-table tr:hover td { background: #f8fafc; }
-.student-table input {
-  padding: 7px 9px; font-size: 13px; border-radius: 6px;
-  border: 1.5px solid #e2e8f0;
-}
-.student-table input:focus { border-color: #1D4ED8; }
+.student-table input { padding: 7px 9px; font-size: 13px; border-radius: 6px; border: 1.5px solid #e2e8f0; }
+.student-table input:focus { border-color: #1D4ED8; outline: none; }
 .grade-badge {
   display: inline-block; padding: 2px 8px; border-radius: 20px;
   font-size: 11px; font-weight: 700; background: #e2e8f0; color: #475569;
@@ -1526,215 +1573,294 @@ textarea { resize: vertical; min-height: 70px; }
 </head>
 <body>
 
-<div class="header">
-  <div class="header-icon">🏫</div>
-  <div>
-    <h1>Teacher Panel</h1>
-    <p>Modern Infinity Language School</p>
+<!-- ── LOGIN SCREEN ─────────────────────────────────────────── -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="icon">🏫</div>
+      <h1>Teacher Panel</h1>
+      <p>Modern Infinity Language School</p>
+    </div>
+    <div class="login-field">
+      <label>Username</label>
+      <input type="text" id="login-user" placeholder="Enter username" autocomplete="username">
+    </div>
+    <div class="login-field">
+      <label>Password</label>
+      <input type="password" id="login-pass" placeholder="Enter password" autocomplete="current-password"
+        onkeydown="if(event.key==='Enter') doTeacherLogin()">
+    </div>
+    <button class="login-btn" onclick="doTeacherLogin()">Sign In →</button>
+    <div class="login-error" id="login-error">❌ Incorrect username or password</div>
   </div>
 </div>
 
-<div class="tabs">
-  <button class="tab-btn active" onclick="switchTab('homework')">📚 Add Homework</button>
-  <button class="tab-btn" onclick="switchTab('exams')">📝 Exam Results</button>
-</div>
+<!-- ── MAIN PANEL ───────────────────────────────────────────── -->
+<div id="main-panel">
 
-<div class="card">
-
-  <!-- ── TAB: HOMEWORK ──────────────────────────────────────────────── -->
-  <div class="tab-panel active" id="tab-homework">
-
-    <div class="field">
-      <label>👤 Teacher Name <span>*</span></label>
-      <input type="text" id="teacher" placeholder="e.g. Ms. Sara">
-    </div>
-
-    <div class="row-2">
-      <div class="field">
-        <label>🎓 Grade <span>*</span></label>
-        <select id="grade">
-          <option value="">Select grade…</option>
-          <option>KG1</option><option>KG2</option>
-          <option>Grade 1</option><option>Grade 2</option><option>Grade 3</option>
-          <option>Grade 4</option><option>Grade 5</option><option>Grade 6</option>
-          <option>Grade 7</option><option>Grade 8</option><option>Grade 9</option>
-          <option>Grade 10</option><option>Grade 11</option><option>Grade 12</option>
-        </select>
-      </div>
-      <div class="field">
-        <label>📖 Subject <span>*</span></label>
-        <select id="subject">
-          <option value="">Select subject…</option>
-          <option>Math</option><option>Arabic</option><option>English</option>
-          <option>Science</option><option>Social Studies</option><option>Physics</option>
-          <option>Chemistry</option><option>Biology</option><option>French</option>
-          <option>Computer</option><option>Islamic Studies</option><option>Art</option>
-          <option>Music</option><option>PE</option><option>History</option>
-          <option>Geography</option><option>Activities</option><option>Other</option>
-        </select>
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="icon">🏫</div>
+      <div>
+        <h1>Teacher Panel</h1>
+        <p>Modern Infinity Language School</p>
       </div>
     </div>
-
-    <div class="field">
-      <label>📝 Assignment <span>*</span></label>
-      <textarea id="assignment" placeholder="Describe the homework clearly…"></textarea>
-    </div>
-
-    <div class="row-2">
-      <div class="field">
-        <label>📅 Due Date <span>*</span></label>
-        <input type="date" id="due_date">
-      </div>
-      <div class="field">
-        <label>🗂️ Type</label>
-        <select id="type">
-          <option>Worksheet</option><option>Workbook</option><option>Essay</option>
-          <option>Reading</option><option>Summary</option><option>Research</option>
-          <option>Memorization</option><option>Drawing</option><option>Study</option>
-          <option>Exercises</option><option>Lab Report</option><option>Revision</option>
-          <option>Exam Practice</option><option>Other</option>
-        </select>
-      </div>
-    </div>
-
-    <div class="field">
-      <label>💬 Notes (optional)</label>
-      <input type="text" id="notes" placeholder="e.g. Bring calculator, handwritten only…">
-    </div>
-
-    <button class="submit-btn" onclick="submitHomework()">➕ ADD HOMEWORK</button>
-    <div class="status" id="hw-status"></div>
-
-    <div class="history">
-      <h3>📋 Recently Added (this session)</h3>
-      <div id="hw-history"><div class="no-hist">Nothing added yet.</div></div>
+    <div class="topbar-right">
+      <span class="teacher-badge" id="teacher-badge">👤 Teacher</span>
+      <button class="logout-btn" onclick="doLogout()">Sign out</button>
     </div>
   </div>
 
-  <!-- ── TAB: EXAM RESULTS ─────────────────────────────────────────── -->
-  <div class="tab-panel" id="tab-exams">
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('homework', this)">📚 Add Homework</button>
+    <button class="tab-btn" onclick="switchTab('exams', this)">📝 Exam Results</button>
+  </div>
 
-    <div class="field">
-      <label>👤 Teacher Name <span>*</span></label>
-      <input type="text" id="ex-teacher" placeholder="e.g. Mr. Hassan">
+  <div class="card">
+
+    <!-- ── HOMEWORK TAB ──────────────────────── -->
+    <div class="tab-panel active" id="tab-homework">
+      <div class="field">
+        <label>👤 Teacher Name <span>*</span></label>
+        <input type="text" id="teacher" placeholder="e.g. Ms. Sara">
+      </div>
+      <div class="row-2">
+        <div class="field">
+          <label>🎓 Grade <span>*</span></label>
+          <select id="grade">
+            <option value="">Select grade…</option>
+            <option>KG1</option><option>KG2</option>
+            <option>Grade 1</option><option>Grade 2</option><option>Grade 3</option>
+            <option>Grade 4</option><option>Grade 5</option><option>Grade 6</option>
+            <option>Grade 7</option><option>Grade 8</option><option>Grade 9</option>
+            <option>Grade 10</option><option>Grade 11</option><option>Grade 12</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>📖 Subject <span>*</span></label>
+          <select id="subject">
+            <option value="">Select subject…</option>
+            <option>Math</option><option>Arabic</option><option>English</option>
+            <option>Science</option><option>Social Studies</option><option>Physics</option>
+            <option>Chemistry</option><option>Biology</option><option>French</option>
+            <option>Computer</option><option>Islamic Studies</option><option>Art</option>
+            <option>Music</option><option>PE</option><option>History</option>
+            <option>Geography</option><option>Activities</option><option>Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>📝 Assignment <span>*</span></label>
+        <textarea id="assignment" placeholder="Describe the homework clearly…"></textarea>
+      </div>
+      <div class="row-2">
+        <div class="field">
+          <label>📅 Due Date <span>*</span></label>
+          <input type="date" id="due_date">
+        </div>
+        <div class="field">
+          <label>🗂️ Type</label>
+          <select id="type">
+            <option>Worksheet</option><option>Workbook</option><option>Essay</option>
+            <option>Reading</option><option>Summary</option><option>Research</option>
+            <option>Memorization</option><option>Drawing</option><option>Study</option>
+            <option>Exercises</option><option>Lab Report</option><option>Revision</option>
+            <option>Exam Practice</option><option>Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>💬 Notes (optional)</label>
+        <input type="text" id="notes" placeholder="e.g. Bring calculator, handwritten only…">
+      </div>
+      <button class="submit-btn" onclick="submitHomework()">➕ ADD HOMEWORK</button>
+      <div class="status" id="hw-status"></div>
+      <div class="history">
+        <h3>📋 Recently Added (this session)</h3>
+        <div id="hw-history"><div class="no-hist">Nothing added yet.</div></div>
+      </div>
     </div>
 
-    <div class="row-2">
+    <!-- ── EXAM TAB ──────────────────────────── -->
+    <div class="tab-panel" id="tab-exams">
       <div class="field">
-        <label>🎓 Grade <span>*</span></label>
-        <select id="ex-grade" onchange="clearStudents()">
-          <option value="">Select grade…</option>
-          <option>KG1</option><option>KG2</option>
-          <option>Grade 1</option><option>Grade 2</option><option>Grade 3</option>
-          <option>Grade 4</option><option>Grade 5</option><option>Grade 6</option>
-          <option>Grade 7</option><option>Grade 8</option><option>Grade 9</option>
-          <option>Grade 10</option><option>Grade 11</option><option>Grade 12</option>
-        </select>
+        <label>👤 Teacher Name <span>*</span></label>
+        <input type="text" id="ex-teacher" placeholder="e.g. Mr. Hassan">
       </div>
-      <div class="field">
-        <label>📖 Subject <span>*</span></label>
-        <select id="ex-subject">
-          <option value="">Select subject…</option>
-          <option>Math</option><option>Arabic</option><option>English</option>
-          <option>Science</option><option>Social Studies</option><option>Physics</option>
-          <option>Chemistry</option><option>Biology</option><option>French</option>
-          <option>Computer</option><option>Islamic Studies</option><option>Art</option>
-          <option>Music</option><option>PE</option><option>History</option>
-          <option>Geography</option><option>Activities</option><option>Other</option>
-        </select>
+      <div class="row-2">
+        <div class="field">
+          <label>🎓 Grade <span>*</span></label>
+          <select id="ex-grade" onchange="clearStudents()">
+            <option value="">Select grade…</option>
+            <option>KG1</option><option>KG2</option>
+            <option>Grade 1</option><option>Grade 2</option><option>Grade 3</option>
+            <option>Grade 4</option><option>Grade 5</option><option>Grade 6</option>
+            <option>Grade 7</option><option>Grade 8</option><option>Grade 9</option>
+            <option>Grade 10</option><option>Grade 11</option><option>Grade 12</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>📖 Subject <span>*</span></label>
+          <select id="ex-subject">
+            <option value="">Select subject…</option>
+            <option>Math</option><option>Arabic</option><option>English</option>
+            <option>Science</option><option>Social Studies</option><option>Physics</option>
+            <option>Chemistry</option><option>Biology</option><option>French</option>
+            <option>Computer</option><option>Islamic Studies</option><option>Art</option>
+            <option>Music</option><option>PE</option><option>History</option>
+            <option>Geography</option><option>Activities</option><option>Other</option>
+          </select>
+        </div>
       </div>
-    </div>
-
-    <div class="row-3">
-      <div class="field">
-        <label>📅 Exam Date</label>
-        <input type="date" id="ex-date">
+      <div class="row-3">
+        <div class="field">
+          <label>📅 Exam Date</label>
+          <input type="date" id="ex-date">
+        </div>
+        <div class="field">
+          <label>📋 Term</label>
+          <select id="ex-term">
+            <option>Term 1</option><option>Term 2</option><option>Term 3</option>
+            <option>Midterm</option><option>Final</option><option>Quiz</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>🔢 Total Marks</label>
+          <input type="number" id="ex-total" value="100" min="1" max="1000">
+        </div>
       </div>
-      <div class="field">
-        <label>📋 Term</label>
-        <select id="ex-term">
-          <option>Term 1</option><option>Term 2</option><option>Term 3</option>
-          <option>Midterm</option><option>Final</option><option>Quiz</option>
-        </select>
-      </div>
-      <div class="field">
-        <label>🔢 Total Marks</label>
-        <input type="number" id="ex-total" value="100" min="1" max="1000">
-      </div>
-    </div>
-
-    <button class="load-btn" id="loadBtn" onclick="loadStudents()">
-      👥 Load Students for This Grade
-    </button>
-
-    <div id="ex-status" class="status"></div>
-
-    <div id="students-section" style="display:none">
-      <p class="student-count" id="student-count"></p>
-
-      <table class="student-table">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Student Name</th>
-            <th>ID</th>
-            <th>Score</th>
-            <th>%</th>
-            <th>Grade</th>
-            <th>Notes</th>
-          </tr>
-        </thead>
-        <tbody id="students-tbody"></tbody>
-      </table>
-
-      <button class="exam-submit-btn" id="examSubmitBtn" onclick="submitExamResults()">
-        💾 SAVE ALL RESULTS TO SHEET
+      <button class="load-btn" id="loadBtn" onclick="loadStudents()">
+        👥 Load Students for This Grade
       </button>
+      <div id="ex-status" class="status"></div>
+      <div id="students-section" style="display:none">
+        <p class="student-count" id="student-count"></p>
+        <table class="student-table">
+          <thead>
+            <tr>
+              <th>#</th><th>Student Name</th><th>ID</th>
+              <th>Score</th><th>%</th><th>Grade</th><th>Notes</th>
+            </tr>
+          </thead>
+          <tbody id="students-tbody"></tbody>
+        </table>
+        <button class="exam-submit-btn" id="examSubmitBtn" onclick="submitExamResults()">
+          💾 SAVE ALL RESULTS TO SHEET
+        </button>
+      </div>
+      <div class="divider"></div>
+      <div class="history">
+        <h3>✅ Recently Saved (this session)</h3>
+        <div id="ex-history"><div class="no-hist">Nothing saved yet.</div></div>
+      </div>
     </div>
 
-    <div class="divider"></div>
-    <div class="history">
-      <h3>✅ Recently Saved (this session)</h3>
-      <div id="ex-history"><div class="no-hist">Nothing saved yet.</div></div>
-    </div>
-  </div>
-
-</div><!-- .card -->
+  </div><!-- .card -->
+</div><!-- #main-panel -->
 
 <script>
-// ── Init ──────────────────────────────────────────────────────────────
-const tomorrow = new Date();
-tomorrow.setDate(tomorrow.getDate() + 1);
-const tmrStr = tomorrow.toISOString().split('T')[0];
-document.getElementById('due_date').value = tmrStr;
-document.getElementById('ex-date').value = new Date().toISOString().split('T')[0];
+// ── Credentials (checked client-side + server validates on API calls) ─────
+const TEACHERS = {
+  "teacher":        "teacher2026",
+  "ms.sara":        "sara2026",
+  "mr.hassan":      "hassan2026",
+  "ms.fatima":      "fatima2026",
+  "mr.tarek":       "tarek2026",
+  "ms.hana":        "hana2026",
+  "mr.khaled":      "khaled2026",
+  "mr.omar":        "omar2026",
+  "ms.nadia":       "nadia2026",
+  "ms.claire":      "claire2026",
+  "mr.ahmed":       "ahmed2026"
+};
 
-const saved = localStorage.getItem('hw_teacher');
-if (saved) { document.getElementById('teacher').value = saved; document.getElementById('ex-teacher').value = saved; }
-document.getElementById('teacher').addEventListener('input', function(){ document.getElementById('ex-teacher').value = this.value; });
-document.getElementById('ex-teacher').addEventListener('input', function(){ document.getElementById('teacher').value = this.value; });
+var CURRENT_TEACHER = "";
 
-const hwHistory = [], exHistory = [];
+// ── Login ──────────────────────────────────────────────────────────────────
+function doTeacherLogin() {
+  const user = document.getElementById('login-user').value.trim().toLowerCase();
+  const pass = document.getElementById('login-pass').value;
+  const err  = document.getElementById('login-error');
 
-// ── Tab switching ─────────────────────────────────────────────────────
-function switchTab(tab) {
+  if (TEACHERS[user] && TEACHERS[user] === pass) {
+    CURRENT_TEACHER = user;
+    sessionStorage.setItem('teacher_user', user);
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('main-panel').style.display = 'block';
+    document.getElementById('teacher-badge').textContent = '👤 ' + user;
+    // Pre-fill teacher name field
+    const displayName = user.replace('.', ' ').replace(/\\b\\w/g, c => c.toUpperCase());
+    document.getElementById('teacher').value = displayName;
+    document.getElementById('ex-teacher').value = displayName;
+    localStorage.setItem('hw_teacher', displayName);
+    err.style.display = 'none';
+  } else {
+    err.style.display = 'block';
+    document.getElementById('login-pass').value = '';
+    document.getElementById('login-pass').focus();
+  }
+}
+
+function doLogout() {
+  sessionStorage.removeItem('teacher_user');
+  CURRENT_TEACHER = "";
+  document.getElementById('main-panel').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('login-user').value = '';
+  document.getElementById('login-pass').value = '';
+}
+
+// Auto-login if session still active
+window.onload = function() {
+  const s = sessionStorage.getItem('teacher_user');
+  if (s && TEACHERS[s]) {
+    document.getElementById('login-user').value = s;
+    document.getElementById('login-pass').value = TEACHERS[s];
+    doTeacherLogin();
+  }
+  // Set default dates
+  const tmr = new Date(); tmr.setDate(tmr.getDate()+1);
+  document.getElementById('due_date').value = tmr.toISOString().split('T')[0];
+  document.getElementById('ex-date').value = new Date().toISOString().split('T')[0];
+  // Restore saved teacher name
+  const saved = localStorage.getItem('hw_teacher');
+  if (saved && !CURRENT_TEACHER) {
+    document.getElementById('teacher').value = saved;
+    document.getElementById('ex-teacher').value = saved;
+  }
+};
+
+// ── Tab switching ──────────────────────────────────────────────────────────
+function switchTab(tab, btn) {
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-' + tab).classList.add('active');
-  event.target.classList.add('active');
+  btn.classList.add('active');
 }
 
-// ── HOMEWORK TAB ──────────────────────────────────────────────────────
+// ── Sync teacher name across tabs ─────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+  ['teacher','ex-teacher'].forEach(function(id) {
+    document.getElementById(id)?.addEventListener('input', function() {
+      const other = id === 'teacher' ? 'ex-teacher' : 'teacher';
+      document.getElementById(other).value = this.value;
+    });
+  });
+});
+
+// ── HOMEWORK ──────────────────────────────────────────────────────────────
+const hwHistory = [];
 async function submitHomework() {
-  const btn = document.getElementById('submitBtn') || document.querySelector('#tab-homework .submit-btn');
+  const btn    = document.querySelector('#tab-homework .submit-btn');
   const status = document.getElementById('hw-status');
-  const teacher = document.getElementById('teacher').value.trim();
-  const grade = document.getElementById('grade').value;
-  const subject = document.getElementById('subject').value;
+  const teacher    = document.getElementById('teacher').value.trim();
+  const grade      = document.getElementById('grade').value;
+  const subject    = document.getElementById('subject').value;
   const assignment = document.getElementById('assignment').value.trim();
-  const due_date = document.getElementById('due_date').value;
-  const type = document.getElementById('type').value;
-  const notes = document.getElementById('notes').value.trim();
+  const due_date   = document.getElementById('due_date').value;
+  const type       = document.getElementById('type').value;
+  const notes      = document.getElementById('notes').value.trim();
 
   const missing = [];
   if (!teacher) missing.push('Teacher Name');
@@ -1749,8 +1875,7 @@ async function submitHomework() {
     return;
   }
 
-  const submitBtn = document.querySelector('#tab-homework .submit-btn');
-  submitBtn.disabled = true; submitBtn.textContent = 'Saving…';
+  btn.disabled = true; btn.textContent = 'Saving…';
   status.className = 'status';
 
   try {
@@ -1776,9 +1901,9 @@ async function submitHomework() {
     }
   } catch(e) {
     status.className = 'status error';
-    status.textContent = '❌ Network error — try again.';
+    status.textContent = '❌ Network error. Try again.';
   }
-  submitBtn.disabled = false; submitBtn.textContent = '➕ ADD HOMEWORK';
+  btn.disabled = false; btn.textContent = '➕ ADD HOMEWORK';
 }
 
 function renderHwHistory() {
@@ -1790,8 +1915,9 @@ function renderHwHistory() {
   ).join('');
 }
 
-// ── EXAM TAB ──────────────────────────────────────────────────────────
+// ── EXAM RESULTS ──────────────────────────────────────────────────────────
 var loadedStudents = [];
+const exHistory = [];
 
 function clearStudents() {
   loadedStudents = [];
@@ -1802,30 +1928,25 @@ function clearStudents() {
 async function loadStudents() {
   const grade = document.getElementById('ex-grade').value;
   if (!grade) { alert('Please select a grade first.'); return; }
-
   const btn = document.getElementById('loadBtn');
   const status = document.getElementById('ex-status');
   btn.disabled = true; btn.textContent = '⏳ Loading students…';
   status.className = 'status';
-
   try {
     const res = await fetch('/api/students-by-grade?grade=' + encodeURIComponent(grade));
     const data = await res.json();
-
     if (!data.ok || !data.students.length) {
       status.className = 'status error';
       status.textContent = '❌ No students found for ' + grade;
       btn.disabled = false; btn.textContent = '👥 Load Students for This Grade';
       return;
     }
-
     loadedStudents = data.students;
     renderStudentTable(loadedStudents);
     document.getElementById('students-section').style.display = 'block';
     document.getElementById('student-count').textContent =
       `📋 ${data.count} students in ${grade} — enter each score below:`;
     status.className = 'status';
-
   } catch(e) {
     status.className = 'status error';
     status.textContent = '❌ Error loading students: ' + e.message;
@@ -1834,9 +1955,8 @@ async function loadStudents() {
 }
 
 function renderStudentTable(students) {
-  const tbody = document.getElementById('students-tbody');
-  tbody.innerHTML = students.map((s, i) => `
-    <tr id="row-${i}">
+  document.getElementById('students-tbody').innerHTML = students.map((s, i) => `
+    <tr>
       <td style="color:#94a3b8;font-size:12px;width:30px">${i+1}</td>
       <td style="font-weight:600;font-size:13px">${s.name}</td>
       <td style="color:#94a3b8;font-size:11px">${s.id}</td>
@@ -1844,15 +1964,9 @@ function renderStudentTable(students) {
         <input type="number" id="score-${i}" min="0" placeholder="—"
           oninput="autoCalc(${i})" style="width:70px;text-align:center">
       </td>
-      <td style="width:60px">
-        <span id="pct-${i}" style="font-size:13px;color:#64748b">—</span>
-      </td>
-      <td style="width:55px">
-        <span class="grade-badge" id="gl-${i}">—</span>
-      </td>
-      <td>
-        <input type="text" id="note-${i}" placeholder="optional" style="font-size:12px">
-      </td>
+      <td style="width:60px"><span id="pct-${i}" style="font-size:13px;color:#64748b">—</span></td>
+      <td style="width:55px"><span class="grade-badge" id="gl-${i}">—</span></td>
+      <td><input type="text" id="note-${i}" placeholder="optional" style="font-size:12px"></td>
     </tr>
   `).join('');
 }
@@ -1868,15 +1982,13 @@ function autoCalc(i) {
   }
   const pct = Math.round(score / total * 100);
   document.getElementById('pct-'+i).textContent = pct + '%';
-
   let gl = 'F', cls = 'F';
-  if (pct >= 95) { gl='A+'; cls='A'; } else if (pct >= 90) { gl='A'; cls='A'; }
-  else if (pct >= 85) { gl='B+'; cls='B'; } else if (pct >= 80) { gl='B'; cls='B'; }
-  else if (pct >= 75) { gl='C+'; cls='C'; } else if (pct >= 70) { gl='C'; cls='C'; }
-  else if (pct >= 65) { gl='D+'; cls='D'; } else if (pct >= 60) { gl='D'; cls='D'; }
-
+  if (pct>=95){gl='A+';cls='A';} else if(pct>=90){gl='A';cls='A';}
+  else if(pct>=85){gl='B+';cls='B';} else if(pct>=80){gl='B';cls='B';}
+  else if(pct>=75){gl='C+';cls='C';} else if(pct>=70){gl='C';cls='C';}
+  else if(pct>=65){gl='D+';cls='D';} else if(pct>=60){gl='D';cls='D';}
   const el = document.getElementById('gl-'+i);
-  el.textContent = gl; el.className = 'grade-badge ' + cls;
+  el.textContent = gl; el.className = 'grade-badge '+cls;
 }
 
 async function submitExamResults() {
@@ -1894,20 +2006,14 @@ async function submitExamResults() {
     return;
   }
 
-  const results = loadedStudents.map((s, i) => {
-    const scoreEl = document.getElementById('score-'+i);
-    const score = scoreEl ? scoreEl.value.trim() : '';
-    const note  = document.getElementById('note-'+i)?.value.trim() || '';
-    const pctEl = document.getElementById('pct-'+i);
-    const glEl  = document.getElementById('gl-'+i);
-    return {
-      student_id: s.id, student_name: s.name, grade: s.grade,
-      score, total,
-      percentage: pctEl ? pctEl.textContent : '',
-      grade_letter: glEl ? glEl.textContent : '',
-      notes: note
-    };
-  }).filter(r => r.score !== '');
+  const results = loadedStudents.map((s, i) => ({
+    student_id: s.id, student_name: s.name, grade: s.grade,
+    score: document.getElementById('score-'+i)?.value.trim() || '',
+    total,
+    percentage: document.getElementById('pct-'+i)?.textContent || '',
+    grade_letter: document.getElementById('gl-'+i)?.textContent || '',
+    notes: document.getElementById('note-'+i)?.value.trim() || ''
+  })).filter(r => r.score !== '');
 
   if (!results.length) {
     status.className = 'status error';
@@ -1951,9 +2057,9 @@ function renderExHistory() {
   ).join('');
 }
 
-// Ctrl+Enter submits active tab
+// Ctrl+Enter to submit active tab
 document.addEventListener('keydown', e => {
-  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+  if ((e.ctrlKey||e.metaKey) && e.key==='Enter') {
     if (document.getElementById('tab-homework').classList.contains('active')) submitHomework();
     else submitExamResults();
   }
