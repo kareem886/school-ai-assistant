@@ -2283,6 +2283,65 @@ def teacher_login():
         return jsonify({"ok": False, "error": "Login service unavailable"}), 500
 
 
+
+@app.route('/setup-teachers-tab')
+def setup_teachers_tab():
+    """Create the Teachers tab with initial accounts."""
+    import time as _t
+    try:
+        gc = get_client()
+        sh = gc.open_by_key(SHEET_ID)
+
+        # Delete existing if present
+        try:
+            sh.del_worksheet(sh.worksheet("Teachers"))
+            _t.sleep(2)
+        except: pass
+
+        ws = sh.add_worksheet("Teachers", rows=50, cols=6)
+        _t.sleep(2)
+
+        # Headers + initial teachers
+        rows = [
+            ["Username", "Password", "Full Name", "Active"],
+            ["ms.sara",    "sara2026",    "Ms. Sara",    "yes"],
+            ["mr.hassan",  "hassan2026",  "Mr. Hassan",  "yes"],
+            ["ms.fatima",  "fatima2026",  "Ms. Fatima",  "yes"],
+            ["mr.tarek",   "tarek2026",   "Mr. Tarek",   "yes"],
+            ["ms.hana",    "hana2026",    "Ms. Hana",    "yes"],
+            ["mr.khaled",  "khaled2026",  "Mr. Khaled",  "yes"],
+            ["mr.omar",    "omar2026",    "Mr. Omar",    "yes"],
+            ["ms.nadia",   "nadia2026",   "Ms. Nadia",   "yes"],
+            ["ms.claire",  "claire2026",  "Ms. Claire",  "yes"],
+            ["mr.ahmed",   "ahmed2026",   "Mr. Ahmed",   "yes"],
+        ]
+        ws.update("A1:D11", rows, value_input_option="USER_ENTERED")
+        _t.sleep(2)
+
+        # Format header row
+        sid = ws.id
+        sh.batch_update({"requests": [
+            {"repeatCell": {
+                "range": {"sheetId":sid,"startRowIndex":0,"endRowIndex":1,"startColumnIndex":0,"endColumnIndex":4},
+                "cell": {"userEnteredFormat": {
+                    "backgroundColor":{"red":0.059,"green":0.110,"blue":0.180},
+                    "textFormat":{"bold":True,"foregroundColor":{"red":1,"green":1,"blue":1}},
+                    "horizontalAlignment":"CENTER"
+                }},
+                "fields":"userEnteredFormat"
+            }},
+            {"updateDimensionProperties":{
+                "range":{"sheetId":sid,"dimension":"COLUMNS","startIndex":0,"endIndex":4},
+                "properties":{"pixelSize":160},"fields":"pixelSize"
+            }}
+        ]})
+
+        return jsonify({"ok": True, "message": f"Teachers tab created with {len(rows)-1} accounts"})
+    except Exception as e:
+        import traceback
+        return jsonify({"ok": False, "error": str(e), "trace": traceback.format_exc()[-400:]}), 500
+
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     logger.info(f"Starting on port {port}")
