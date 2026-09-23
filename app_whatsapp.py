@@ -1395,7 +1395,7 @@ def homework_panel():
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Teacher Panel — Modern Infinity School</title>
+<title>Homework & Exam Input — Modern Infinity School</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f4f8; min-height: 100vh; padding: 20px 16px; }
@@ -1529,7 +1529,7 @@ textarea { resize: vertical; min-height: 70px; }
 <div class="header">
   <div class="header-icon">🏫</div>
   <div>
-    <h1>Teacher Panel</h1>
+    <h1>Homework &amp; Exam Input</h1>
     <p>Modern Infinity Language School</p>
   </div>
 </div>
