@@ -3294,12 +3294,12 @@ input:checked+.slider:before{transform:translateX(22px)}
 <script>
 // ── USER ROLES & PERMISSIONS ──────────────────────────────────────────────────
 var USERS = {
-  "super_admin":  {pass:"admin2026",  name:"Super Admin",    role:"Super Administrator",  panels:["announce","teacher","finance"], grade_filter:null},
-  "junior_admin": {pass:"junior2026", name:"Junior Admin",   role:"Junior Administrator", panels:["announce"],                     grade_filter:"junior"},
-  "senior_admin": {pass:"senior2026", name:"Senior Admin",   role:"Senior Administrator", panels:["announce"],                     grade_filter:"senior"},
-  "finance":      {pass:"finance2026",name:"Finance Team",   role:"Finance Officer",      panels:["finance"],                      grade_filter:null},
-  "teacher":      {pass:"teacher2026",name:"Teacher",        role:"Teacher",              panels:["teacher"],                      grade_filter:null}
+  "super_admin":  {pass:"admin2026",  name:"Super Admin",  role:"Super Administrator",  panels:["announce","teacher","finance"], grade_filter:null},
+  "junior_admin": {pass:"junior2026", name:"Junior Admin", role:"Junior Administrator", panels:["announce"],                     grade_filter:"junior"},
+  "senior_admin": {pass:"senior2026", name:"Senior Admin", role:"Senior Administrator", panels:["announce"],                     grade_filter:"senior"},
+  "finance":      {pass:"finance2026",name:"Finance Team", role:"Finance Officer",      panels:["finance"],                      grade_filter:null}
 };
+// Teacher logins are verified server-side from the Teachers sheet
 var JUNIOR_GRADES = ["KG1","KG2","Nursery","Grade 1","Grade 2","Grade 3","Grade 4","Grade 5","Grade 6"];
 var SENIOR_GRADES = ["Grade 7","Grade 8","Grade 9","Grade 10","Grade 11","Grade 12"];
 var currentUser = null;
@@ -3311,11 +3311,51 @@ function doLogin(){
   var u = document.getElementById('lu').value.trim();
   var p = document.getElementById('lp').value.trim();
   var err = document.getElementById('lerr');
+  var loginBtn = document.querySelector('.login-btn');
   if(!u||!p){err.textContent='⚠️ Enter username and password';err.style.display='block';return;}
   var user = USERS[u];
   if(user && user.pass === p){
     err.style.display='none';
     currentUser = {username:u, ...user};
+    doLoginSuccess(currentUser);
+  } else {
+    // Try teacher login via server
+    loginBtn.disabled=true; loginBtn.textContent='Signing in...';
+    fetch('/api/teacher-login', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({username:u, password:p})
+    }).then(function(r){return r.json();}).then(function(data){
+      if(data.ok){
+        err.style.display='none';
+        currentUser = {
+          username: u,
+          name: data.name,
+          role: 'Teacher',
+          panels: ['teacher'],
+          grade_filter: null
+        };
+        doLoginSuccess(currentUser);
+      } else {
+        err.textContent='❌ Incorrect username or password';
+        err.style.display='block';
+        document.getElementById('lp').value='';
+      }
+      loginBtn.disabled=false; loginBtn.textContent='Sign In →';
+    }).catch(function(){
+      err.textContent='❌ Server error, try again';
+      err.style.display='block';
+      loginBtn.disabled=false; loginBtn.textContent='Sign In →';
+    });
+    return;
+  }
+  if(false){ currentUser = null;
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('main-panel').style.display='block';
+    doLoginSuccess(currentUser);
+  }
+}
+function doLoginSuccess(user){
     document.getElementById('login-screen').style.display='none';
     document.getElementById('main-panel').style.display='block';
     document.getElementById('sidebarUserName').textContent = user.name;
@@ -3834,6 +3874,32 @@ def api_post_exam_results_bulk():
         return jsonify({"ok": True, "saved": len(rows_to_append)})
     except Exception as e:
         logger.error(f"[exam-results/bulk] {e}")
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
+
+@app.route('/api/teacher-login', methods=['POST'])
+def api_teacher_login():
+    """Verify teacher credentials against Teachers sheet."""
+    data = request.get_json(force=True, silent=True) or {}
+    username = str(data.get('username', '')).strip()
+    password = str(data.get('password', '')).strip()
+    if not username or not password:
+        return jsonify({"ok": False, "error": "Missing credentials"}), 400
+    try:
+        rows = read_tab("Teachers")
+        for row in rows:
+            u = str(row.get('Username', '')).strip()
+            p = str(row.get('Password', '')).strip()
+            active = str(row.get('Active', 'yes')).strip().lower()
+            if u.lower() == username.lower() and p == password and active == 'yes':
+                name = str(row.get('Full Name', username)).strip()
+                logger.info(f"[teacher-login] ✅ {username} logged in")
+                return jsonify({"ok": True, "name": name, "username": username})
+        logger.warning(f"[teacher-login] ❌ Failed login for: {username}")
+        return jsonify({"ok": False, "error": "Invalid credentials"}), 401
+    except Exception as e:
+        logger.error(f"[teacher-login] {e}")
         return jsonify({"ok": False, "error": str(e)}), 500
 
 if __name__ == "__main__":
