@@ -3159,23 +3159,16 @@ input:checked+.slider:before{transform:translateX(22px)}
 
           <!-- Exam Results Sub-tab -->
           <div id="teacher-exam" style="display:none">
-            <div class="table-card" style="margin-bottom:20px">
-              <div class="table-card-header"><div class="table-card-title">➕ Enter Exam Result</div></div>
+
+            <!-- Step 1: Select Grade + Subject -->
+            <div class="table-card" style="margin-bottom:20px" id="ex-step1">
+              <div class="table-card-header"><div class="table-card-title">📝 Enter Exam Results</div></div>
               <div style="padding:20px">
-                <div class="form-row">
-                  <div class="form-group">
-                    <label class="form-label">Student ID</label>
-                    <input type="text" class="form-input" id="ex-student-id" placeholder="e.g. STU001">
-                  </div>
-                  <div class="form-group">
-                    <label class="form-label">Student Name</label>
-                    <input type="text" class="form-input" id="ex-student-name" placeholder="e.g. Ahmed Mohamed">
-                  </div>
-                </div>
                 <div class="form-row">
                   <div class="form-group">
                     <label class="form-label">Grade</label>
                     <select class="form-select" id="ex-grade">
+                      <option value="">Select grade...</option>
                       <option>KG1</option><option>KG2</option>
                       <option>Grade 1</option><option>Grade 2</option><option>Grade 3</option>
                       <option>Grade 4</option><option>Grade 5</option><option>Grade 6</option>
@@ -3194,52 +3187,43 @@ input:checked+.slider:before{transform:translateX(22px)}
                 </div>
                 <div class="form-row">
                   <div class="form-group">
-                    <label class="form-label">Score</label>
-                    <input type="number" class="form-input" id="ex-score" placeholder="e.g. 85" min="0">
-                  </div>
-                  <div class="form-group">
-                    <label class="form-label">Total Marks</label>
-                    <input type="number" class="form-input" id="ex-total" placeholder="e.g. 100" min="1" value="100">
-                  </div>
-                </div>
-                <div class="form-row">
-                  <div class="form-group">
                     <label class="form-label">Term</label>
                     <select class="form-select" id="ex-term">
                       <option>Term 1</option><option>Term 2</option><option>Term 3</option><option>Final</option>
                     </select>
                   </div>
                   <div class="form-group">
+                    <label class="form-label">Total Marks</label>
+                    <input type="number" class="form-input" id="ex-total" value="100" min="1">
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
                     <label class="form-label">Exam Date</label>
                     <input type="date" class="form-input" id="ex-date">
                   </div>
                 </div>
-                <div class="form-group">
-                  <label class="form-label">Notes (optional)</label>
-                  <input type="text" class="form-input" id="ex-notes" placeholder="e.g. Absent for part 2">
-                </div>
-                <button class="btn btn-green" onclick="addExamResult()">💾 Save Result</button>
+                <button class="btn btn-primary" onclick="loadStudentsForExam()">📋 Load Students</button>
               </div>
             </div>
-            <div class="table-card">
-              <div class="table-card-header">
-                <div class="table-card-title">📊 Recent Results</div>
-                <div style="display:flex;gap:8px;align-items:center">
-                  <select class="form-select" id="ex-filter-grade" style="padding:7px 10px;font-size:12px">
-                    <option value="">All Grades</option>
-                    <option>KG1</option><option>KG2</option>
-                    <option>Grade 1</option><option>Grade 2</option><option>Grade 3</option>
-                    <option>Grade 4</option><option>Grade 5</option><option>Grade 6</option>
-                    <option>Grade 7</option><option>Grade 8</option><option>Grade 9</option>
-                    <option>Grade 10</option><option>Grade 11</option><option>Grade 12</option>
-                  </select>
-                  <button class="btn btn-outline btn-sm" onclick="loadExamResults()">🔄 Refresh</button>
+
+            <!-- Step 2: Student scores table (hidden until students loaded) -->
+            <div id="ex-step2" style="display:none">
+              <div class="table-card">
+                <div class="table-card-header">
+                  <div>
+                    <div class="table-card-title" id="ex-table-title">Enter Scores</div>
+                    <div style="font-size:12px;color:#64748b;margin-top:2px" id="ex-table-sub"></div>
+                  </div>
+                  <div style="display:flex;gap:8px">
+                    <button class="btn btn-outline btn-sm" onclick="resetExamForm()">← Back</button>
+                    <button class="btn btn-green" id="ex-save-btn" onclick="saveAllExamResults()">💾 Save All Results</button>
+                  </div>
                 </div>
-              </div>
-              <div id="ex-list-body">
-                <div style="padding:30px;text-align:center;color:#94a3b8;font-size:13px">Click Refresh to load results</div>
+                <div id="ex-students-body"></div>
               </div>
             </div>
+
           </div>
         </div>
       </div>
@@ -3520,66 +3504,123 @@ async function loadHomework(){
       }).join('')+'</tbody></table>';
   } catch(e){body.innerHTML='<div style="padding:20px;text-align:center;color:#dc2626">Error loading homework</div>';}
 }
-async function addExamResult(){
-  var sid   = document.getElementById('ex-student-id').value.trim();
-  var sname = document.getElementById('ex-student-name').value.trim();
+var exStudents = [];
+
+async function loadStudentsForExam(){
   var grade = document.getElementById('ex-grade').value;
   var subj  = document.getElementById('ex-subject').value;
-  var score = document.getElementById('ex-score').value.trim();
-  var total = document.getElementById('ex-total').value.trim();
+  var total = document.getElementById('ex-total').value;
   var term  = document.getElementById('ex-term').value;
   var date  = document.getElementById('ex-date').value;
-  var notes = document.getElementById('ex-notes').value.trim();
-  if(!sid||!sname||!score||!total){
-    showAlert('teacher','Please fill in Student ID, Name, Score and Total Marks','error');
+  if(!grade){ showAlert('teacher','Please select a grade first','error'); return; }
+  var btn = document.querySelector('#ex-step1 .btn-primary');
+  btn.disabled=true; btn.textContent='⏳ Loading...';
+  try{
+    var res = await fetch('/api/finance/students?grade='+encodeURIComponent(grade));
+    var data = await res.json();
+    exStudents = data.students || [];
+    if(!exStudents.length){
+      showAlert('teacher','No students found for '+grade,'error');
+      btn.disabled=false; btn.textContent='📋 Load Students';
+      return;
+    }
+    // Build scores table
+    document.getElementById('ex-table-title').textContent = grade+' — '+subj+' Results';
+    document.getElementById('ex-table-sub').textContent = term+' · Total: '+total+' marks · Date: '+(date||'—');
+    var rows = exStudents.map(function(s,i){
+      return '<tr>'+
+        '<td style="font-weight:600;color:#0F1C2E">'+esc(s.name)+'</td>'+
+        '<td style="font-size:12px;color:#64748b">'+esc(s.id)+'</td>'+
+        '<td>'+
+          '<input type="number" id="ex-score-'+i+'" min="0" max="'+total+'" '+
+          'style="width:90px;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:7px;font-size:14px;outline:none;text-align:center" '+
+          'oninput="updateGradeBadge('+i+','+total+')" placeholder="—">'+
+        '</td>'+
+        '<td id="ex-badge-'+i+'" style="font-size:18px;min-width:60px">—</td>'+
+        '<td><input type="text" id="ex-note-'+i+'" placeholder="Notes..." '+
+          'style="width:160px;padding:7px 10px;border:1.5px solid #e2e8f0;border-radius:7px;font-size:12px;outline:none"></td>'+
+      '</tr>';
+    }).join('');
+    document.getElementById('ex-students-body').innerHTML =
+      '<table><thead><tr><th>Student Name</th><th>ID</th><th>Score / '+total+'</th><th>Grade</th><th>Notes</th></tr></thead>'+
+      '<tbody>'+rows+'</tbody></table>';
+    document.getElementById('ex-step1').style.display='none';
+    document.getElementById('ex-step2').style.display='block';
+  } catch(e){
+    showAlert('teacher','❌ Error loading students: '+e.message,'error');
+  }
+  btn.disabled=false; btn.textContent='📋 Load Students';
+}
+
+function updateGradeBadge(i, total){
+  var scoreEl = document.getElementById('ex-score-'+i);
+  var badgeEl = document.getElementById('ex-badge-'+i);
+  var score = parseFloat(scoreEl.value);
+  if(isNaN(score)||scoreEl.value===''){badgeEl.textContent='—';return;}
+  var pct = Math.round((score/parseFloat(total))*100);
+  var gl = pct>=90?'A+':pct>=85?'A':pct>=80?'B+':pct>=75?'B':pct>=70?'C+':pct>=65?'C':pct>=60?'D':'F';
+  var color = pct>=80?'#16a34a':pct>=60?'#2563eb':'#dc2626';
+  badgeEl.innerHTML='<span style="font-weight:700;color:'+color+'">'+gl+'</span><span style="font-size:11px;color:#94a3b8;margin-left:4px">('+pct+'%)</span>';
+}
+
+function resetExamForm(){
+  document.getElementById('ex-step1').style.display='block';
+  document.getElementById('ex-step2').style.display='none';
+  exStudents=[];
+}
+
+async function saveAllExamResults(){
+  var grade = document.getElementById('ex-grade').value;
+  var subj  = document.getElementById('ex-subject').value;
+  var total = document.getElementById('ex-total').value;
+  var term  = document.getElementById('ex-term').value;
+  var date  = document.getElementById('ex-date').value;
+  var btn   = document.getElementById('ex-save-btn');
+  // Build results array — only students with a score entered
+  var results = [];
+  exStudents.forEach(function(s, i){
+    var scoreEl = document.getElementById('ex-score-'+i);
+    var noteEl  = document.getElementById('ex-note-'+i);
+    var score   = scoreEl ? scoreEl.value.trim() : '';
+    if(!score) return; // skip blank
+    var pct = Math.round((parseFloat(score)/parseFloat(total))*100);
+    var gl  = pct>=90?'A+':pct>=85?'A':pct>=80?'B+':pct>=75?'B':pct>=70?'C+':pct>=65?'C':pct>=60?'D':'F';
+    results.push({
+      student_id:   s.id,
+      student_name: s.name,
+      grade:        grade,
+      subject:      subj,
+      score:        score,
+      total:        total,
+      percentage:   pct+'%',
+      grade_letter: gl,
+      term:         term,
+      exam_date:    date,
+      notes:        noteEl ? noteEl.value.trim() : ''
+    });
+  });
+  if(!results.length){
+    showAlert('teacher','Please enter at least one score before saving','error');
     return;
   }
-  var pct = Math.round((parseFloat(score)/parseFloat(total))*100);
-  var grade_letter = pct>=90?'A+':pct>=85?'A':pct>=80?'B+':pct>=75?'B':pct>=70?'C+':pct>=65?'C':pct>=60?'D':'F';
+  btn.disabled=true; btn.textContent='⏳ Saving...';
   try{
-    var res=await fetch('/api/exam-results',{method:'POST',
+    var res = await fetch('/api/exam-results/bulk', {
+      method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        student_id:sid, student_name:sname, grade, subject:subj,
-        score, total, percentage:pct+'%', grade_letter, term, exam_date:date, notes
-      })});
-    var data=await res.json();
+      body: JSON.stringify({results})
+    });
+    var data = await res.json();
     if(data.ok){
-      showAlert('teacher','✅ Result saved! '+sname+' — '+score+'/'+total+' ('+pct+'% '+grade_letter+')','success');
-      document.getElementById('ex-student-id').value='';
-      document.getElementById('ex-student-name').value='';
-      document.getElementById('ex-score').value='';
-      document.getElementById('ex-notes').value='';
-      loadExamResults();
-    } else {showAlert('teacher','❌ '+(data.error||'Error'),'error');}
-  } catch(e){showAlert('teacher','❌ Network error','error');}
-}
-async function loadExamResults(){
-  var body=document.getElementById('ex-list-body');
-  var grade=document.getElementById('ex-filter-grade').value;
-  body.innerHTML='<div style="padding:20px;text-align:center;color:#94a3b8">Loading...</div>';
-  try{
-    var url='/api/exam-results'+(grade?'?grade='+encodeURIComponent(grade):'');
-    var res=await fetch(url);
-    var data=await res.json();
-    var rows=data.results||[];
-    if(!rows.length){body.innerHTML='<div style="padding:30px;text-align:center;color:#94a3b8;font-size:13px">No results found</div>';return;}
-    body.innerHTML='<table><thead><tr><th>Student ID</th><th>Name</th><th>Grade</th><th>Subject</th><th>Score</th><th>%</th><th>Grade</th><th>Term</th></tr></thead><tbody>'+
-      rows.map(function(r){
-        var pct=parseFloat(r.Percentage||r.percentage||'0');
-        var badgeCol=pct>=80?'badge-green':pct>=60?'badge-blue':'badge-red';
-        return '<tr>'+
-          '<td style="font-size:12px;color:#64748b">'+esc(r['Student ID']||r.student_id||'')+'</td>'+
-          '<td style="font-weight:600">'+esc(r['Student Name']||r.student_name||'')+'</td>'+
-          '<td><span class="badge badge-blue">'+esc(r.Grade||r.grade||'')+'</span></td>'+
-          '<td>'+esc(r.Subject||r.subject||'')+'</td>'+
-          '<td>'+esc(r.Score||r.score||'')+'</td>'+
-          '<td><span class="badge '+badgeCol+'">'+esc(r.Percentage||r.percentage||'')+'</span></td>'+
-          '<td style="font-weight:700">'+esc(r['Grade Letter']||r.grade_letter||'')+'</td>'+
-          '<td style="color:#64748b">'+esc(r.Term||r.term||'')+'</td>'+
-        '</tr>';
-      }).join('')+'</tbody></table>';
-  } catch(e){body.innerHTML='<div style="padding:20px;text-align:center;color:#dc2626">Error loading results</div>';}
+      showAlert('teacher','✅ Saved '+data.saved+' results for '+grade+' — '+subj,'success');
+      resetExamForm();
+    } else {
+      showAlert('teacher','❌ '+(data.error||'Error saving'),'error');
+    }
+  } catch(e){
+    showAlert('teacher','❌ Network error: '+e.message,'error');
+  }
+  btn.disabled=false; btn.textContent='💾 Save All Results';
 }
 
 // ── FINANCE PANEL ─────────────────────────────────────────────────────────────
@@ -3737,6 +3778,45 @@ def api_post_exam_result():
         return jsonify({"ok": True})
     except Exception as e:
         logger.error(f"[api/exam-results POST] {e}")
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
+
+@app.route('/api/exam-results/bulk', methods=['POST'])
+def api_post_exam_results_bulk():
+    """Save multiple exam results at once."""
+    data = request.get_json(force=True, silent=True) or {}
+    results = data.get('results', [])
+    if not results:
+        return jsonify({"ok": False, "error": "No results provided"}), 400
+    try:
+        wb = get_client().open_by_key(SHEET_ID)
+        ws = wb.worksheet("exam")
+        headers = ws.row_values(1) if ws.row_count > 0 else []
+        expected = ['Student ID', 'Student Name', 'Grade', 'Subject', 'Score', 'Total', 'Percentage', 'Grade Letter', 'Term', 'Exam Date', 'Notes']
+        if not headers:
+            ws.update('A1', [expected])
+        rows_to_append = []
+        for r in results:
+            rows_to_append.append([
+                str(r.get('student_id', '')),
+                str(r.get('student_name', '')),
+                str(r.get('grade', '')),
+                str(r.get('subject', '')),
+                str(r.get('score', '')),
+                str(r.get('total', '')),
+                str(r.get('percentage', '')),
+                str(r.get('grade_letter', '')),
+                str(r.get('term', '')),
+                str(r.get('exam_date', '')),
+                str(r.get('notes', '')),
+            ])
+        if rows_to_append:
+            ws.append_rows(rows_to_append, value_input_option='USER_ENTERED')
+        logger.info(f"[exam-results/bulk] Saved {len(rows_to_append)} results")
+        return jsonify({"ok": True, "saved": len(rows_to_append)})
+    except Exception as e:
+        logger.error(f"[exam-results/bulk] {e}")
         return jsonify({"ok": False, "error": str(e)}), 500
 
 if __name__ == "__main__":
