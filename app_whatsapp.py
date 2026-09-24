@@ -2786,6 +2786,811 @@ def sheet_audit():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
+@app.route('/portal')
+@app.route('/portal/')
+def unified_portal():
+    """Unified school portal — Announcements + Teacher Panel + Finance."""
+    html = r"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Modern Infinity School — Staff Portal</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f4f8;min-height:100vh}
+
+/* ── LOGIN ── */
+#login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#0F1C2E 0%,#1a3a2a 100%)}
+.login-box{background:#fff;border-radius:16px;padding:40px 36px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.login-logo{text-align:center;margin-bottom:28px}
+.login-logo .school-icon{font-size:48px}
+.login-logo h1{font-size:22px;font-weight:700;color:#0F1C2E;margin-top:10px}
+.login-logo p{font-size:13px;color:#64748b;margin-top:4px}
+.field{margin-bottom:16px}
+.field label{display:block;font-size:12px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
+.field input,.field select{width:100%;padding:13px 14px;border:2px solid #e2e8f0;border-radius:9px;font-size:15px;outline:none;transition:border-color .2s;background:#f8fafc}
+.field input:focus,.field select:focus{border-color:#00C8C8;background:#fff}
+.login-btn{width:100%;padding:14px;background:linear-gradient(135deg,#0F1C2E,#1a3a5c);color:#fff;border:none;border-radius:9px;font-size:15px;font-weight:700;cursor:pointer;transition:opacity .2s}
+.login-btn:hover{opacity:.9}
+.login-error{background:#fee2e2;color:#dc2626;border-radius:8px;padding:10px 14px;font-size:13px;font-weight:600;margin-top:14px;text-align:center;display:none}
+
+/* ── MAIN LAYOUT ── */
+#main-panel{display:none;min-height:100vh}
+.layout{display:flex;min-height:100vh}
+
+/* ── SIDEBAR ── */
+.sidebar{width:240px;background:#0F1C2E;display:flex;flex-direction:column;flex-shrink:0}
+.sidebar-logo{padding:24px 20px 16px;border-bottom:1px solid rgba(255,255,255,.08)}
+.sidebar-logo .logo-icon{font-size:28px}
+.sidebar-logo h2{color:#fff;font-size:14px;font-weight:700;margin-top:6px;line-height:1.3}
+.sidebar-logo p{color:rgba(255,255,255,.4);font-size:11px;margin-top:2px}
+.sidebar-user{padding:14px 20px;border-bottom:1px solid rgba(255,255,255,.08)}
+.sidebar-user .user-name{color:#fff;font-size:13px;font-weight:600}
+.sidebar-user .user-role{color:#00C8C8;font-size:11px;margin-top:2px}
+.nav-section{padding:16px 12px 8px;flex:1}
+.nav-label{color:rgba(255,255,255,.3);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:0 8px;margin-bottom:6px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:8px;cursor:pointer;margin-bottom:2px;transition:background .15s;color:rgba(255,255,255,.6);font-size:13px;font-weight:500;border:none;background:none;width:100%;text-align:left}
+.nav-item:hover{background:rgba(255,255,255,.07);color:#fff}
+.nav-item.active{background:rgba(0,200,200,.15);color:#00C8C8;font-weight:700}
+.nav-item .nav-icon{font-size:16px;flex-shrink:0}
+.nav-item .nav-badge{margin-left:auto;background:rgba(0,200,200,.2);color:#00C8C8;border-radius:10px;padding:2px 7px;font-size:10px;font-weight:700}
+.sidebar-footer{padding:16px;border-top:1px solid rgba(255,255,255,.08)}
+.logout-btn{width:100%;padding:10px;background:rgba(255,255,255,.06);color:rgba(255,255,255,.5);border:1px solid rgba(255,255,255,.1);border-radius:8px;font-size:12px;cursor:pointer;transition:all .15s}
+.logout-btn:hover{background:rgba(255,59,48,.15);color:#ff6b6b;border-color:rgba(255,59,48,.2)}
+
+/* ── CONTENT ── */
+.content{flex:1;overflow-y:auto}
+.panel{display:none;height:100%}
+.panel.active{display:block}
+.panel-header{background:#fff;border-bottom:1px solid #e2e8f0;padding:20px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
+.panel-title{font-size:18px;font-weight:700;color:#0F1C2E}
+.panel-subtitle{font-size:12px;color:#64748b;margin-top:2px}
+.panel-body{padding:24px 28px}
+
+/* ── CARDS & STATS ── */
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px}
+.stat-card{background:#fff;border-radius:12px;padding:20px;border:1px solid #e2e8f0}
+.stat-label{font-size:12px;color:#64748b;font-weight:500;margin-bottom:4px}
+.stat-value{font-size:26px;font-weight:700;color:#0F1C2E}
+.stat-value.green{color:#16a34a}
+.stat-value.red{color:#dc2626}
+.stat-value.blue{color:#2563eb}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .15s}
+.btn-primary{background:#0F1C2E;color:#fff}
+.btn-primary:hover{background:#1a3a5c}
+.btn-teal{background:#00C8C8;color:#0F1C2E}
+.btn-teal:hover{background:#00b0b0}
+.btn-green{background:#16a34a;color:#fff}
+.btn-green:hover{background:#15803d}
+.btn-green:disabled{background:#86efac;cursor:not-allowed}
+.btn-outline{background:#fff;color:#0F1C2E;border:1.5px solid #e2e8f0}
+.btn-outline:hover{border-color:#0F1C2E}
+.btn-red{background:#dc2626;color:#fff}
+.btn-sm{padding:7px 14px;font-size:12px}
+
+/* ── FORM ── */
+.form-group{margin-bottom:16px}
+.form-label{display:block;font-size:12px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
+.form-input,.form-select,.form-textarea{width:100%;padding:11px 13px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;outline:none;background:#f8fafc;transition:border-color .15s;font-family:inherit}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:#00C8C8;background:#fff}
+.form-textarea{resize:vertical;min-height:100px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.char-counter{font-size:11px;color:#94a3b8;text-align:right;margin-top:4px}
+
+/* ── TABLE ── */
+.table-card{background:#fff;border-radius:12px;border:1px solid #e2e8f0;overflow:hidden;margin-bottom:20px}
+.table-card-header{padding:16px 20px;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between}
+.table-card-title{font-size:14px;font-weight:700;color:#0F1C2E}
+.table-count{font-size:12px;color:#64748b}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;padding:11px 16px;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;background:#f8fafc;border-bottom:1px solid #e2e8f0}
+td{padding:11px 16px;border-bottom:1px solid #f1f5f9;font-size:13px;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fafbfc}
+
+/* ── TOGGLE ── */
+.toggle{position:relative;width:48px;height:26px;cursor:pointer}
+.toggle input{opacity:0;width:0;height:0}
+.slider{position:absolute;inset:0;background:#e2e8f0;border-radius:26px;transition:.25s}
+.slider:before{content:'';position:absolute;height:18px;width:18px;left:4px;bottom:4px;background:#fff;border-radius:50%;transition:.25s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+input:checked+.slider{background:#16a34a}
+input:checked+.slider:before{transform:translateX(22px)}
+.toggle-label{font-size:12px;font-weight:600}
+.toggle-label.paid{color:#16a34a}
+.toggle-label.unpaid{color:#dc2626}
+
+/* ── ANNOUNCEMENT PREVIEW ── */
+.preview-box{background:#075E54;border-radius:12px;padding:16px 20px;margin-top:12px}
+.preview-header{color:rgba(255,255,255,.6);font-size:11px;margin-bottom:8px}
+.preview-bubble{background:#202C33;border-radius:8px;padding:12px 14px;color:#e9edef;font-size:13px;line-height:1.5;white-space:pre-wrap;max-height:150px;overflow-y:auto}
+.preview-meta{color:rgba(255,255,255,.4);font-size:10px;margin-top:6px;text-align:right}
+
+/* ── SAVE BAR ── */
+.save-bar{background:#fff;border-radius:12px;padding:14px 20px;margin-bottom:20px;border:1.5px solid #fbbf24;display:flex;align-items:center;justify-content:space-between;display:none}
+.save-bar.show{display:flex}
+.save-bar-info{font-size:13px;color:#374151}
+.save-bar-info span{font-weight:700;color:#d97706}
+
+/* ── ALERTS ── */
+.alert{border-radius:8px;padding:12px 16px;font-size:13px;font-weight:600;margin-bottom:16px;display:none}
+.alert.show{display:block}
+.alert-success{background:#dcfce7;color:#15803d}
+.alert-error{background:#fee2e2;color:#dc2626}
+.alert-info{background:#dbeafe;color:#1d4ed8}
+
+/* ── BADGE ── */
+.badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600}
+.badge-green{background:#dcfce7;color:#16a34a}
+.badge-red{background:#fee2e2;color:#dc2626}
+.badge-blue{background:#dbeafe;color:#2563eb}
+.badge-grey{background:#f1f5f9;color:#64748b}
+
+/* ── FILTERS ── */
+.filters{background:#fff;border-radius:12px;padding:16px 20px;margin-bottom:20px;border:1px solid #e2e8f0;display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
+.filter-group{display:flex;flex-direction:column;gap:5px}
+.filter-group label{font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.05em}
+.filter-group select,.filter-group input{padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;outline:none;background:#f8fafc}
+.filter-group select:focus,.filter-group input:focus{border-color:#00C8C8}
+
+/* ── RESPONSIVE ── */
+@media(max-width:768px){
+  .sidebar{width:64px}
+  .sidebar-logo h2,.sidebar-logo p,.sidebar-user,.nav-label,.nav-item span:not(.nav-icon),.nav-badge,.logout-btn span{display:none}
+  .nav-item{justify-content:center;padding:12px}
+  .stats-row{grid-template-columns:1fr}
+  .form-row{grid-template-columns:1fr}
+  .panel-body{padding:16px}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="school-icon">🏫</div>
+      <h1>Modern Infinity School</h1>
+      <p>Staff Portal — Powered by Smarvex</p>
+    </div>
+    <div class="field">
+      <label>Username</label>
+      <input type="text" id="lu" placeholder="Enter your username" autocomplete="off">
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="lp" placeholder="Enter your password" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="login-btn" onclick="doLogin()">Sign In →</button>
+    <div class="login-error" id="lerr">❌ Incorrect username or password</div>
+  </div>
+</div>
+
+<!-- MAIN PANEL -->
+<div id="main-panel">
+  <div class="layout">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="sidebar-logo">
+        <div class="logo-icon">🏫</div>
+        <h2>Modern Infinity School</h2>
+        <p>Staff Portal</p>
+      </div>
+      <div class="sidebar-user">
+        <div class="user-name" id="sidebarUserName">—</div>
+        <div class="user-role" id="sidebarUserRole">—</div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-label">Main Menu</div>
+        <button class="nav-item active" id="nav-announce" onclick="showPanel('announce')" style="display:none">
+          <span class="nav-icon">📣</span>
+          <span>Announcements</span>
+        </button>
+        <button class="nav-item" id="nav-teacher" onclick="showPanel('teacher')" style="display:none">
+          <span class="nav-icon">👩‍🏫</span>
+          <span>Teacher Panel</span>
+        </button>
+        <button class="nav-item" id="nav-finance" onclick="showPanel('finance')" style="display:none">
+          <span class="nav-icon">💳</span>
+          <span>Finance Panel</span>
+        </button>
+      </div>
+      <div class="sidebar-footer">
+        <button class="logout-btn" onclick="doLogout()">🚪 <span>Sign out</span></button>
+      </div>
+    </div>
+
+    <!-- CONTENT AREA -->
+    <div class="content">
+
+      <!-- ════════════════════════════════════════════════
+           ANNOUNCEMENTS PANEL
+      ════════════════════════════════════════════════ -->
+      <div class="panel active" id="panel-announce">
+        <div class="panel-header">
+          <div>
+            <div class="panel-title">📣 Announcements</div>
+            <div class="panel-subtitle">Send broadcasts to parents via WhatsApp</div>
+          </div>
+          <div id="ann-status-top"></div>
+        </div>
+        <div class="panel-body">
+
+          <div id="ann-alert" class="alert"></div>
+
+          <!-- Compose -->
+          <div class="table-card" style="margin-bottom:20px">
+            <div class="table-card-header">
+              <div class="table-card-title">✍️ New Announcement</div>
+            </div>
+            <div style="padding:20px">
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Audience</label>
+                  <select class="form-select" id="ann-audience">
+                    <option value="all">📢 All Parents</option>
+                    <option value="grade">📚 Specific Grade</option>
+                  </select>
+                </div>
+                <div class="form-group" id="ann-grade-wrap" style="display:none">
+                  <label class="form-label">Grade</label>
+                  <select class="form-select" id="ann-grade">
+                    <option>KG1</option><option>KG2</option>
+                    <option>Grade 1</option><option>Grade 2</option><option>Grade 3</option>
+                    <option>Grade 4</option><option>Grade 5</option><option>Grade 6</option>
+                    <option>Grade 7</option><option>Grade 8</option><option>Grade 9</option>
+                    <option>Grade 10</option><option>Grade 11</option><option>Grade 12</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Message</label>
+                <textarea class="form-textarea" id="ann-msg" placeholder="Type your announcement here..." oninput="updatePreview()" rows="4"></textarea>
+                <div class="char-counter"><span id="ann-chars">0</span> characters</div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">📎 Image (optional)</label>
+                <input type="file" accept="image/*" id="ann-image" style="padding:8px;font-size:13px;border:1.5px dashed #e2e8f0;border-radius:8px;width:100%;background:#f8fafc">
+              </div>
+              <div class="preview-box" id="ann-preview" style="display:none">
+                <div class="preview-header">👀 Preview — What parents will see</div>
+                <div class="preview-bubble" id="ann-preview-text"></div>
+                <div class="preview-meta">Modern Infinity School · now</div>
+              </div>
+              <div style="margin-top:16px;display:flex;gap:10px">
+                <button class="btn btn-green" onclick="sendAnnouncement()" id="ann-send-btn">📤 Send to Parents</button>
+                <button class="btn btn-outline" onclick="clearAnnouncement()">🗑️ Clear</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- History -->
+          <div class="table-card">
+            <div class="table-card-header">
+              <div class="table-card-title">📋 Recent Announcements</div>
+              <button class="btn btn-outline btn-sm" onclick="loadHistory()">🔄 Refresh</button>
+            </div>
+            <div id="ann-history-body">
+              <div style="padding:30px;text-align:center;color:#94a3b8;font-size:13px">Click Refresh to load history</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ════════════════════════════════════════════════
+           TEACHER PANEL
+      ════════════════════════════════════════════════ -->
+      <div class="panel" id="panel-teacher">
+        <div class="panel-header">
+          <div>
+            <div class="panel-title">👩‍🏫 Teacher Panel</div>
+            <div class="panel-subtitle">Manage homework and exam schedules</div>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div id="teacher-alert" class="alert"></div>
+          <div style="display:flex;gap:12px;margin-bottom:20px">
+            <button class="btn btn-primary" id="tbtn-hw" onclick="showTeacherTab('hw')">📚 Homework</button>
+            <button class="btn btn-outline" id="tbtn-exam" onclick="showTeacherTab('exam')">📝 Exams</button>
+          </div>
+
+          <!-- Homework Sub-tab -->
+          <div id="teacher-hw">
+            <div class="table-card" style="margin-bottom:20px">
+              <div class="table-card-header"><div class="table-card-title">➕ Add Homework</div></div>
+              <div style="padding:20px">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Grade</label>
+                    <select class="form-select" id="hw-grade">
+                      <option>KG1</option><option>KG2</option>
+                      <option>Grade 1</option><option>Grade 2</option><option>Grade 3</option>
+                      <option>Grade 4</option><option>Grade 5</option><option>Grade 6</option>
+                      <option>Grade 7</option><option>Grade 8</option><option>Grade 9</option>
+                      <option>Grade 10</option><option>Grade 11</option><option>Grade 12</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Subject</label>
+                    <select class="form-select" id="hw-subject">
+                      <option>Math</option><option>Arabic</option><option>English</option>
+                      <option>Science</option><option>Social Studies</option><option>Islamic Studies</option>
+                      <option>French</option><option>Art</option><option>Computer</option><option>PE</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Assignment</label>
+                  <textarea class="form-textarea" id="hw-assignment" placeholder="Describe the homework..." rows="3"></textarea>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Due Date</label>
+                    <input type="date" class="form-input" id="hw-due">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Notes (optional)</label>
+                    <input type="text" class="form-input" id="hw-notes" placeholder="e.g. Handwritten only">
+                  </div>
+                </div>
+                <button class="btn btn-green" onclick="addHomework()">➕ Add Homework</button>
+              </div>
+            </div>
+            <div class="table-card">
+              <div class="table-card-header">
+                <div class="table-card-title">📚 Active Homework</div>
+                <button class="btn btn-outline btn-sm" onclick="loadHomework()">🔄 Refresh</button>
+              </div>
+              <div id="hw-list-body">
+                <div style="padding:30px;text-align:center;color:#94a3b8;font-size:13px">Click Refresh to load homework</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Exam Sub-tab -->
+          <div id="teacher-exam" style="display:none">
+            <div class="table-card" style="margin-bottom:20px">
+              <div class="table-card-header"><div class="table-card-title">➕ Add Exam</div></div>
+              <div style="padding:20px">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Grade</label>
+                    <select class="form-select" id="ex-grade">
+                      <option>KG1</option><option>KG2</option>
+                      <option>Grade 1</option><option>Grade 2</option><option>Grade 3</option>
+                      <option>Grade 4</option><option>Grade 5</option><option>Grade 6</option>
+                      <option>Grade 7</option><option>Grade 8</option><option>Grade 9</option>
+                      <option>Grade 10</option><option>Grade 11</option><option>Grade 12</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Subject</label>
+                    <select class="form-select" id="ex-subject">
+                      <option>Math</option><option>Arabic</option><option>English</option>
+                      <option>Science</option><option>Social Studies</option><option>Islamic Studies</option>
+                      <option>French</option><option>Art</option><option>Computer</option><option>PE</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Exam Date</label>
+                    <input type="date" class="form-input" id="ex-date">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Exam Time (optional)</label>
+                    <input type="time" class="form-input" id="ex-time">
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Topics Covered (optional)</label>
+                  <input type="text" class="form-input" id="ex-topics" placeholder="e.g. Chapter 3 & 4">
+                </div>
+                <button class="btn btn-green" onclick="addExam()">➕ Add Exam</button>
+              </div>
+            </div>
+            <div class="table-card">
+              <div class="table-card-header">
+                <div class="table-card-title">📝 Upcoming Exams</div>
+                <button class="btn btn-outline btn-sm" onclick="loadExams()">🔄 Refresh</button>
+              </div>
+              <div id="ex-list-body">
+                <div style="padding:30px;text-align:center;color:#94a3b8;font-size:13px">Click Refresh to load exams</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════════════════════════════════════════════════
+           FINANCE PANEL
+      ════════════════════════════════════════════════ -->
+      <div class="panel" id="panel-finance">
+        <div class="panel-header">
+          <div>
+            <div class="panel-title">💳 Finance Panel</div>
+            <div class="panel-subtitle">Manage student payment status</div>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div id="finance-alert" class="alert"></div>
+          <div class="stats-row">
+            <div class="stat-card"><div class="stat-label">Total Students</div><div class="stat-value" id="fin-total">—</div></div>
+            <div class="stat-card"><div class="stat-label">Paid</div><div class="stat-value green" id="fin-paid">—</div></div>
+            <div class="stat-card"><div class="stat-label">Not Paid</div><div class="stat-value red" id="fin-unpaid">—</div></div>
+          </div>
+          <div class="save-bar" id="fin-save-bar">
+            <div class="save-bar-info">⚠️ You have <span id="fin-change-count">0</span> unsaved changes</div>
+            <button class="btn btn-green" id="fin-save-btn" onclick="saveFinanceChanges()">💾 Save All Changes</button>
+          </div>
+          <div class="filters">
+            <div class="filter-group">
+              <label>Grade</label>
+              <select id="fin-grade-filter">
+                <option value="">All Grades</option>
+                <option>KG1</option><option>KG2</option>
+                <option>Grade 1</option><option>Grade 2</option><option>Grade 3</option>
+                <option>Grade 4</option><option>Grade 5</option><option>Grade 6</option>
+                <option>Grade 7</option><option>Grade 8</option><option>Grade 9</option>
+                <option>Grade 10</option><option>Grade 11</option><option>Grade 12</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label>Status</label>
+              <select id="fin-status-filter" onchange="renderFinanceTable()">
+                <option value="">All</option>
+                <option value="paid">Paid Only</option>
+                <option value="unpaid">Not Paid Only</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label>Search</label>
+              <input type="text" id="fin-search" placeholder="Name or ID..." oninput="renderFinanceTable()">
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="loadFinanceStudents()">🔄 Load Students</button>
+          </div>
+          <div class="table-card">
+            <div class="table-card-header">
+              <div class="table-card-title">Students</div>
+              <div class="table-count" id="fin-student-count">—</div>
+            </div>
+            <div id="fin-table-body">
+              <div style="padding:30px;text-align:center;color:#94a3b8;font-size:13px">Click "Load Students" to begin</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /layout -->
+</div><!-- /main-panel -->
+
+<script>
+// ── USER ROLES & PERMISSIONS ──────────────────────────────────────────────────
+var USERS = {
+  "super_admin":    {pass:"admin2026",      name:"Super Admin",    role:"Super Administrator", panels:["announce","teacher","finance"]},
+  "admin":          {pass:"modern2026",     name:"School Admin",   role:"Administrator",       panels:["announce","teacher"]},
+  "finance":        {pass:"finance2026",    name:"Finance Team",   role:"Finance Officer",     panels:["finance"]},
+  "finance_admin":  {pass:"moderninfinity2026", name:"Finance Admin", role:"Finance Administrator", panels:["finance","announce"]},
+  "teacher":        {pass:"teacher2026",    name:"Teacher",        role:"Teacher",             panels:["teacher"]}
+};
+var currentUser = null;
+var financeStudents = [];
+var financeChanges = {};
+
+// ── LOGIN ─────────────────────────────────────────────────────────────────────
+function doLogin(){
+  var u = document.getElementById('lu').value.trim();
+  var p = document.getElementById('lp').value.trim();
+  var err = document.getElementById('lerr');
+  if(!u||!p){err.textContent='⚠️ Enter username and password';err.style.display='block';return;}
+  var user = USERS[u];
+  if(user && user.pass === p){
+    err.style.display='none';
+    currentUser = {username:u, ...user};
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('main-panel').style.display='block';
+    document.getElementById('sidebarUserName').textContent = user.name;
+    document.getElementById('sidebarUserRole').textContent = user.role;
+    // Show allowed nav items
+    user.panels.forEach(function(panel){
+      var nav = document.getElementById('nav-'+panel);
+      if(nav) nav.style.display='flex';
+    });
+    // Show first allowed panel
+    showPanel(user.panels[0]);
+    // Set today's date on forms
+    var today = new Date().toISOString().split('T')[0];
+    ['hw-due','ex-date'].forEach(function(id){
+      var el=document.getElementById(id);
+      if(el) el.value=today;
+    });
+  } else {
+    err.textContent='❌ Incorrect username or password';
+    err.style.display='block';
+    document.getElementById('lp').value='';
+  }
+}
+function doLogout(){
+  currentUser=null; financeStudents=[]; financeChanges={};
+  ['announce','teacher','finance'].forEach(function(p){
+    var nav=document.getElementById('nav-'+p);
+    if(nav) nav.style.display='none';
+  });
+  document.getElementById('main-panel').style.display='none';
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('lu').value='';
+  document.getElementById('lp').value='';
+}
+
+// ── PANEL SWITCHING ───────────────────────────────────────────────────────────
+function showPanel(name){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  var panel=document.getElementById('panel-'+name);
+  var nav=document.getElementById('nav-'+name);
+  if(panel) panel.classList.add('active');
+  if(nav) nav.classList.add('active');
+}
+
+// ── ANNOUNCEMENTS ─────────────────────────────────────────────────────────────
+document.getElementById('ann-audience').addEventListener('change',function(){
+  document.getElementById('ann-grade-wrap').style.display=this.value==='grade'?'block':'none';
+});
+function updatePreview(){
+  var msg=document.getElementById('ann-msg').value;
+  document.getElementById('ann-chars').textContent=msg.length;
+  var prev=document.getElementById('ann-preview');
+  if(msg.trim()){
+    prev.style.display='block';
+    document.getElementById('ann-preview-text').textContent=msg;
+  } else {
+    prev.style.display='none';
+  }
+}
+function clearAnnouncement(){
+  document.getElementById('ann-msg').value='';
+  document.getElementById('ann-image').value='';
+  document.getElementById('ann-preview').style.display='none';
+  document.getElementById('ann-chars').textContent='0';
+}
+async function sendAnnouncement(){
+  var msg=document.getElementById('ann-msg').value.trim();
+  if(!msg){showAlert('ann','Please write a message first','error');return;}
+  var audience=document.getElementById('ann-audience').value;
+  var grade=audience==='grade'?document.getElementById('ann-grade').value:'';
+  var imageFile=document.getElementById('ann-image').files[0];
+  var btn=document.getElementById('ann-send-btn');
+  btn.disabled=true; btn.textContent='⏳ Sending...';
+  showAlert('ann','Sending announcement...','info');
+  try{
+    var fd=new FormData();
+    fd.append('message',msg);
+    fd.append('audience',audience);
+    if(grade) fd.append('grade',grade);
+    if(imageFile) fd.append('image',imageFile);
+    var res=await fetch('/api/broadcast',{method:'POST',body:fd});
+    var data=await res.json();
+    if(data.ok){
+      showAlert('ann','✅ Sent to '+data.sent+' parents successfully!','success');
+      clearAnnouncement();
+      loadHistory();
+    } else {
+      showAlert('ann','❌ Error: '+(data.error||'Unknown error'),'error');
+    }
+  } catch(e){
+    showAlert('ann','❌ Network error: '+e.message,'error');
+  }
+  btn.disabled=false; btn.textContent='📤 Send to Parents';
+}
+async function loadHistory(){
+  var body=document.getElementById('ann-history-body');
+  body.innerHTML='<div style="padding:20px;text-align:center;color:#94a3b8">Loading...</div>';
+  try{
+    var res=await fetch('/api/announcements');
+    var data=await res.json();
+    var rows=data.announcements||[];
+    if(!rows.length){body.innerHTML='<div style="padding:30px;text-align:center;color:#94a3b8;font-size:13px">No announcements yet</div>';return;}
+    body.innerHTML='<table><thead><tr><th>Title</th><th>Message</th><th>Date</th><th>Status</th></tr></thead><tbody>'+
+      rows.slice(0,20).map(function(r){
+        return '<tr><td style="font-weight:600">'+esc(r.Title||'')+'</td>'+
+               '<td style="max-width:300px;color:#64748b">'+esc((r.Message||'').substring(0,80)+(r.Message&&r.Message.length>80?'...':''))+'</td>'+
+               '<td style="white-space:nowrap;color:#64748b">'+esc(r.Date||'')+'</td>'+
+               '<td><span class="badge '+(r.Status==='Sent'?'badge-green':'badge-grey')+'">'+esc(r.Status||'')+'</span></td></tr>';
+      }).join('')+'</tbody></table>';
+  } catch(e){
+    body.innerHTML='<div style="padding:20px;text-align:center;color:#dc2626">Error loading history</div>';
+  }
+}
+
+// ── TEACHER PANEL ─────────────────────────────────────────────────────────────
+function showTeacherTab(tab){
+  document.getElementById('teacher-hw').style.display=tab==='hw'?'block':'none';
+  document.getElementById('teacher-exam').style.display=tab==='exam'?'block':'none';
+  document.getElementById('tbtn-hw').className='btn '+(tab==='hw'?'btn-primary':'btn-outline');
+  document.getElementById('tbtn-exam').className='btn '+(tab==='exam'?'btn-primary':'btn-outline');
+}
+async function addHomework(){
+  var grade=document.getElementById('hw-grade').value;
+  var subject=document.getElementById('hw-subject').value;
+  var assignment=document.getElementById('hw-assignment').value.trim();
+  var due=document.getElementById('hw-due').value;
+  var notes=document.getElementById('hw-notes').value.trim();
+  if(!assignment||!due){showAlert('teacher','Please fill in the assignment and due date','error');return;}
+  try{
+    var res=await fetch('/api/homework',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({grade,subject,assignment,due_date:due,notes,teacher:currentUser.name})});
+    var data=await res.json();
+    if(data.ok){
+      showAlert('teacher','✅ Homework added successfully!','success');
+      document.getElementById('hw-assignment').value='';
+      document.getElementById('hw-notes').value='';
+      loadHomework();
+    } else {showAlert('teacher','❌ '+(data.error||'Error'),'error');}
+  } catch(e){showAlert('teacher','❌ Network error','error');}
+}
+async function loadHomework(){
+  var body=document.getElementById('hw-list-body');
+  body.innerHTML='<div style="padding:20px;text-align:center;color:#94a3b8">Loading...</div>';
+  try{
+    var res=await fetch('/api/homework');
+    var data=await res.json();
+    var rows=data.homework||[];
+    if(!rows.length){body.innerHTML='<div style="padding:30px;text-align:center;color:#94a3b8;font-size:13px">No active homework</div>';return;}
+    body.innerHTML='<table><thead><tr><th>Grade</th><th>Subject</th><th>Assignment</th><th>Due Date</th><th>Teacher</th><th>Status</th></tr></thead><tbody>'+
+      rows.map(function(r,i){
+        return '<tr><td><span class="badge badge-blue">'+esc(r.Grade||r.grade||'')+'</span></td>'+
+               '<td>'+esc(r.Subject||r.subject||'')+'</td>'+
+               '<td style="max-width:260px">'+esc(r.Assignment||r.assignment||'')+'</td>'+
+               '<td style="white-space:nowrap">'+esc(r['Due Date']||r.due_date||'')+'</td>'+
+               '<td style="color:#64748b">'+esc(r.Teacher||r.teacher||'')+'</td>'+
+               '<td><span class="badge badge-green">Active</span></td></tr>';
+      }).join('')+'</tbody></table>';
+  } catch(e){body.innerHTML='<div style="padding:20px;text-align:center;color:#dc2626">Error loading homework</div>';}
+}
+async function addExam(){
+  var grade=document.getElementById('ex-grade').value;
+  var subject=document.getElementById('ex-subject').value;
+  var date=document.getElementById('ex-date').value;
+  var time=document.getElementById('ex-time').value;
+  var topics=document.getElementById('ex-topics').value.trim();
+  if(!date){showAlert('teacher','Please select an exam date','error');return;}
+  try{
+    var res=await fetch('/api/exams',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({grade,subject,exam_date:date,exam_time:time,topics})});
+    var data=await res.json();
+    if(data.ok){
+      showAlert('teacher','✅ Exam added successfully!','success');
+      document.getElementById('ex-topics').value='';
+      loadExams();
+    } else {showAlert('teacher','❌ '+(data.error||'Error'),'error');}
+  } catch(e){showAlert('teacher','❌ Network error','error');}
+}
+async function loadExams(){
+  var body=document.getElementById('ex-list-body');
+  body.innerHTML='<div style="padding:20px;text-align:center;color:#94a3b8">Loading...</div>';
+  try{
+    var res=await fetch('/api/exams');
+    var data=await res.json();
+    var rows=data.exams||[];
+    if(!rows.length){body.innerHTML='<div style="padding:30px;text-align:center;color:#94a3b8;font-size:13px">No upcoming exams</div>';return;}
+    body.innerHTML='<table><thead><tr><th>Grade</th><th>Subject</th><th>Date</th><th>Time</th><th>Topics</th></tr></thead><tbody>'+
+      rows.map(function(r){
+        return '<tr><td><span class="badge badge-blue">'+esc(r.Grade||r.grade||'')+'</span></td>'+
+               '<td>'+esc(r.Subject||r.subject||'')+'</td>'+
+               '<td style="white-space:nowrap">'+esc(r['Exam Date']||r.exam_date||'')+'</td>'+
+               '<td>'+esc(r['Exam Time']||r.exam_time||'—')+'</td>'+
+               '<td style="color:#64748b">'+esc(r.Topics||r.topics||'—')+'</td></tr>';
+      }).join('')+'</tbody></table>';
+  } catch(e){body.innerHTML='<div style="padding:20px;text-align:center;color:#dc2626">Error loading exams</div>';}
+}
+
+// ── FINANCE PANEL ─────────────────────────────────────────────────────────────
+async function loadFinanceStudents(){
+  var grade=document.getElementById('fin-grade-filter').value;
+  financeChanges={};
+  updateFinanceSaveBar();
+  try{
+    var url='/api/finance/students'+(grade?'?grade='+encodeURIComponent(grade):'');
+    var res=await fetch(url);
+    var data=await res.json();
+    financeStudents=data.students||[];
+    renderFinanceTable();
+    updateFinanceStats();
+  } catch(e){showAlert('finance','❌ Error loading students','error');}
+}
+function renderFinanceTable(){
+  var status=document.getElementById('fin-status-filter').value;
+  var search=document.getElementById('fin-search').value.toLowerCase();
+  var filtered=financeStudents.filter(function(s){
+    var isPaid=(financeChanges[s.row_index]!==undefined)?financeChanges[s.row_index]==='paid':(s.payment_status||'').toLowerCase()==='paid';
+    var matchStatus=!status||(status==='paid'&&isPaid)||(status==='unpaid'&&!isPaid);
+    var matchSearch=!search||(s.name||'').toLowerCase().includes(search)||(s.id||'').toLowerCase().includes(search);
+    return matchStatus&&matchSearch;
+  });
+  document.getElementById('fin-student-count').textContent=filtered.length+' students shown';
+  if(!filtered.length){
+    document.getElementById('fin-table-body').innerHTML='<div style="padding:30px;text-align:center;color:#94a3b8;font-size:13px">No students match your filters</div>';
+    return;
+  }
+  var rows=filtered.map(function(s){
+    var isPaid=(financeChanges[s.row_index]!==undefined)?financeChanges[s.row_index]==='paid':(s.payment_status||'').toLowerCase()==='paid';
+    var label=isPaid?'<span class="toggle-label paid">✅ Paid</span>':'<span class="toggle-label unpaid">❌ Not Paid</span>';
+    return '<tr><td style="font-weight:600">'+esc(s.name)+'</td>'+
+           '<td style="color:#64748b;font-size:12px">'+esc(s.id)+'</td>'+
+           '<td><span class="badge badge-blue">'+esc(s.grade)+'</span></td>'+
+           '<td><div style="display:flex;align-items:center;gap:10px">'+
+             '<label class="toggle"><input type="checkbox" '+(isPaid?'checked':'')+' onchange="togglePayment(this,'+s.row_index+')"><span class="slider"></span></label>'+
+             '<span id="fin-lbl-'+s.row_index+'">'+label+'</span></div></td></tr>';
+  }).join('');
+  document.getElementById('fin-table-body').innerHTML=
+    '<table><thead><tr><th>Name</th><th>ID</th><th>Grade</th><th>Payment Status</th></tr></thead><tbody>'+rows+'</tbody></table>';
+}
+function togglePayment(cb,rowIndex){
+  financeChanges[rowIndex]=cb.checked?'paid':'unpaid';
+  var lbl=document.getElementById('fin-lbl-'+rowIndex);
+  if(lbl) lbl.innerHTML=cb.checked?'<span class="toggle-label paid">✅ Paid</span>':'<span class="toggle-label unpaid">❌ Not Paid</span>';
+  updateFinanceSaveBar();
+  updateFinanceStats();
+}
+function updateFinanceSaveBar(){
+  var count=Object.keys(financeChanges).length;
+  document.getElementById('fin-change-count').textContent=count;
+  document.getElementById('fin-save-bar').className='save-bar'+(count>0?' show':'');
+}
+function updateFinanceStats(){
+  var total=financeStudents.length;
+  var paid=financeStudents.filter(function(s){
+    var status=(financeChanges[s.row_index]!==undefined)?financeChanges[s.row_index]:(s.payment_status||'').toLowerCase();
+    return status==='paid';
+  }).length;
+  document.getElementById('fin-total').textContent=total||'—';
+  document.getElementById('fin-paid').textContent=paid||'—';
+  document.getElementById('fin-unpaid').textContent=total?(total-paid):'—';
+}
+async function saveFinanceChanges(){
+  var btn=document.getElementById('fin-save-btn');
+  btn.disabled=true; btn.textContent='⏳ Saving...';
+  try{
+    var res=await fetch('/api/finance/update-payment',{method:'POST',
+      headers:{'Content-Type':'application/json'},body:JSON.stringify({changes:financeChanges})});
+    var data=await res.json();
+    if(data.ok){
+      showAlert('finance','✅ Saved — '+data.updated+' students updated','success');
+      financeStudents.forEach(function(s){
+        if(financeChanges[s.row_index]!==undefined) s.payment_status=financeChanges[s.row_index];
+      });
+      financeChanges={};
+      updateFinanceSaveBar();
+      renderFinanceTable();
+    } else {showAlert('finance','❌ '+(data.error||'Error'),'error');}
+  } catch(e){showAlert('finance','❌ Network error','error');}
+  btn.disabled=false; btn.textContent='💾 Save All Changes';
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function showAlert(panel,msg,type){
+  var el=document.getElementById(panel+'-alert');
+  if(!el) return;
+  el.textContent=msg;
+  el.className='alert show alert-'+type;
+  setTimeout(function(){el.style.display='none';},5000);
+}
+function esc(s){
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+</script>
+</body>
+</html>"""
+    return html, 200, {"Content-Type": "text/html; charset=utf-8"}
+
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     logger.info(f"Starting on port {port}")
