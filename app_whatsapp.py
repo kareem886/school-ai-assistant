@@ -3532,17 +3532,23 @@ async function loadStudentsForExam(){
         '<td style="font-weight:600;color:#0F1C2E">'+esc(s.name)+'</td>'+
         '<td style="font-size:12px;color:#64748b">'+esc(s.id)+'</td>'+
         '<td>'+
-          '<input type="number" id="ex-score-'+i+'" min="0" max="'+total+'" '+
-          'style="width:90px;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:7px;font-size:14px;outline:none;text-align:center" '+
-          'oninput="updateGradeBadge('+i+','+total+')" placeholder="—">'+
+          '<div style="display:flex;align-items:center;gap:6px">'+
+            '<input type="number" id="ex-score-'+i+'" min="0" '+
+            'style="width:80px;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:7px;font-size:14px;outline:none;text-align:center" '+
+            'oninput="updateGradeBadge('+i+')" placeholder="—">'+
+            '<span style="color:#64748b;font-size:13px;white-space:nowrap">/ <strong id="ex-out-'+i+'">'+total+'</strong></span>'+
+            '<input type="number" id="ex-total-'+i+'" min="1" value="'+total+'" '+
+            'style="width:60px;padding:8px 8px;border:1.5px solid #e2e8f0;border-radius:7px;font-size:12px;outline:none;text-align:center;color:#64748b" '+
+            'oninput="syncTotal('+i+')" placeholder="Max" title="Change total for this student">'+
+          '</div>'+
         '</td>'+
-        '<td id="ex-badge-'+i+'" style="font-size:18px;min-width:60px">—</td>'+
+        '<td id="ex-badge-'+i+'" style="min-width:80px">—</td>'+
         '<td><input type="text" id="ex-note-'+i+'" placeholder="Notes..." '+
-          'style="width:160px;padding:7px 10px;border:1.5px solid #e2e8f0;border-radius:7px;font-size:12px;outline:none"></td>'+
+          'style="width:150px;padding:7px 10px;border:1.5px solid #e2e8f0;border-radius:7px;font-size:12px;outline:none"></td>'+
       '</tr>';
     }).join('');
     document.getElementById('ex-students-body').innerHTML =
-      '<table><thead><tr><th>Student Name</th><th>ID</th><th>Score / '+total+'</th><th>Grade</th><th>Notes</th></tr></thead>'+
+      '<table><thead><tr><th>Student Name</th><th>ID</th><th>Score &nbsp;/&nbsp; Out of</th><th>Grade</th><th>Notes</th></tr></thead>'+
       '<tbody>'+rows+'</tbody></table>';
     document.getElementById('ex-step1').style.display='none';
     document.getElementById('ex-step2').style.display='block';
@@ -3552,15 +3558,24 @@ async function loadStudentsForExam(){
   btn.disabled=false; btn.textContent='📋 Load Students';
 }
 
-function updateGradeBadge(i, total){
+function updateGradeBadge(i){
   var scoreEl = document.getElementById('ex-score-'+i);
+  var totalEl = document.getElementById('ex-total-'+i);
   var badgeEl = document.getElementById('ex-badge-'+i);
   var score = parseFloat(scoreEl.value);
-  if(isNaN(score)||scoreEl.value===''){badgeEl.textContent='—';return;}
-  var pct = Math.round((score/parseFloat(total))*100);
+  var total = parseFloat(totalEl ? totalEl.value : 100);
+  if(isNaN(score)||scoreEl.value===''||isNaN(total)||total<=0){badgeEl.innerHTML='—';return;}
+  var pct = Math.round((score/total)*100);
   var gl = pct>=90?'A+':pct>=85?'A':pct>=80?'B+':pct>=75?'B':pct>=70?'C+':pct>=65?'C':pct>=60?'D':'F';
   var color = pct>=80?'#16a34a':pct>=60?'#2563eb':'#dc2626';
-  badgeEl.innerHTML='<span style="font-weight:700;color:'+color+'">'+gl+'</span><span style="font-size:11px;color:#94a3b8;margin-left:4px">('+pct+'%)</span>';
+  badgeEl.innerHTML='<span style="font-weight:700;color:'+color+'">'+gl+'</span>'+
+    '<span style="font-size:11px;color:#94a3b8;margin-left:4px">('+pct+'%)</span>';
+}
+function syncTotal(i){
+  var totalEl = document.getElementById('ex-total-'+i);
+  var outEl   = document.getElementById('ex-out-'+i);
+  if(outEl && totalEl) outEl.textContent = totalEl.value||'?';
+  updateGradeBadge(i);
 }
 
 function resetExamForm(){
@@ -3580,10 +3595,12 @@ async function saveAllExamResults(){
   var results = [];
   exStudents.forEach(function(s, i){
     var scoreEl = document.getElementById('ex-score-'+i);
+    var totalEl = document.getElementById('ex-total-'+i);
     var noteEl  = document.getElementById('ex-note-'+i);
     var score   = scoreEl ? scoreEl.value.trim() : '';
+    var rowTotal= totalEl ? totalEl.value.trim() : total;
     if(!score) return; // skip blank
-    var pct = Math.round((parseFloat(score)/parseFloat(total))*100);
+    var pct = Math.round((parseFloat(score)/parseFloat(rowTotal))*100);
     var gl  = pct>=90?'A+':pct>=85?'A':pct>=80?'B+':pct>=75?'B':pct>=70?'C+':pct>=65?'C':pct>=60?'D':'F';
     results.push({
       student_id:   s.id,
@@ -3591,7 +3608,7 @@ async function saveAllExamResults(){
       grade:        grade,
       subject:      subj,
       score:        score,
-      total:        total,
+      total:        rowTotal,
       percentage:   pct+'%',
       grade_letter: gl,
       term:         term,
