@@ -3033,7 +3033,7 @@ input:checked+.slider:before{transform:translateX(22px)}
                 <div class="form-group">
                   <label class="form-label">Audience</label>
                   <select class="form-select" id="ann-audience">
-                    <option value="all">📢 All Parents</option>
+                    <option value="all" id="ann-opt-all">📢 All Parents</option>
                     <option value="grade">📚 Specific Grade</option>
                   </select>
                 </div>
@@ -3046,6 +3046,10 @@ input:checked+.slider:before{transform:translateX(22px)}
                     <option>Grade 7</option><option>Grade 8</option><option>Grade 9</option>
                     <option>Grade 10</option><option>Grade 11</option><option>Grade 12</option>
                   </select>
+                </div>
+                <div class="form-group" id="ann-grade-restricted-wrap" style="display:none">
+                  <label class="form-label">Grade</label>
+                  <select class="form-select" id="ann-grade-restricted"></select>
                 </div>
               </div>
               <div class="form-group">
@@ -3274,12 +3278,16 @@ input:checked+.slider:before{transform:translateX(22px)}
 <script>
 // ── USER ROLES & PERMISSIONS ──────────────────────────────────────────────────
 var USERS = {
-  "super_admin":    {pass:"admin2026",      name:"Super Admin",    role:"Super Administrator", panels:["announce","teacher","finance"]},
-  "admin":          {pass:"modern2026",     name:"School Admin",   role:"Administrator",       panels:["announce","teacher"]},
-  "finance":        {pass:"finance2026",    name:"Finance Team",   role:"Finance Officer",     panels:["finance"]},
-  "finance_admin":  {pass:"moderninfinity2026", name:"Finance Admin", role:"Finance Administrator", panels:["finance","announce"]},
-  "teacher":        {pass:"teacher2026",    name:"Teacher",        role:"Teacher",             panels:["teacher"]}
+  "super_admin":    {pass:"admin2026",          name:"Super Admin",    role:"Super Administrator",  panels:["announce","teacher","finance"], grade_filter:null},
+  "admin":          {pass:"modern2026",         name:"School Admin",   role:"Administrator",        panels:["announce","teacher"],           grade_filter:null},
+  "junior_admin":   {pass:"junior2026",         name:"Junior Admin",   role:"Junior Administrator", panels:["announce"],                     grade_filter:"junior"},
+  "senior_admin":   {pass:"senior2026",         name:"Senior Admin",   role:"Senior Administrator", panels:["announce"],                     grade_filter:"senior"},
+  "finance":        {pass:"finance2026",        name:"Finance Team",   role:"Finance Officer",      panels:["finance"],                      grade_filter:null},
+  "finance_admin":  {pass:"moderninfinity2026", name:"Finance Admin",  role:"Finance Administrator",panels:["finance","announce"],           grade_filter:null},
+  "teacher":        {pass:"teacher2026",        name:"Teacher",        role:"Teacher",              panels:["teacher"],                      grade_filter:null}
 };
+var JUNIOR_GRADES = ["KG1","KG2","Nursery","Grade 1","Grade 2","Grade 3","Grade 4","Grade 5","Grade 6"];
+var SENIOR_GRADES = ["Grade 7","Grade 8","Grade 9","Grade 10","Grade 11","Grade 12"];
 var currentUser = null;
 var financeStudents = [];
 var financeChanges = {};
@@ -3311,6 +3319,26 @@ function doLogin(){
       var el=document.getElementById(id);
       if(el) el.value=today;
     });
+    // Apply grade restrictions for junior/senior admin
+    var gradeFilter = user.grade_filter;
+    if(gradeFilter === 'junior' || gradeFilter === 'senior'){
+      // Hide "All Parents" option — restricted admins can only send to their grades
+      var optAll = document.getElementById('ann-opt-all');
+      if(optAll) optAll.style.display='none';
+      // Force "Specific Grade" selected
+      var audSel = document.getElementById('ann-audience');
+      if(audSel){ audSel.value='grade'; }
+      document.getElementById('ann-grade-wrap').style.display='none';
+      // Populate restricted grade dropdown
+      var grades = gradeFilter==='junior' ? JUNIOR_GRADES : SENIOR_GRADES;
+      var sel = document.getElementById('ann-grade-restricted');
+      sel.innerHTML = grades.map(function(g){return '<option>'+g+'</option>';}).join('');
+      document.getElementById('ann-grade-restricted-wrap').style.display='block';
+      // Override audience change handler to keep restricted
+      document.getElementById('ann-audience').addEventListener('change',function(){
+        this.value='grade'; // force grade
+      });
+    }
   } else {
     err.textContent='❌ Incorrect username or password';
     err.style.display='block';
@@ -3364,7 +3392,15 @@ async function sendAnnouncement(){
   var msg=document.getElementById('ann-msg').value.trim();
   if(!msg){showAlert('ann','Please write a message first','error');return;}
   var audience=document.getElementById('ann-audience').value;
-  var grade=audience==='grade'?document.getElementById('ann-grade').value:'';
+  var gradeFilter = currentUser ? currentUser.grade_filter : null;
+  var grade='';
+  if(audience==='grade'){
+    if(gradeFilter==='junior'||gradeFilter==='senior'){
+      grade=document.getElementById('ann-grade-restricted').value;
+    } else {
+      grade=document.getElementById('ann-grade').value;
+    }
+  }
   var imageFile=document.getElementById('ann-image').files[0];
   var btn=document.getElementById('ann-send-btn');
   btn.disabled=true; btn.textContent='⏳ Sending...';
