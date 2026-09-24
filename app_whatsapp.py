@@ -1334,6 +1334,7 @@ def broadcast():
 
     sent = 0
     failed = 0
+    already_sent = set()   # prevent duplicate sends to same number
     for parent in all_parents:
         phone = str(parent.get("Phone", "")).strip()
         if not phone:
@@ -1341,13 +1342,15 @@ def broadcast():
         if not phone.startswith("20") and not phone.startswith("+"):
             phone = "20" + phone.lstrip("0")
         phone = phone.lstrip("+")
+        if phone in already_sent:
+            logger.warning(f"[broadcast] Skipping duplicate phone: {phone[:6]}***")
+            continue
+        already_sent.add(phone)
         if media_id:
-            # Send image with caption using WhatsApp media_id
+            # Send image with caption using WhatsApp media_id ONLY
             ok = send_whatsapp_image(phone, media_id, caption=broadcast_msg)
-        elif image_url:
-            # Fallback: link-based image (less reliable)
-            ok = send_whatsapp_image(phone, image_url, caption=broadcast_msg)
         else:
+            # Text only — ignore image_url (old/unused path)
             ok = send_whatsapp(phone, broadcast_msg)
         if ok:
             sent += 1
