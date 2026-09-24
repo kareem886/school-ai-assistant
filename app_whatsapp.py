@@ -3278,13 +3278,11 @@ input:checked+.slider:before{transform:translateX(22px)}
 <script>
 // ── USER ROLES & PERMISSIONS ──────────────────────────────────────────────────
 var USERS = {
-  "super_admin":    {pass:"admin2026",          name:"Super Admin",    role:"Super Administrator",  panels:["announce","teacher","finance"], grade_filter:null},
-  "admin":          {pass:"modern2026",         name:"School Admin",   role:"Administrator",        panels:["announce","teacher"],           grade_filter:null},
-  "junior_admin":   {pass:"junior2026",         name:"Junior Admin",   role:"Junior Administrator", panels:["announce"],                     grade_filter:"junior"},
-  "senior_admin":   {pass:"senior2026",         name:"Senior Admin",   role:"Senior Administrator", panels:["announce"],                     grade_filter:"senior"},
-  "finance":        {pass:"finance2026",        name:"Finance Team",   role:"Finance Officer",      panels:["finance"],                      grade_filter:null},
-  "finance_admin":  {pass:"moderninfinity2026", name:"Finance Admin",  role:"Finance Administrator",panels:["finance","announce"],           grade_filter:null},
-  "teacher":        {pass:"teacher2026",        name:"Teacher",        role:"Teacher",              panels:["teacher"],                      grade_filter:null}
+  "super_admin":  {pass:"admin2026",  name:"Super Admin",    role:"Super Administrator",  panels:["announce","teacher","finance"], grade_filter:null},
+  "junior_admin": {pass:"junior2026", name:"Junior Admin",   role:"Junior Administrator", panels:["announce"],                     grade_filter:"junior"},
+  "senior_admin": {pass:"senior2026", name:"Senior Admin",   role:"Senior Administrator", panels:["announce"],                     grade_filter:"senior"},
+  "finance":      {pass:"finance2026",name:"Finance Team",   role:"Finance Officer",      panels:["finance"],                      grade_filter:null},
+  "teacher":      {pass:"teacher2026",name:"Teacher",        role:"Teacher",              panels:["teacher"],                      grade_filter:null}
 };
 var JUNIOR_GRADES = ["KG1","KG2","Nursery","Grade 1","Grade 2","Grade 3","Grade 4","Grade 5","Grade 6"];
 var SENIOR_GRADES = ["Grade 7","Grade 8","Grade 9","Grade 10","Grade 11","Grade 12"];
