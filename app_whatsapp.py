@@ -734,6 +734,7 @@ textarea:focus{border-color:var(--g)}
     <div class="ni active" onclick="showTab('b')">📣 Send Announcement</div>
     <div class="ni" onclick="showTab('h')">📋 History</div>
     <div class="ni" onclick="showTab('p')">👥 Parents</div>
+    <div class="ni" onclick="window.open('/finance','_blank')" style="margin-top:8px;border:1px solid rgba(0,200,200,0.2)">💳 Finance Panel ↗</div>
     <div class="sb-bot">
       <div class="lo" onclick="doLogout()">🚪 Sign out</div>
     </div>
