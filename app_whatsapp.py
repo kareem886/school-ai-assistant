@@ -3636,6 +3636,133 @@ async function saveFinanceChanges(){
 }
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
+
+// ── ANNOUNCEMENTS ─────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function(){
+  var audSel = document.getElementById('ann-audience');
+  if(audSel) audSel.addEventListener('change', function(){
+    document.getElementById('ann-grade-wrap').style.display = this.value==='grade' ? 'block' : 'none';
+  });
+});
+function updatePreview(){
+  var msg = document.getElementById('ann-msg').value;
+  document.getElementById('ann-chars').textContent = msg.length;
+  var prev = document.getElementById('ann-preview');
+  if(msg.trim()){
+    prev.style.display='block';
+    document.getElementById('ann-preview-text').textContent = msg;
+  } else { prev.style.display='none'; }
+}
+function clearAnnouncement(){
+  document.getElementById('ann-msg').value='';
+  document.getElementById('ann-image').value='';
+  document.getElementById('ann-preview').style.display='none';
+  document.getElementById('ann-chars').textContent='0';
+}
+async function sendAnnouncement(){
+  var msg = document.getElementById('ann-msg').value.trim();
+  if(!msg){ showAlert('ann','Please write a message first','error'); return; }
+  var audience = document.getElementById('ann-audience').value;
+  var grade = '';
+  var gf = currentUser ? currentUser.grade_filter : null;
+  if(audience==='grade'){
+    if(gf==='junior'||gf==='senior'){
+      grade = document.getElementById('ann-grade-restricted').value;
+    } else {
+      grade = document.getElementById('ann-grade').value;
+    }
+  }
+  var imageFile = document.getElementById('ann-image').files[0];
+  var btn = document.getElementById('ann-send-btn');
+  btn.disabled=true; btn.textContent='⏳ Sending...';
+  showAlert('ann','Sending announcement...','info');
+  try{
+    var fd = new FormData();
+    fd.append('message', msg);
+    fd.append('audience', audience);
+    if(grade) fd.append('grade', grade);
+    if(imageFile) fd.append('image', imageFile);
+    var res = await fetch('/api/broadcast', {method:'POST', body:fd});
+    var data = await res.json();
+    if(data.ok){
+      showAlert('ann','✅ Sent to '+data.sent+' parents successfully!','success');
+      clearAnnouncement();
+      loadHistory();
+    } else { showAlert('ann','❌ Error: '+(data.error||'Unknown error'),'error'); }
+  } catch(e){ showAlert('ann','❌ Network error: '+e.message,'error'); }
+  btn.disabled=false; btn.textContent='📤 Send to Parents';
+}
+async function loadHistory(){
+  var body = document.getElementById('ann-history-body');
+  body.innerHTML='<div style="padding:20px;text-align:center;color:#94a3b8">Loading...</div>';
+  try{
+    var res = await fetch('/api/announcements');
+    var data = await res.json();
+    var rows = data.announcements || [];
+    if(!rows.length){ body.innerHTML='<div style="padding:30px;text-align:center;color:#94a3b8;font-size:13px">No announcements yet</div>'; return; }
+    body.innerHTML='<table><thead><tr><th>Title</th><th>Message</th><th>Date</th><th>Status</th></tr></thead><tbody>'+
+      rows.slice(0,20).map(function(r){
+        return '<tr><td style="font-weight:600">'+esc(r.Title||'')+'</td>'+
+               '<td style="max-width:280px;color:#64748b">'+esc((r.Message||'').substring(0,80)+((r.Message||'').length>80?'...':''))+'</td>'+
+               '<td style="white-space:nowrap;color:#64748b">'+esc(r.Date||'')+'</td>'+
+               '<td><span class="badge '+(r.Status==='Sent'?'badge-green':'badge-grey')+'">'+esc(r.Status||'')+'</span></td></tr>';
+      }).join('')+'</tbody></table>';
+  } catch(e){ body.innerHTML='<div style="padding:20px;text-align:center;color:#dc2626">Error loading history</div>'; }
+}
+
+// ── TEACHER PANEL ─────────────────────────────────────────────────────────────
+function showTeacherTab(tab){
+  document.getElementById('teacher-hw').style.display   = tab==='hw'   ? 'block' : 'none';
+  document.getElementById('teacher-exam').style.display = tab==='exam' ? 'block' : 'none';
+  document.getElementById('tbtn-hw').className   = 'btn '+(tab==='hw'  ?'btn-primary':'btn-outline');
+  document.getElementById('tbtn-exam').className = 'btn '+(tab==='exam'?'btn-primary':'btn-outline');
+}
+async function addHomework(){
+  var grade       = document.getElementById('hw-grade').value;
+  var subject     = document.getElementById('hw-subject').value;
+  var assignment  = document.getElementById('hw-assignment').value.trim();
+  var due         = document.getElementById('hw-due').value;
+  var notes       = document.getElementById('hw-notes').value.trim();
+  var teacherName = currentUser ? currentUser.name : 'Unknown';
+  if(!assignment||!due){ showAlert('teacher','Please fill in the assignment and due date','error'); return; }
+  var btn = document.querySelector('#teacher-hw .btn-green');
+  if(btn){ btn.disabled=true; btn.textContent='⏳ Saving...'; }
+  try{
+    var res = await fetch('/api/homework', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({grade, subject, assignment, due_date:due, notes, teacher:teacherName})
+    });
+    var data = await res.json();
+    if(data.ok){
+      showAlert('teacher','✅ Homework added by '+teacherName+'!','success');
+      document.getElementById('hw-assignment').value='';
+      document.getElementById('hw-notes').value='';
+      loadHomework();
+    } else { showAlert('teacher','❌ '+(data.error||'Error'),'error'); }
+  } catch(e){ showAlert('teacher','❌ Network error: '+e.message,'error'); }
+  if(btn){ btn.disabled=false; btn.textContent='➕ Add Homework'; }
+}
+async function loadHomework(){
+  var body = document.getElementById('hw-list-body');
+  body.innerHTML='<div style="padding:20px;text-align:center;color:#94a3b8">Loading...</div>';
+  try{
+    var res = await fetch('/api/homework');
+    var data = await res.json();
+    var rows = data.homework || [];
+    if(!rows.length){ body.innerHTML='<div style="padding:30px;text-align:center;color:#94a3b8;font-size:13px">No active homework</div>'; return; }
+    body.innerHTML='<table><thead><tr><th>Grade</th><th>Subject</th><th>Assignment</th><th>Due Date</th><th>Teacher</th></tr></thead><tbody>'+
+      rows.map(function(r){
+        return '<tr>'+
+          '<td><span class="badge badge-blue">'+esc(r.Grade||r.grade||'')+'</span></td>'+
+          '<td>'+esc(r.Subject||r.subject||'')+'</td>'+
+          '<td style="max-width:260px">'+esc(r.Assignment||r.assignment||'')+'</td>'+
+          '<td style="white-space:nowrap">'+esc(r["Due Date"]||r.due_date||'')+'</td>'+
+          '<td style="color:#64748b">'+esc(r.Teacher||r.teacher||'')+'</td>'+
+        '</tr>';
+      }).join('')+'</tbody></table>';
+  } catch(e){ body.innerHTML='<div style="padding:20px;text-align:center;color:#dc2626">Error loading homework</div>'; }
+}
+
 function showAlert(panel,msg,type){
   var el=document.getElementById(panel+'-alert');
   if(!el) return;
