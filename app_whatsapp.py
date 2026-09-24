@@ -2765,6 +2765,27 @@ def finance_update_payment():
         return jsonify({"ok": False, "error": str(e)}), 500
 
 
+
+
+@app.route('/sheet-audit')
+def sheet_audit():
+    """Temporary: read all tabs and return their headers and row counts."""
+    try:
+        wb = get_client().open_by_key(SHEET_ID)
+        result = {}
+        for ws in wb.worksheets():
+            values = ws.get_all_values()
+            headers = values[0] if values else []
+            row_count = len(values) - 1 if len(values) > 1 else 0
+            result[ws.title] = {
+                "headers": headers,
+                "rows": row_count,
+                "total_columns": len(headers)
+            }
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     logger.info(f"Starting on port {port}")
