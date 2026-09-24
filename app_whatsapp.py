@@ -3349,11 +3349,6 @@ function doLogin(){
     });
     return;
   }
-  if(false){ currentUser = null;
-    document.getElementById('login-screen').style.display='none';
-    document.getElementById('main-panel').style.display='block';
-    doLoginSuccess(currentUser);
-  }
 }
 function doLoginSuccess(user){
     document.getElementById('login-screen').style.display='none';
