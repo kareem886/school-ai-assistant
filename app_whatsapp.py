@@ -1351,12 +1351,36 @@ def broadcast():
     return jsonify({"sent": sent, "failed": failed, "total": len(all_parents)})
 
 
-@app.route('/api/homework')
+@app.route('/api/homework', methods=['GET','POST'])
 def homework_api():
-    grade = request.args.get("grade", "")
-    rows = read_tab("Homework")
-    result = [r for r in rows if grade.lower() in str(r.get("Grade","")).lower() and str(r.get("Assignment","")).strip()]
-    return jsonify({"homework": result, "count": len(result)})
+    if request.method == 'POST':
+        data = request.get_json(force=True, silent=True) or {}
+        grade      = str(data.get('grade', '')).strip()
+        subject    = str(data.get('subject', '')).strip()
+        assignment = str(data.get('assignment', '')).strip()
+        due_date   = str(data.get('due_date', '')).strip()
+        notes      = str(data.get('notes', '')).strip()
+        teacher    = str(data.get('teacher', '')).strip()
+        if not assignment or not due_date:
+            return jsonify({'ok': False, 'error': 'Assignment and due date are required'}), 400
+        try:
+            wb = get_client().open_by_key(SHEET_ID)
+            ws = wb.worksheet('Homework')
+            headers = ws.row_values(1) if ws.row_count > 0 else []
+            if not headers:
+                ws.update('A1', [['Grade','Subject','Assignment','Due Date','Teacher','Notes','Status']])
+            ws.append_row([grade, subject, assignment, due_date, teacher, notes, 'Active'],
+                          value_input_option='USER_ENTERED')
+            logger.info(f"[homework] Added by {teacher}: {grade} {subject}")
+            return jsonify({'ok': True})
+        except Exception as e:
+            logger.error(f"[homework POST] {e}")
+            return jsonify({'ok': False, 'error': str(e)}), 500
+    # GET
+    grade = request.args.get('grade', '')
+    rows = read_tab('Homework')
+    result = [r for r in rows if grade.lower() in str(r.get('Grade','')).lower() and str(r.get('Assignment','')).strip()]
+    return jsonify({'homework': result, 'count': len(result)})
 
 @app.route('/api/announcements')
 def announcements_api():
@@ -3407,11 +3431,9 @@ function showPanel(name){
   var nav   = document.getElementById('nav-'+name);
   if(panel) panel.classList.add('active');
   if(nav)   nav.classList.add('active');
-  // Update teacher name tags
-  if(currentUser){
-    var hwTag = document.getElementById('hw-teacher-tag');
-    if(hwTag) hwTag.textContent = '👤 '+currentUser.name;
-  }
+  // Update teacher name tags immediately on login
+  var hwTag = document.getElementById('hw-teacher-tag');
+  if(hwTag) hwTag.textContent = user && user.name ? '👤 '+user.name : '';
 }
 var exStudents = [];
 
@@ -3894,7 +3916,7 @@ def api_teacher_login():
             if u.lower() == username.lower() and p == password and active == 'yes':
                 name = str(row.get('Full Name', username)).strip()
                 logger.info(f"[teacher-login] ✅ {username} logged in")
-                return jsonify({"ok": True, "name": name, "username": username})
+                return jsonify({"ok": True, "name": name, "username": username, "role": "Teacher"})
         logger.warning(f"[teacher-login] ❌ Failed login for: {username}")
         return jsonify({"ok": False, "error": "Invalid credentials"}), 401
     except Exception as e:
