@@ -3107,7 +3107,10 @@ input:checked+.slider:before{transform:translateX(22px)}
           <!-- Homework Sub-tab -->
           <div id="teacher-hw">
             <div class="table-card" style="margin-bottom:20px">
-              <div class="table-card-header"><div class="table-card-title">➕ Add Homework</div></div>
+              <div class="table-card-header">
+                <div class="table-card-title">➕ Add Homework</div>
+                <div style="font-size:12px;color:#00C8C8" id="hw-teacher-tag"></div>
+              </div>
               <div style="padding:20px">
                 <div class="form-row">
                   <div class="form-group">
@@ -3214,6 +3217,7 @@ input:checked+.slider:before{transform:translateX(22px)}
                   <div>
                     <div class="table-card-title" id="ex-table-title">Enter Scores</div>
                     <div style="font-size:12px;color:#64748b;margin-top:2px" id="ex-table-sub"></div>
+                    <div style="font-size:11px;color:#00C8C8;margin-top:3px" id="ex-teacher-tag"></div>
                   </div>
                   <div style="display:flex;gap:8px">
                     <button class="btn btn-outline btn-sm" onclick="resetExamForm()">← Back</button>
@@ -3403,6 +3407,11 @@ function showPanel(name){
   var nav   = document.getElementById('nav-'+name);
   if(panel) panel.classList.add('active');
   if(nav)   nav.classList.add('active');
+  // Update teacher name tags
+  if(currentUser){
+    var hwTag = document.getElementById('hw-teacher-tag');
+    if(hwTag) hwTag.textContent = '👤 '+currentUser.name;
+  }
 }
 var exStudents = [];
 
@@ -3425,8 +3434,10 @@ async function loadStudentsForExam(){
       return;
     }
     // Build scores table
+    var tName = currentUser ? currentUser.name : '';
     document.getElementById('ex-table-title').textContent = grade+' — '+subj+' Results';
     document.getElementById('ex-table-sub').textContent = term+' · Total: '+total+' marks · Date: '+(date||'—');
+    document.getElementById('ex-teacher-tag').textContent = tName ? '👤 Entered by: '+tName : '';
     var rows = exStudents.map(function(s,i){
       return '<tr>'+
         '<td style="font-weight:600;color:#0F1C2E">'+esc(s.name)+'</td>'+
@@ -3491,7 +3502,7 @@ async function saveAllExamResults(){
   var term  = document.getElementById('ex-term').value;
   var date  = document.getElementById('ex-date').value;
   var btn   = document.getElementById('ex-save-btn');
-  // Build results array — only students with a score entered
+  var teacherName = currentUser ? currentUser.name : 'Unknown';
   var results = [];
   exStudents.forEach(function(s, i){
     var scoreEl = document.getElementById('ex-score-'+i);
@@ -3499,7 +3510,7 @@ async function saveAllExamResults(){
     var noteEl  = document.getElementById('ex-note-'+i);
     var score   = scoreEl ? scoreEl.value.trim() : '';
     var rowTotal= totalEl ? totalEl.value.trim() : total;
-    if(!score) return; // skip blank
+    if(!score) return;
     var pct = Math.round((parseFloat(score)/parseFloat(rowTotal))*100);
     var gl  = pct>=90?'A+':pct>=85?'A':pct>=80?'B+':pct>=75?'B':pct>=70?'C+':pct>=65?'C':pct>=60?'D':'F';
     results.push({
@@ -3513,6 +3524,7 @@ async function saveAllExamResults(){
       grade_letter: gl,
       term:         term,
       exam_date:    date,
+      entered_by:   teacherName,
       notes:        noteEl ? noteEl.value.trim() : ''
     });
   });
@@ -3529,7 +3541,7 @@ async function saveAllExamResults(){
     });
     var data = await res.json();
     if(data.ok){
-      showAlert('teacher','✅ Saved '+data.saved+' results for '+grade+' — '+subj,'success');
+      showAlert('teacher','✅ Saved '+data.saved+' results for '+grade+' — '+subj+' (by '+teacherName+')','success');
       resetExamForm();
     } else {
       showAlert('teacher','❌ '+(data.error||'Error saving'),'error');
