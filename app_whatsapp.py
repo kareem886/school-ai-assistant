@@ -306,13 +306,21 @@ def process_message(msg, from_phone=""):
         name = s.get('Full Name', s.get('Student Name',''))
         grade = s.get('Grade','')
 
-        # EXAM RESULTS — SECURED BY PARENT PHONE NUMBER
+        # EXAM RESULTS — SECURED BY PARENT PHONE NUMBER + PAYMENT STATUS
         result_kw = ['result','results','exam','score','mark','marks','\u0646\u062a\u064a\u062c\u0629','\u0646\u062a\u0627\u0626\u062c','\u0627\u0645\u062a\u062d\u0627\u0646','\u0627\u0645\u062a\u062d\u0627\u0646\u0627\u062a','\u062f\u0631\u062c\u0629','\u062f\u0631\u062c\u0627\u062a']
         if any(w in m for w in result_kw):
             authorized = get_parent_students(from_phone)
             if sid not in authorized:
                 return (f"🔒 \u0639\u0630\u0631\u0627\u064b\u060c \u064a\u0645\u0643\u0646\u0643 \u0641\u0642\u0637 \u0627\u0644\u0627\u0637\u0644\u0627\u0639 \u0639\u0644\u0649 \u0646\u062a\u0627\u0626\u062c \u0623\u0628\u0646\u0627\u0626\u0643 \u0627\u0644\u0645\u0633\u062c\u0644\u064a\u0646 \u0628\u0631\u0642\u0645\u0643.\n"
                         f"📞 {SCHOOL['phone']}") if is_arabic else                        (f"🔒 Sorry, you can only access results for students registered under your phone number.\n"
+                        f"📞 {SCHOOL['phone']}")
+            # ── PAYMENT GATE ──────────────────────────────────────────────────
+            payment_status = str(s.get("Payment Status", "")).strip().lower()
+            if payment_status != "paid":
+                return (f"📞 \u0644\u0644\u0627\u0633\u062a\u0641\u0633\u0627\u0631 \u0639\u0646 \u0646\u062a\u0627\u0626\u062c \u0637\u0641\u0644\u0643\u060c\n"
+                        f"\u064a\u0631\u062c\u0649 \u0627\u0644\u062a\u0648\u0627\u0635\u0644 \u0645\u0639 \u0645\u0643\u062a\u0628 \u0627\u0644\u0645\u062f\u0631\u0633\u0629.\n\n"
+                        f"📞 {SCHOOL['phone']}") if is_arabic else (
+                        f"📞 To access your child's exam results, please contact the school office.\n\n"
                         f"📞 {SCHOOL['phone']}")
             result_rows = read_tab("exam")
             student_results = [r for r in result_rows if str(r.get("Student ID","")).upper() == sid]
@@ -377,37 +385,15 @@ def process_message(msg, from_phone=""):
     # Fees
     fees_kw = ['fee','fees','cost','how much','price','\u0631\u0633\u0648\u0645','\u0645\u0635\u0627\u0631\u064a\u0641','\u0643\u0627\u0645','\u0633\u0639\u0631','\u062a\u0643\u0644\u0641\u0629','\u0627\u0644\u0631\u0633\u0648\u0645','\u0627\u0644\u0645\u0635\u0627\u0631\u064a\u0641','\u0628\u0643\u0627\u0645','\u0628\u0642\u062f \u0627\u064a\u0647','\u0642\u062f\u064a\u0647','\u0642\u062f \u0627\u064a\u0647']
     if any(w in m for w in fees_kw):
-        rows = read_tab("Admissions")
-        info = {r.get("Item",""): r.get("Value","") for r in rows}
         if is_arabic:
-            return (f"💰 \u0631\u0633\u0648\u0645 Modern Infinity 2025/2026\n\n"
-                    f"🔹 KG: {info.get('KG1 Fees','42,000 جنيه')}\n"
-                    f"🔹 \u0627\u0644\u0635\u0641 1-3: {info.get('Grade 1-3 Fees','48,000 جنيه')}\n"
-                    f"🔹 \u0627\u0644\u0635\u0641 4-6: {info.get('Grade 4-6 Fees','55,000 جنيه')}\n"
-                    f"🔹 \u0627\u0644\u0635\u0641 7-9: {info.get('Grade 7-9 Fees','62,000 جنيه')}\n"
-                    f"🔹 \u0627\u0644\u0635\u0641 10-12: {info.get('Grade 10-12 Fees','70,000 جنيه')}\n\n"
-                    f"📅 \u062a\u0642\u0633\u064a\u0645 \u0639\u0644\u0649 3 \u0623\u0642\u0633\u0627\u0637\n"
+            return (f"\u💳 \u062d\u0627\u0644\u0629 \u0633\u062f\u0627\u062f \u0627\u0644\u0631\u0633\u0648\u0645\n\n"
+                    f"\u0644\u0644\u0627\u0633\u062a\u0641\u0633\u0627\u0631 \u0639\u0646 \u062d\u0627\u0644\u0629 \u0633\u062f\u0627\u062f \u0631\u0633\u0648\u0645 \u0637\u0641\u0644\u0643\u060c\n"
+                    f"\u0623\u0631\u0633\u0644 \u0631\u0642\u0645 \u0627\u0644\u0637\u0627\u0644\u0628. \u0645\u062b\u0627\u0644: STU001\n\n"
                     f"📞 {SCHOOL['phone']}")
-        return (f"💰 Modern Infinity Fees 2025/2026\n\n"
-                f"🔹 KG: {info.get('KG1 Fees','42,000 EGP')}\n"
-                f"🔹 Grade 1-3: {info.get('Grade 1-3 Fees','48,000 EGP')}\n"
-                f"🔹 Grade 4-6: {info.get('Grade 4-6 Fees','55,000 EGP')}\n"
-                f"🔹 Grade 7-9: {info.get('Grade 7-9 Fees','62,000 EGP')}\n"
-                f"🔹 Grade 10-12: {info.get('Grade 10-12 Fees','70,000 EGP')}\n\n"
-                f"📅 3 installments available\n"
+        return (f"💳 Fees Status\n\n"
+                f"To check your child\'s fees status, please send their Student ID.\n"
+                f"Example: STU001\n\n"
                 f"📞 {SCHOOL['phone']}")
-
-    # Announcements
-    ann_kw = ['announcement','news','holiday','\u0625\u0639\u0644\u0627\u0646','\u0627\u0645\u062a\u062d\u0627\u0646','\u0625\u0639\u0644\u0627\u0646\u0627\u062a','\u0627\u0639\u0644\u0627\u0646\u0627\u062a','\u0627\u062e\u0628\u0627\u0631','\u0623\u062e\u0628\u0627\u0631','\u0627\u0645\u062a\u062d\u0627\u0646\u0627\u062a','\u0627\u062c\u0627\u0632\u0629','\u0625\u062c\u0627\u0632\u0629','\u0645\u0648\u0639\u062f','\u062c\u062f\u064a\u062f']
-    if any(w in m for w in ann_kw):
-        rows = read_tab("Announcements")
-        active = [r for r in rows if str(r.get("Status","")).lower() == "active"]
-        if not active:
-            return "📢 \u0644\u0627 \u062a\u0648\u062c\u062f \u0625\u0639\u0644\u0627\u0646\u0627\u062a \u062d\u0627\u0644\u064a\u0627\u064b" if is_arabic else "📢 No announcements at this time"
-        r = "📢 \u0625\u0639\u0644\u0627\u0646\u0627\u062a \u0627\u0644\u0645\u062f\u0631\u0633\u0629\n\n" if is_arabic else "📢 School Announcements\n\n"
-        for a in active:
-            r += f"🔔 {a.get('Title','')}\n{a.get('Message','')}\n📅 {a.get('Date','')}\n\n"
-        return r.strip()
 
     # Bus Routes
     bus_kw = ['bus','route','transport','pickup','\u0645\u0648\u0627\u0635\u0644\u0627\u062a','\u0628\u0627\u0635','\u0627\u0648\u062a\u0648\u0628\u064a\u0633','\u0646\u0642\u0644','\u062a\u0648\u0635\u064a\u0644','\u0645\u064a\u0639\u0627\u062f \u0627\u0644\u0628\u0627\u0635']
@@ -2354,6 +2340,426 @@ def setup_teachers_tab():
     except Exception as e:
         import traceback
         return jsonify({"ok": False, "error": str(e), "trace": traceback.format_exc()[-400:]}), 500
+
+
+
+
+@app.route('/finance')
+def finance_panel():
+    """Finance team panel — manage student payment status."""
+    html = """<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Finance Panel — Modern Infinity School</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f4f8;min-height:100vh}
+/* LOGIN */
+#login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#0F1C2E,#1a3a2a)}
+.login-box{background:#fff;border-radius:16px;padding:40px 36px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.login-logo{text-align:center;margin-bottom:28px}
+.login-logo .icon{font-size:48px}
+.login-logo h1{font-size:22px;font-weight:700;color:#0F1C2E;margin-top:10px}
+.login-logo p{font-size:13px;color:#64748b;margin-top:4px}
+.field{margin-bottom:16px}
+.field label{display:block;font-size:12px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
+.field input,.field select{width:100%;padding:13px 14px;border:2px solid #e2e8f0;border-radius:9px;font-size:15px;outline:none;transition:border-color .2s;background:#f8fafc}
+.field input:focus,.field select:focus{border-color:#16a34a;background:#fff}
+.login-btn{width:100%;padding:14px;background:#16a34a;color:#fff;border:none;border-radius:9px;font-size:15px;font-weight:700;cursor:pointer;transition:background .2s}
+.login-btn:hover{background:#15803d}
+.login-error{background:#fee2e2;color:#dc2626;border-radius:8px;padding:10px 14px;font-size:13px;font-weight:600;margin-top:14px;text-align:center;display:none}
+/* MAIN */
+#main-panel{display:none}
+.topbar{background:#0F1C2E;color:#fff;padding:16px 28px;display:flex;align-items:center;justify-content:space-between}
+.topbar h1{font-size:18px;font-weight:700}
+.topbar p{font-size:12px;opacity:.6;margin-top:2px}
+.topbar-right{display:flex;align-items:center;gap:14px}
+.badge{background:rgba(22,163,74,.25);color:#86efac;padding:5px 14px;border-radius:20px;font-size:12px;font-weight:700;border:1px solid rgba(22,163,74,.3)}
+.logout-btn{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.2);border-radius:6px;padding:6px 14px;font-size:12px;cursor:pointer}
+.logout-btn:hover{background:rgba(255,255,255,.2)}
+.content{max-width:1000px;margin:28px auto;padding:0 20px}
+/* FILTERS */
+.filters{background:#fff;border-radius:12px;padding:20px 24px;margin-bottom:20px;border:1px solid #e2e8f0;display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end}
+.filter-group{display:flex;flex-direction:column;gap:6px;min-width:180px}
+.filter-group label{font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.05em}
+.filter-group select,.filter-group input{padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;outline:none;background:#f8fafc}
+.filter-group select:focus,.filter-group input:focus{border-color:#16a34a}
+.load-btn{padding:10px 24px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap}
+.load-btn:hover{background:#15803d}
+/* STATS */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px}
+.stat-card{background:#fff;border-radius:12px;padding:20px 24px;border:1px solid #e2e8f0}
+.stat-label{font-size:13px;color:#64748b;font-weight:500;margin-bottom:6px}
+.stat-value{font-size:28px;font-weight:700;color:#0F1C2E}
+.stat-value.green{color:#16a34a}
+.stat-value.red{color:#dc2626}
+/* SAVE BAR */
+.save-bar{background:#fff;border-radius:12px;padding:16px 24px;margin-bottom:20px;border:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;display:none}
+.save-bar.show{display:flex}
+.save-info{font-size:14px;color:#374151}<br>.save-info span{font-weight:700;color:#dc2626}
+.save-btn{padding:10px 28px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer}
+.save-btn:hover{background:#15803d}
+.save-btn:disabled{background:#86efac;cursor:not-allowed}
+/* TABLE */
+.table-wrap{background:#fff;border-radius:12px;border:1px solid #e2e8f0;overflow:hidden}
+.table-header{padding:16px 24px;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between}
+.table-title{font-size:15px;font-weight:700;color:#0F1C2E}
+.student-count{font-size:13px;color:#64748b}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;padding:12px 16px;font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;background:#f8fafc;border-bottom:1px solid #e2e8f0}
+td{padding:12px 16px;border-bottom:1px solid #f1f5f9;font-size:14px;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fafbfc}
+.grade-badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;background:#e2e8f0;color:#475569}
+/* TOGGLE */
+.toggle-wrap{display:flex;align-items:center;gap:10px}
+.toggle{position:relative;width:52px;height:28px;cursor:pointer}
+.toggle input{opacity:0;width:0;height:0}
+.slider{position:absolute;inset:0;background:#e2e8f0;border-radius:28px;transition:.3s}
+.slider:before{content:'';position:absolute;height:20px;width:20px;left:4px;bottom:4px;background:#fff;border-radius:50%;transition:.3s;box-shadow:0 1px 4px rgba(0,0,0,.2)}
+input:checked+.slider{background:#16a34a}
+input:checked+.slider:before{transform:translateX(24px)}
+.toggle-label{font-size:13px;font-weight:600}
+.toggle-label.paid{color:#16a34a}
+.toggle-label.unpaid{color:#dc2626}
+/* Status */
+.status-msg{padding:12px 16px;border-radius:8px;font-size:13px;font-weight:600;margin-top:12px;display:none}
+.status-msg.success{background:#dcfce7;color:#15803d;display:block}
+.status-msg.error{background:#fee2e2;color:#dc2626;display:block}
+.empty{text-align:center;padding:40px;color:#94a3b8;font-size:14px}
+@media(max-width:600px){.stats{grid-template-columns:1fr}.filters{flex-direction:column}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="icon">💳</div>
+      <h1>Finance Panel</h1>
+      <p>Modern Infinity Language School</p>
+    </div>
+    <div class="field"><label>Username</label>
+      <input type="text" id="fu" placeholder="Finance username" autocomplete="off">
+    </div>
+    <div class="field"><label>Password</label>
+      <input type="password" id="fp" placeholder="Password" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="login-btn" onclick="doLogin()">Sign In →</button>
+    <div class="login-error" id="fe">❌ Incorrect username or password</div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div id="main-panel">
+  <div class="topbar">
+    <div>
+      <h1>💳 Finance Panel</h1>
+      <p>Modern Infinity Language School — Payment Management</p>
+    </div>
+    <div class="topbar-right">
+      <span class="badge">Finance Team</span>
+      <button class="logout-btn" onclick="doLogout()">Sign out</button>
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- Filters -->
+    <div class="filters">
+      <div class="filter-group">
+        <label>Grade</label>
+        <select id="gradeFilter">
+          <option value="">All Grades</option>
+          <option>KG1</option><option>KG2</option>
+          <option>Grade 1</option><option>Grade 2</option><option>Grade 3</option>
+          <option>Grade 4</option><option>Grade 5</option><option>Grade 6</option>
+          <option>Grade 7</option><option>Grade 8</option><option>Grade 9</option>
+          <option>Grade 10</option><option>Grade 11</option><option>Grade 12</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Payment Status</label>
+        <select id="statusFilter">
+          <option value="">All Students</option>
+          <option value="paid">Paid Only</option>
+          <option value="unpaid">Not Paid Only</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Search</label>
+        <input type="text" id="searchInput" placeholder="Name or Student ID..." oninput="filterTable()">
+      </div>
+      <button class="load-btn" onclick="loadStudents()">🔄 Load Students</button>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats">
+      <div class="stat-card"><div class="stat-label">Total Students</div><div class="stat-value" id="statTotal">—</div></div>
+      <div class="stat-card"><div class="stat-label">Paid</div><div class="stat-value green" id="statPaid">—</div></div>
+      <div class="stat-card"><div class="stat-label">Not Paid</div><div class="stat-value red" id="statUnpaid">—</div></div>
+    </div>
+
+    <!-- Save bar -->
+    <div class="save-bar" id="saveBar">
+      <div class="save-info">⚠️ You have <span id="changeCount">0</span> unsaved changes</div>
+      <button class="save-btn" id="saveBtn" onclick="saveChanges()">💾 Save All Changes</button>
+    </div>
+
+    <div id="statusMsg" class="status-msg"></div>
+
+    <!-- Table -->
+    <div class="table-wrap">
+      <div class="table-header">
+        <div class="table-title">Students</div>
+        <div class="student-count" id="studentCount">Load students to begin</div>
+      </div>
+      <div id="tableContainer">
+        <div class="empty">Click "Load Students" to begin</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var FINANCE_USERS = {"finance": "finance2026", "finance_admin": "moderninfinity2026"};
+var allStudents = [];
+var changes = {};
+
+function doLogin(){
+  var u = document.getElementById('fu').value.trim();
+  var p = document.getElementById('fp').value.trim();
+  var err = document.getElementById('fe');
+  if(!u||!p){err.textContent='⚠️ Enter username and password';err.style.display='block';return;}
+  if(FINANCE_USERS[u] && FINANCE_USERS[u]===p){
+    err.style.display='none';
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('main-panel').style.display='block';
+    loadStudents();
+  } else {
+    err.textContent='❌ Incorrect username or password';
+    err.style.display='block';
+    document.getElementById('fp').value='';
+  }
+}
+
+function doLogout(){
+  allStudents=[]; changes={};
+  document.getElementById('main-panel').style.display='none';
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('fu').value='';
+  document.getElementById('fp').value='';
+}
+
+async function loadStudents(){
+  var btn = document.querySelector('.load-btn');
+  btn.textContent='⏳ Loading...'; btn.disabled=true;
+  changes={};
+  updateSaveBar();
+  try{
+    var grade = document.getElementById('gradeFilter').value;
+    var url = '/api/finance/students' + (grade ? '?grade='+encodeURIComponent(grade) : '');
+    var res = await fetch(url);
+    var data = await res.json();
+    allStudents = data.students || [];
+    renderTable(allStudents);
+    updateStats(allStudents);
+    document.getElementById('statusMsg').style.display='none';
+  } catch(e){
+    showStatus('❌ Error loading students: '+e.message, 'error');
+  }
+  btn.textContent='🔄 Load Students'; btn.disabled=false;
+}
+
+function renderTable(students){
+  var status = document.getElementById('statusFilter').value;
+  var search = document.getElementById('searchInput').value.toLowerCase();
+  var filtered = students.filter(function(s){
+    var matchStatus = !status ||
+      (status==='paid' && (s.payment_status||'').toLowerCase()==='paid') ||
+      (status==='unpaid' && (s.payment_status||'').toLowerCase()!=='paid');
+    var matchSearch = !search ||
+      (s.name||'').toLowerCase().includes(search) ||
+      (s.id||'').toLowerCase().includes(search);
+    return matchStatus && matchSearch;
+  });
+  document.getElementById('studentCount').textContent = filtered.length + ' students shown';
+  if(!filtered.length){
+    document.getElementById('tableContainer').innerHTML='<div class="empty">No students match your filters</div>';
+    return;
+  }
+  var rows = filtered.map(function(s, i){
+    var isPaid = (changes[s.row_index] !== undefined)
+      ? changes[s.row_index]==='paid'
+      : (s.payment_status||'').toLowerCase()==='paid';
+    var label = isPaid
+      ? '<span class="toggle-label paid">✅ Paid</span>'
+      : '<span class="toggle-label unpaid">❌ Not Paid</span>';
+    return '<tr>'+
+      '<td style="font-weight:600">'+s.name+'</td>'+
+      '<td style="color:#64748b;font-size:12px">'+s.id+'</td>'+
+      '<td><span class="grade-badge">'+s.grade+'</span></td>'+
+      '<td>'+
+        '<div class="toggle-wrap">'+
+          '<label class="toggle">'+
+            '<input type="checkbox" '+(isPaid?'checked':'')+' onchange="togglePayment(this,'+s.row_index+')">'+
+            '<span class="slider"></span>'+
+          '</label>'+
+          '<span id="lbl-'+s.row_index+'">'+label+'</span>'+
+        '</div>'+
+      '</td>'+
+    '</tr>';
+  }).join('');
+  document.getElementById('tableContainer').innerHTML =
+    '<table><thead><tr><th>Student Name</th><th>ID</th><th>Grade</th><th>Payment Status</th></tr></thead>'+
+    '<tbody>'+rows+'</tbody></table>';
+}
+
+function filterTable(){ renderTable(allStudents); }
+
+function togglePayment(checkbox, rowIndex){
+  var isPaid = checkbox.checked;
+  changes[rowIndex] = isPaid ? 'paid' : 'unpaid';
+  var lbl = document.getElementById('lbl-'+rowIndex);
+  if(lbl) lbl.innerHTML = isPaid
+    ? '<span class="toggle-label paid">✅ Paid</span>'
+    : '<span class="toggle-label unpaid">❌ Not Paid</span>';
+  updateSaveBar();
+  updateStats(allStudents);
+}
+
+function updateSaveBar(){
+  var count = Object.keys(changes).length;
+  document.getElementById('changeCount').textContent = count;
+  document.getElementById('saveBar').className = count > 0 ? 'save-bar show' : 'save-bar';
+}
+
+function updateStats(students){
+  var total = students.length;
+  var paid = students.filter(function(s){
+    var status = (changes[s.row_index] !== undefined) ? changes[s.row_index] : (s.payment_status||'').toLowerCase();
+    return status === 'paid';
+  }).length;
+  document.getElementById('statTotal').textContent = total;
+  document.getElementById('statPaid').textContent = paid;
+  document.getElementById('statUnpaid').textContent = total - paid;
+}
+
+async function saveChanges(){
+  var btn = document.getElementById('saveBtn');
+  btn.disabled=true; btn.textContent='⏳ Saving...';
+  try{
+    var res = await fetch('/api/finance/update-payment', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({changes: changes})
+    });
+    var data = await res.json();
+    if(data.ok){
+      showStatus('✅ Saved successfully — '+data.updated+' students updated', 'success');
+      // Update local student data
+      Object.keys(changes).forEach(function(rowIndex){
+        var s = allStudents.find(function(x){ return x.row_index == rowIndex; });
+        if(s) s.payment_status = changes[rowIndex];
+      });
+      changes = {};
+      updateSaveBar();
+      updateStats(allStudents);
+      renderTable(allStudents);
+    } else {
+      showStatus('❌ Error: '+data.error, 'error');
+    }
+  } catch(e){
+    showStatus('❌ Network error: '+e.message, 'error');
+  }
+  btn.disabled=false; btn.textContent='💾 Save All Changes';
+}
+
+function showStatus(msg, type){
+  var el = document.getElementById('statusMsg');
+  el.textContent = msg;
+  el.className = 'status-msg '+type;
+  setTimeout(function(){ el.style.display='none'; }, 5000);
+}
+</script>
+</body>
+</html>"""
+    return html, 200, {"Content-Type": "text/html; charset=utf-8"}
+
+
+@app.route('/api/finance/students')
+def finance_students():
+    """Return all students with their payment status and sheet row index."""
+    try:
+        grade = request.args.get("grade", "").strip()
+        wb = get_client().open_by_key(SHEET_ID)
+        ws = wb.worksheet("Students")
+        values = ws.get_all_values()
+        if not values:
+            return jsonify({"students": []})
+        headers = [h.strip() for h in values[0]]
+        students = []
+        for i, row in enumerate(values[1:], start=2):  # row index in sheet (1-based, +1 for header)
+            d = {headers[j]: row[j] if j < len(row) else "" for j in range(len(headers))}
+            if not str(d.get("Student ID", "")).strip():
+                continue
+            student_grade = str(d.get("Grade", "")).strip()
+            if grade and grade.lower() not in student_grade.lower():
+                continue
+            if str(d.get("Active", "yes")).strip().lower() != "yes":
+                continue
+            payment_col = next((h for h in headers if "payment" in h.lower() and "status" in h.lower()), "Payment Status")
+            students.append({
+                "id": str(d.get("Student ID", "")).strip(),
+                "name": str(d.get("Full Name", d.get("Student Name", ""))).strip(),
+                "grade": student_grade,
+                "payment_status": str(d.get(payment_col, "")).strip(),
+                "row_index": i
+            })
+        students.sort(key=lambda x: (x["grade"], x["name"]))
+        return jsonify({"students": students, "count": len(students)})
+    except Exception as e:
+        logger.error(f"[finance/students] {e}")
+        return jsonify({"students": [], "error": str(e)}), 500
+
+
+@app.route('/api/finance/update-payment', methods=['POST'])
+def finance_update_payment():
+    """Update Payment Status column for multiple students by row index."""
+    data = request.get_json(force=True, silent=True) or {}
+    changes = data.get("changes", {})
+    if not changes:
+        return jsonify({"ok": False, "error": "No changes provided"}), 400
+    try:
+        wb = get_client().open_by_key(SHEET_ID)
+        ws = wb.worksheet("Students")
+        headers = [h.strip() for h in ws.row_values(1)]
+        # Find or create Payment Status column
+        payment_col_name = "Payment Status"
+        if payment_col_name in headers:
+            col_idx = headers.index(payment_col_name) + 1  # 1-based
+        else:
+            # Add new column
+            col_idx = len(headers) + 1
+            ws.update_cell(1, col_idx, payment_col_name)
+            logger.info(f"[finance] Created Payment Status column at col {col_idx}")
+        updated = 0
+        for row_index, status in changes.items():
+            try:
+                row_int = int(row_index)
+                value = "Paid" if str(status).lower() == "paid" else "Not Paid"
+                ws.update_cell(row_int, col_idx, value)
+                updated += 1
+                import time as _t; _t.sleep(0.1)
+            except Exception as e2:
+                logger.error(f"[finance] row {row_index}: {e2}")
+        logger.info(f"[finance] Updated {updated} students")
+        return jsonify({"ok": True, "updated": updated})
+    except Exception as e:
+        logger.error(f"[finance/update] {e}")
+        return jsonify({"ok": False, "error": str(e)}), 500
 
 
 if __name__ == "__main__":
