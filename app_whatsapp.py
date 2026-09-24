@@ -386,13 +386,15 @@ def process_message(msg, from_phone=""):
     fees_kw = ['fee','fees','cost','how much','price','\u0631\u0633\u0648\u0645','\u0645\u0635\u0627\u0631\u064a\u0641','\u0643\u0627\u0645','\u0633\u0639\u0631','\u062a\u0643\u0644\u0641\u0629','\u0627\u0644\u0631\u0633\u0648\u0645','\u0627\u0644\u0645\u0635\u0627\u0631\u064a\u0641','\u0628\u0643\u0627\u0645','\u0628\u0642\u062f \u0627\u064a\u0647','\u0642\u062f\u064a\u0647','\u0642\u062f \u0627\u064a\u0647']
     if any(w in m for w in fees_kw):
         if is_arabic:
-            return (f"\u💳 \u062d\u0627\u0644\u0629 \u0633\u062f\u0627\u062f \u0627\u0644\u0631\u0633\u0648\u0645\n\n"
-                    f"\u0644\u0644\u0627\u0633\u062a\u0641\u0633\u0627\u0631 \u0639\u0646 \u062d\u0627\u0644\u0629 \u0633\u062f\u0627\u062f \u0631\u0633\u0648\u0645 \u0637\u0641\u0644\u0643\u060c\n"
-                    f"\u0623\u0631\u0633\u0644 \u0631\u0642\u0645 \u0627\u0644\u0637\u0627\u0644\u0628. \u0645\u062b\u0627\u0644: STU001\n\n"
+            return (
+                    "💳 حالة سداد الرسوم\n\n"
+                    "للاستفسار عن حالة سداد رسوم طفلك،\n"
+                    "أرسل رقم الطالب. مثال: STU001\n\n"
                     f"📞 {SCHOOL['phone']}")
-        return (f"💳 Fees Status\n\n"
-                f"To check your child\'s fees status, please send their Student ID.\n"
-                f"Example: STU001\n\n"
+        return (
+                "💳 Fees Status\n\n"
+                "To check your child's fees status, please send their Student ID.\n"
+                "Example: STU001\n\n"
                 f"📞 {SCHOOL['phone']}")
 
     # Bus Routes
