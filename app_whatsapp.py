@@ -3299,7 +3299,6 @@ var USERS = {
   "senior_admin": {pass:"senior2026", name:"Senior Admin", role:"Senior Administrator", panels:["announce"],                     grade_filter:"senior"},
   "finance":      {pass:"finance2026",name:"Finance Team", role:"Finance Officer",      panels:["finance"],                      grade_filter:null}
 };
-// Teacher logins are verified server-side from the Teachers sheet
 var JUNIOR_GRADES = ["KG1","KG2","Nursery","Grade 1","Grade 2","Grade 3","Grade 4","Grade 5","Grade 6"];
 var SENIOR_GRADES = ["Grade 7","Grade 8","Grade 9","Grade 10","Grade 11","Grade 12"];
 var currentUser = null;
@@ -3311,94 +3310,51 @@ function doLogin(){
   var u = document.getElementById('lu').value.trim();
   var p = document.getElementById('lp').value.trim();
   var err = document.getElementById('lerr');
-  var loginBtn = document.querySelector('.login-btn');
-  if(!u||!p){err.textContent='⚠️ Enter username and password';err.style.display='block';return;}
+  var btn = document.querySelector('.login-btn');
+  if(!u||!p){ err.textContent='⚠️ Enter username and password'; err.style.display='block'; return; }
+
+  // Check static users first
   var user = USERS[u];
   if(user && user.pass === p){
     err.style.display='none';
-    currentUser = {username:u, ...user};
-    doLoginSuccess(currentUser);
-  } else {
-    // Try teacher login via server
-    loginBtn.disabled=true; loginBtn.textContent='Signing in...';
-    fetch('/api/teacher-login', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({username:u, password:p})
-    }).then(function(r){return r.json();}).then(function(data){
-      if(data.ok){
-        err.style.display='none';
-        currentUser = {
-          username: u,
-          name: data.name,
-          role: 'Teacher',
-          panels: ['teacher'],
-          grade_filter: null
-        };
-        doLoginSuccess(currentUser);
-      } else {
-        err.textContent='❌ Incorrect username or password';
-        err.style.display='block';
-        document.getElementById('lp').value='';
-      }
-      loginBtn.disabled=false; loginBtn.textContent='Sign In →';
-    }).catch(function(){
-      err.textContent='❌ Server error, try again';
-      err.style.display='block';
-      loginBtn.disabled=false; loginBtn.textContent='Sign In →';
-    });
+    currentUser = {username:u, name:user.name, role:user.role, panels:user.panels, grade_filter:user.grade_filter};
+    doLoginSuccess();
     return;
   }
-}
-function doLoginSuccess(user){
-    document.getElementById('login-screen').style.display='none';
-    document.getElementById('main-panel').style.display='block';
-    document.getElementById('sidebarUserName').textContent = user.name;
-    document.getElementById('sidebarUserRole').textContent = user.role;
-    // Show allowed nav items
-    user.panels.forEach(function(panel){
-      var nav = document.getElementById('nav-'+panel);
-      if(nav) nav.style.display='flex';
-    });
-    // Show first allowed panel
-    showPanel(user.panels[0]);
-    // Set today's date on forms
-    var today = new Date().toISOString().split('T')[0];
-    ['hw-due','ex-date'].forEach(function(id){
-      var el=document.getElementById(id);
-      if(el) el.value=today;
-    });
-    // Apply grade restrictions for junior/senior admin
-    var gradeFilter = user.grade_filter;
-    if(gradeFilter === 'junior' || gradeFilter === 'senior'){
-      // Hide "All Parents" option — restricted admins can only send to their grades
-      var optAll = document.getElementById('ann-opt-all');
-      if(optAll) optAll.style.display='none';
-      // Force "Specific Grade" selected
-      var audSel = document.getElementById('ann-audience');
-      if(audSel){ audSel.value='grade'; }
-      document.getElementById('ann-grade-wrap').style.display='none';
-      // Populate restricted grade dropdown
-      var grades = gradeFilter==='junior' ? JUNIOR_GRADES : SENIOR_GRADES;
-      var sel = document.getElementById('ann-grade-restricted');
-      sel.innerHTML = grades.map(function(g){return '<option>'+g+'</option>';}).join('');
-      document.getElementById('ann-grade-restricted-wrap').style.display='block';
-      // Override audience change handler to keep restricted
-      document.getElementById('ann-audience').addEventListener('change',function(){
-        this.value='grade'; // force grade
-      });
+
+  // Otherwise verify against Teachers sheet
+  btn.disabled=true; btn.textContent='Signing in...';
+  err.style.display='none';
+  fetch('/api/teacher-login', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({username:u, password:p})
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(data){
+    if(data.ok){
+      currentUser = {username:u, name:data.name, role:'Teacher', panels:['teacher'], grade_filter:null};
+      doLoginSuccess();
+    } else {
+      err.textContent='❌ Incorrect username or password';
+      err.style.display='block';
+      document.getElementById('lp').value='';
     }
-  } else {
-    err.textContent='❌ Incorrect username or password';
+  })
+  .catch(function(){
+    err.textContent='❌ Server error, try again';
     err.style.display='block';
-    document.getElementById('lp').value='';
-  }
+  })
+  .finally(function(){
+    btn.disabled=false; btn.textContent='Sign In →';
+  });
 }
+
 function doLogout(){
   currentUser=null; financeStudents=[]; financeChanges={};
   ['announce','teacher','finance'].forEach(function(p){
     var nav=document.getElementById('nav-'+p);
-    if(nav) nav.style.display='none';
+    if(nav){ nav.style.display='none'; nav.classList.remove('active'); }
   });
   document.getElementById('main-panel').style.display='none';
   document.getElementById('login-screen').style.display='flex';
@@ -3406,138 +3362,47 @@ function doLogout(){
   document.getElementById('lp').value='';
 }
 
+function doLoginSuccess(){
+  var user = currentUser;
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('main-panel').style.display='block';
+  document.getElementById('sidebarUserName').textContent = user.name;
+  document.getElementById('sidebarUserRole').textContent = user.role;
+  // Show only allowed panels
+  user.panels.forEach(function(panel){
+    var nav = document.getElementById('nav-'+panel);
+    if(nav) nav.style.display='flex';
+  });
+  showPanel(user.panels[0]);
+  // Set today's date on forms
+  var today = new Date().toISOString().split('T')[0];
+  ['hw-due','ex-date'].forEach(function(id){
+    var el = document.getElementById(id);
+    if(el) el.value = today;
+  });
+  // Grade restrictions for junior/senior
+  if(user.grade_filter === 'junior' || user.grade_filter === 'senior'){
+    var optAll = document.getElementById('ann-opt-all');
+    if(optAll) optAll.style.display='none';
+    var audSel = document.getElementById('ann-audience');
+    if(audSel) audSel.value='grade';
+    document.getElementById('ann-grade-wrap').style.display='none';
+    var grades = user.grade_filter==='junior' ? JUNIOR_GRADES : SENIOR_GRADES;
+    var sel = document.getElementById('ann-grade-restricted');
+    if(sel) sel.innerHTML = grades.map(function(g){return '<option>'+g+'</option>';}).join('');
+    var wrap = document.getElementById('ann-grade-restricted-wrap');
+    if(wrap) wrap.style.display='block';
+  }
+}
+
 // ── PANEL SWITCHING ───────────────────────────────────────────────────────────
 function showPanel(name){
-  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
-  var panel=document.getElementById('panel-'+name);
-  var nav=document.getElementById('nav-'+name);
+  document.querySelectorAll('.panel').forEach(function(p){ p.classList.remove('active'); });
+  document.querySelectorAll('.nav-item').forEach(function(n){ n.classList.remove('active'); });
+  var panel = document.getElementById('panel-'+name);
+  var nav   = document.getElementById('nav-'+name);
   if(panel) panel.classList.add('active');
-  if(nav) nav.classList.add('active');
-}
-
-// ── ANNOUNCEMENTS ─────────────────────────────────────────────────────────────
-document.getElementById('ann-audience').addEventListener('change',function(){
-  document.getElementById('ann-grade-wrap').style.display=this.value==='grade'?'block':'none';
-});
-function updatePreview(){
-  var msg=document.getElementById('ann-msg').value;
-  document.getElementById('ann-chars').textContent=msg.length;
-  var prev=document.getElementById('ann-preview');
-  if(msg.trim()){
-    prev.style.display='block';
-    document.getElementById('ann-preview-text').textContent=msg;
-  } else {
-    prev.style.display='none';
-  }
-}
-function clearAnnouncement(){
-  document.getElementById('ann-msg').value='';
-  document.getElementById('ann-image').value='';
-  document.getElementById('ann-preview').style.display='none';
-  document.getElementById('ann-chars').textContent='0';
-}
-async function sendAnnouncement(){
-  var msg=document.getElementById('ann-msg').value.trim();
-  if(!msg){showAlert('ann','Please write a message first','error');return;}
-  var audience=document.getElementById('ann-audience').value;
-  var gradeFilter = currentUser ? currentUser.grade_filter : null;
-  var grade='';
-  if(audience==='grade'){
-    if(gradeFilter==='junior'||gradeFilter==='senior'){
-      grade=document.getElementById('ann-grade-restricted').value;
-    } else {
-      grade=document.getElementById('ann-grade').value;
-    }
-  }
-  var imageFile=document.getElementById('ann-image').files[0];
-  var btn=document.getElementById('ann-send-btn');
-  btn.disabled=true; btn.textContent='⏳ Sending...';
-  showAlert('ann','Sending announcement...','info');
-  try{
-    var fd=new FormData();
-    fd.append('message',msg);
-    fd.append('audience',audience);
-    if(grade) fd.append('grade',grade);
-    if(imageFile) fd.append('image',imageFile);
-    var res=await fetch('/api/broadcast',{method:'POST',body:fd});
-    var data=await res.json();
-    if(data.ok){
-      showAlert('ann','✅ Sent to '+data.sent+' parents successfully!','success');
-      clearAnnouncement();
-      loadHistory();
-    } else {
-      showAlert('ann','❌ Error: '+(data.error||'Unknown error'),'error');
-    }
-  } catch(e){
-    showAlert('ann','❌ Network error: '+e.message,'error');
-  }
-  btn.disabled=false; btn.textContent='📤 Send to Parents';
-}
-async function loadHistory(){
-  var body=document.getElementById('ann-history-body');
-  body.innerHTML='<div style="padding:20px;text-align:center;color:#94a3b8">Loading...</div>';
-  try{
-    var res=await fetch('/api/announcements');
-    var data=await res.json();
-    var rows=data.announcements||[];
-    if(!rows.length){body.innerHTML='<div style="padding:30px;text-align:center;color:#94a3b8;font-size:13px">No announcements yet</div>';return;}
-    body.innerHTML='<table><thead><tr><th>Title</th><th>Message</th><th>Date</th><th>Status</th></tr></thead><tbody>'+
-      rows.slice(0,20).map(function(r){
-        return '<tr><td style="font-weight:600">'+esc(r.Title||'')+'</td>'+
-               '<td style="max-width:300px;color:#64748b">'+esc((r.Message||'').substring(0,80)+(r.Message&&r.Message.length>80?'...':''))+'</td>'+
-               '<td style="white-space:nowrap;color:#64748b">'+esc(r.Date||'')+'</td>'+
-               '<td><span class="badge '+(r.Status==='Sent'?'badge-green':'badge-grey')+'">'+esc(r.Status||'')+'</span></td></tr>';
-      }).join('')+'</tbody></table>';
-  } catch(e){
-    body.innerHTML='<div style="padding:20px;text-align:center;color:#dc2626">Error loading history</div>';
-  }
-}
-
-// ── TEACHER PANEL ─────────────────────────────────────────────────────────────
-function showTeacherTab(tab){
-  document.getElementById('teacher-hw').style.display=tab==='hw'?'block':'none';
-  document.getElementById('teacher-exam').style.display=tab==='exam'?'block':'none';
-  document.getElementById('tbtn-hw').className='btn '+(tab==='hw'?'btn-primary':'btn-outline');
-  document.getElementById('tbtn-exam').className='btn '+(tab==='exam'?'btn-primary':'btn-outline');
-}
-async function addHomework(){
-  var grade=document.getElementById('hw-grade').value;
-  var subject=document.getElementById('hw-subject').value;
-  var assignment=document.getElementById('hw-assignment').value.trim();
-  var due=document.getElementById('hw-due').value;
-  var notes=document.getElementById('hw-notes').value.trim();
-  if(!assignment||!due){showAlert('teacher','Please fill in the assignment and due date','error');return;}
-  try{
-    var res=await fetch('/api/homework',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({grade,subject,assignment,due_date:due,notes,teacher:currentUser.name})});
-    var data=await res.json();
-    if(data.ok){
-      showAlert('teacher','✅ Homework added successfully!','success');
-      document.getElementById('hw-assignment').value='';
-      document.getElementById('hw-notes').value='';
-      loadHomework();
-    } else {showAlert('teacher','❌ '+(data.error||'Error'),'error');}
-  } catch(e){showAlert('teacher','❌ Network error','error');}
-}
-async function loadHomework(){
-  var body=document.getElementById('hw-list-body');
-  body.innerHTML='<div style="padding:20px;text-align:center;color:#94a3b8">Loading...</div>';
-  try{
-    var res=await fetch('/api/homework');
-    var data=await res.json();
-    var rows=data.homework||[];
-    if(!rows.length){body.innerHTML='<div style="padding:30px;text-align:center;color:#94a3b8;font-size:13px">No active homework</div>';return;}
-    body.innerHTML='<table><thead><tr><th>Grade</th><th>Subject</th><th>Assignment</th><th>Due Date</th><th>Teacher</th><th>Status</th></tr></thead><tbody>'+
-      rows.map(function(r,i){
-        return '<tr><td><span class="badge badge-blue">'+esc(r.Grade||r.grade||'')+'</span></td>'+
-               '<td>'+esc(r.Subject||r.subject||'')+'</td>'+
-               '<td style="max-width:260px">'+esc(r.Assignment||r.assignment||'')+'</td>'+
-               '<td style="white-space:nowrap">'+esc(r['Due Date']||r.due_date||'')+'</td>'+
-               '<td style="color:#64748b">'+esc(r.Teacher||r.teacher||'')+'</td>'+
-               '<td><span class="badge badge-green">Active</span></td></tr>';
-      }).join('')+'</tbody></table>';
-  } catch(e){body.innerHTML='<div style="padding:20px;text-align:center;color:#dc2626">Error loading homework</div>';}
+  if(nav)   nav.classList.add('active');
 }
 var exStudents = [];
 
