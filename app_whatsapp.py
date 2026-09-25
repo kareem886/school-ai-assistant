@@ -314,7 +314,7 @@ def process_message(msg, from_phone=""):
         grade = s.get('Grade','')
 
         # EXAM RESULTS — SECURED BY PARENT PHONE NUMBER + PAYMENT STATUS
-        result_kw = ['result','results','exam','score','mark','marks','\u0646\u062a\u064a\u062c\u0629','\u0646\u062a\u0627\u0626\u062c','\u0627\u0645\u062a\u062d\u0627\u0646','\u0627\u0645\u062a\u062d\u0627\u0646\u0627\u062a','\u062f\u0631\u062c\u0629','\u062f\u0631\u062c\u0627\u062a']
+        result_kw = ['result','results','exam','score','mark','marks','\u0646\u062a\u064a\u062c\u0629','\u0646\u062a\u0627\u0626\u062c','\u0627\u0645\u062a\u062d\u0627\u0646','\u0627\u0645\u062a\u062d\u0627\u0646\u0627\u062a','\u062f\u0631\u062c\u0629','\u062f\u0631\u062c\u0627\u062a','grade','grades','الدرجات','درجاته']
         if any(w in m for w in result_kw):
             authorized = get_parent_students(from_phone)
             if sid not in authorized:
@@ -323,12 +323,13 @@ def process_message(msg, from_phone=""):
                         f"📞 {SCHOOL['phone']}")
             # ── PAYMENT GATE ──────────────────────────────────────────────────
             payment_status = str(s.get("Payment Status", "")).strip().lower()
+            payment_reminder = ""
             if payment_status != "paid":
-                return (f"📞 \u0644\u0644\u0627\u0633\u062a\u0641\u0633\u0627\u0631 \u0639\u0646 \u0646\u062a\u0627\u0626\u062c \u0637\u0641\u0644\u0643\u060c\n"
-                        f"\u064a\u0631\u062c\u0649 \u0627\u0644\u062a\u0648\u0627\u0635\u0644 \u0645\u0639 \u0645\u0643\u062a\u0628 \u0627\u0644\u0645\u062f\u0631\u0633\u0629.\n\n"
-                        f"📞 {SCHOOL['phone']}") if is_arabic else (
-                        f"📞 To access your child's exam results, please contact the school office.\n\n"
-                        f"📞 {SCHOOL['phone']}")
+                payment_reminder = (
+                    f"\n\n\u26a0\ufe0f \u062a\u0630\u0643\u064a\u0631: \u0647\u0646\u0627\u0643 \u0631\u0633\u0648\u0645 \u063a\u064a\u0631 \u0645\u0633\u062f\u062f\u0629.\n\u0628\u0631\u062c\u0627\u0621 \u0645\u0631\u0627\u062c\u0639\u0629 \u0627\u0644\u0645\u062f\u0631\u0633\u0629.\n\u0645\u0643\u062a\u0628 \u0627\u0644\u0645\u062f\u0631\u0633\u0629: {SCHOOL['phone']}"
+                    if is_arabic else
+                    f"\n\n\u26a0\ufe0f Reminder: There are outstanding school fees.\nPlease contact the school office.\n{SCHOOL['phone']}"
+                )
             result_rows = read_tab("exam")
             student_results = [r for r in result_rows if str(r.get("Student ID","")).upper() == sid]
             if not student_results:
