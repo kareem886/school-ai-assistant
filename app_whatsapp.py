@@ -4,7 +4,12 @@ Includes: WhatsApp webhook + Admin Panel + Broadcast announcements
 """
 import os, json, re, base64, requests, logging, time, hmac, hashlib
 from collections import defaultdict
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify
+try:
+    from flask_cors import CORS
+    _has_cors = True
+except ImportError:
+    _has_cors = False, send_from_directory
 import gspread
 from google.oauth2.service_account import Credentials
 
@@ -12,6 +17,8 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(mess
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
+if _has_cors:
+    CORS(app, origins=["https://kareem886.github.io", "http://localhost", "http://127.0.0.1"])
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max upload
 app.config["MAX_CONTENT_LENGTH"] = 64 * 1024
 
