@@ -346,7 +346,7 @@ def process_message(msg, from_phone=""):
                     gl = res.get('Grade Letter', res.get('Grade',''))
                     r += f"\u2022 {res.get('Subject','')}: {res.get('Score','')}/100 ({res.get('Percentage','')}) — {gl}\n"
                     if res.get('Rank',''): r += f"  🏆 Rank: {res.get('Rank','')}\n"
-            return r.strip()
+            return r.strip() + payment_reminder
 
         # Attendance
         if any(w in m for w in ['attendance','absent','\u062d\u0636\u0648\u0631','\u063a\u064a\u0627\u0628','\u0627\u0644\u063a\u064a\u0627\u0628','\u0627\u0644\u062d\u0636\u0648\u0631']):
