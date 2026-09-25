@@ -365,29 +365,24 @@ def process_message(msg, from_phone=""):
                     f"📅 Total: {total} days\n"
                     f"📊 Rate: {pct}%{low_en}")
 
-        # Fee Balance
-        total_fees = int(s.get('Total Fees',0) or 0)
-        paid = int(s.get('Amount Paid',0) or 0)
-        remaining = int(s.get('Remaining',0) or 0)
-        next_due = s.get('Next Due','')
-        status = s.get('Payment Status','')
-        status_emoji = "\u2705" if "paid" in str(status).lower() else ("\u26a0\ufe0f" if "overdue" in str(status).lower() else "\u23f3")
-        if is_arabic:
-            r = (f"👤 {name} ({grade})\n"
-                 f"💰 \u0625\u062c\u0645\u0627\u0644\u064a \u0627\u0644\u0631\u0633\u0648\u0645: {total_fees:,} \u062c\u0646\u064a\u0647\n"
-                 f"\u2705 \u0627\u0644\u0645\u062f\u0641\u0648\u0639: {paid:,} \u062c\u0646\u064a\u0647\n"
-                 f"\u23f3 \u0627\u0644\u0645\u062a\u0628\u0642\u064a: {remaining:,} \u062c\u0646\u064a\u0647\n")
-            if status: r += f"{status_emoji} \u0627\u0644\u062d\u0627\u0644\u0629: {status}\n"
-            if next_due: r += f"📅 \u0627\u0644\u062f\u0641\u0639\u0629 \u0627\u0644\u0642\u0627\u062f\u0645\u0629: {next_due}\n"
-            r += f"📞 {SCHOOL['phone']}"
+        # Fee Balance — status only, no amounts
+        status = str(s.get('Payment Status', '')).strip()
+        if 'paid' in status.lower() and 'not' not in status.lower():
+            emoji = '\u2705'
+            ar_status = '\u0645\u062f\u0641\u0648\u0639'
+            en_status = 'Paid'
         else:
-            r = (f"👤 {name} ({grade})\n"
-                 f"💰 Total: {total_fees:,} EGP\n"
-                 f"\u2705 Paid: {paid:,} EGP\n"
-                 f"\u23f3 Remaining: {remaining:,} EGP\n")
-            if status: r += f"{status_emoji} Status: {status}\n"
-            if next_due: r += f"📅 Next due: {next_due}\n"
-            r += f"📞 {SCHOOL['phone']}"
+            emoji = '\u274c'
+            ar_status = '\u063a\u064a\u0631 \u0645\u062f\u0641\u0648\u0639'
+            en_status = 'Not Paid'
+        if is_arabic:
+            r = (f"لأد {name} ({grade})\n"
+                 f"{emoji} حالة الرسوم: {ar_status}\n"
+                 f"للاستفسار: {SCHOOL['phone']}")
+        else:
+            r = (f"لأد {name} ({grade})\n"
+                 f"{emoji} Fees Status: {en_status}\n"
+                 f"لأد {SCHOOL['phone']}")
         return r
 
     # Fees
