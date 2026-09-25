@@ -376,13 +376,13 @@ def process_message(msg, from_phone=""):
             ar_status = '\u063a\u064a\u0631 \u0645\u062f\u0641\u0648\u0639'
             en_status = 'Not Paid'
         if is_arabic:
-            r = (f"لأد {name} ({grade})\n"
-                 f"{emoji} حالة الرسوم: {ar_status}\n"
-                 f"للاستفسار: {SCHOOL['phone']}")
+            r = (f"\U0001f464 {name} ({grade})\n"
+                 f"{emoji} \u062d\u0627\u0644\u0629 \u0627\u0644\u0631\u0633\u0648\u0645: {ar_status}\n"
+                 f"\U0001f4de {SCHOOL['phone']}")
         else:
-            r = (f"لأد {name} ({grade})\n"
+            r = (f"\U0001f464 {name} ({grade})\n"
                  f"{emoji} Fees Status: {en_status}\n"
-                 f"لأد {SCHOOL['phone']}")
+                 f"\U0001f4de {SCHOOL['phone']}")
         return r
 
     # Fees
