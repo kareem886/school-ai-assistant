@@ -365,6 +365,16 @@ def process_message(msg, from_phone=""):
                     f"📅 Total: {total} days\n"
                     f"📊 Rate: {pct}%{low_en}")
 
+        # Fee Balance — status only, no amounts, secured by parent phone
+        authorized = get_parent_students(from_phone)
+        if sid not in authorized:
+            return (
+                f"🔒 عذراً، يمكنك فقط الاستفسار عن أبنائك المسجلين برقمك.\n"
+                f"📞 {SCHOOL['phone']}"
+            ) if is_arabic else (
+                f"🔒 Sorry, you can only check fees for students registered under your phone number.\n"
+                f"📞 {SCHOOL['phone']}"
+            )
         # Fee Balance — status only, no amounts
         status = str(s.get('Payment Status', '')).strip()
         if 'paid' in status.lower() and 'not' not in status.lower():
