@@ -1695,15 +1695,26 @@ textarea { resize: vertical; min-height: 70px; }
     <!-- MONTHLY EVALUATION TAB -->
     <div class="tab-panel" id="tab-eval" style="display:none">
       <div style="padding:4px 0 16px 0">
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px">
-          <div class="field"><label>Student Name <span>*</span></label>
-            <input id="ev-name" type="text" placeholder="Full student name" style="width:100%;padding:11px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;background:#f8fafc"></div>
-          <div class="field"><label>Grade &amp; Section <span>*</span></label>
-            <input id="ev-grade" type="text" placeholder="e.g. Grade 4 - A" style="width:100%;padding:11px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;background:#f8fafc"></div>
-          <div class="field"><label>Seat Number</label>
-            <input id="ev-seat" type="text" placeholder="e.g. 81" style="width:100%;padding:11px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;background:#f8fafc"></div>
-        </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+          <div class="field">
+            <label>Search Student (Name or ID) <span>*</span></label>
+            <div style="position:relative">
+              <input id="ev-search" type="text" placeholder="Type name or student ID..." onkeyup="evSearchStudent(this)" autocomplete="off"
+                style="width:100%;padding:11px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;background:#f8fafc">
+              <div id="ev-drop" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1.5px solid #e2e8f0;border-radius:8px;z-index:100;max-height:200px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.1)"></div>
+            </div>
+          </div>
+          <div class="field">
+            <label>Selected Student</label>
+            <div id="ev-selected" style="padding:11px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;background:#f0f4f8;color:#94a3b8;min-height:46px">No student selected</div>
+          </div>
+        </div>
+        <input type="hidden" id="ev-sid">
+        <input type="hidden" id="ev-name">
+        <input type="hidden" id="ev-grade">
+        <input type="hidden" id="ev-seat">
+        <input type="hidden" id="ev-phone">
+        <div style="margin-bottom:14px">
           <div class="field"><label>Period <span>*</span></label>
             <select id="ev-period" style="width:100%;padding:11px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;background:#f8fafc">
               <option value="">Select period...</option>
@@ -1714,8 +1725,6 @@ textarea { resize: vertical; min-height: 70px; }
               <option>Monthly - March</option><option>Monthly - April</option>
               <option>Monthly - May</option><option>Monthly - June</option>
             </select></div>
-          <div class="field"><label>Parent WhatsApp Number</label>
-            <input id="ev-phone" type="text" placeholder="e.g. 201012345678" style="width:100%;padding:11px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;background:#f8fafc"></div>
         </div>
         <div style="margin-bottom:14px">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
@@ -2188,13 +2197,49 @@ document.addEventListener('keydown', e => {
     });
     return out;
   }
+  var _evAll=[];
+  async function evSearchStudent(inp){
+    var q=inp.value.trim().toLowerCase();
+    var drop=document.getElementById('ev-drop');
+    if(q.length<2){drop.style.display='none';return;}
+    if(!_evAll.length){
+      try{
+        var r=await fetch('/api/students-by-grade?grade=All');
+        var data=await r.json();
+        _evAll=data.students||[];
+      }catch(e){return;}
+    }
+    var hits=_evAll.filter(function(s){
+      return (s.name||'').toLowerCase().includes(q)||(s.id||'').toLowerCase().includes(q);
+    }).slice(0,8);
+    if(!hits.length){drop.style.display='none';return;}
+    drop.innerHTML=hits.map(function(s){
+      var safe=JSON.stringify(s).replace(/'/g,"&#39;");
+      return '<div onclick="evPick('+safe+')" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid #f0f4f8;font-size:13px;hover:background:#f8fafc">'
+        +'<strong>'+(s.name||'')+'</strong> <span style="color:#94a3b8;font-size:11px">ID:'+(s.id||'')+' | '+(s.grade||'')+'</span></div>';
+    }).join('');
+    drop.style.display='block';
+  }
+  function evPick(s){
+    document.getElementById('ev-sid').value=s.id||'';
+    document.getElementById('ev-name').value=s.name||'';
+    document.getElementById('ev-grade').value=s.grade||'';
+    document.getElementById('ev-seat').value=s.seat_number||'';
+    document.getElementById('ev-phone').value=s.parent_phone||s.phone||'';
+    document.getElementById('ev-search').value=(s.name||'')+' ('+( s.id||'')+')';
+    document.getElementById('ev-drop').style.display='none';
+    document.getElementById('ev-selected').innerHTML='<strong>'+(s.name||'')+'</strong><br>'
+      +'<span style="font-size:12px;color:#64748b">'+(s.grade||'')+' | ID:'+(s.id||'')+'</span>';
+    document.getElementById('ev-selected').style.color='#0F1C2E';
+  }
   function evData(){
     return {
-      student_name:document.getElementById('ev-name').value.trim(),
-      grade:document.getElementById('ev-grade').value.trim(),
-      seat_number:document.getElementById('ev-seat').value.trim(),
+      student_id:document.getElementById('ev-sid').value,
+      student_name:document.getElementById('ev-name').value,
+      grade:document.getElementById('ev-grade').value,
+      seat_number:document.getElementById('ev-seat').value,
       period:document.getElementById('ev-period').value,
-      parent_phone:document.getElementById('ev-phone').value.trim(),
+      parent_phone:document.getElementById('ev-phone').value,
       teacher:CURRENT_FULL_NAME||sessionStorage.getItem('teacher_name')||'',
       staff:{head_of_control:document.getElementById('ev-head').value.trim(),headmistress:document.getElementById('ev-hmis').value.trim(),principal:document.getElementById('ev-principal').value.trim()},
       subjects:evRows()
@@ -3046,6 +3091,25 @@ def save_evaluation():
             except Exception as we:
                 result['whatsapp_error'] = str(we)
         return jsonify(result)
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)}), 500
+
+
+@app.route('/api/evaluation-result', methods=['GET'])
+def get_evaluation_result():
+    """Get monthly evaluation results — secured by parent phone."""
+    student_id  = request.args.get('student_id','').strip()
+    from_phone  = request.args.get('phone','').strip()
+    if not student_id or not from_phone:
+        return jsonify({'ok': False, 'error': 'Missing params'}), 400
+    try:
+        # Verify parent owns this student
+        authorized = get_parent_students(from_phone)
+        if student_id not in authorized:
+            return jsonify({'ok': False, 'error': 'Not authorized'}), 403
+        rows = read_tab('Evaluations')
+        results = [r for r in rows if r.get('Student ID','').strip() == student_id]
+        return jsonify({'ok': True, 'results': results})
     except Exception as e:
         return jsonify({'ok': False, 'error': str(e)}), 500
 
