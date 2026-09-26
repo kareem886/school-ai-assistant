@@ -748,7 +748,6 @@ textarea:focus{border-color:var(--g)}
     </div>
     <div class="ni active" onclick="showTab('b')">📣 Send Announcement</div>
     <div class="ni" onclick="showTab('h')">📋 History</div>
-    <div class="ni" onclick="showTab('p')">👥 Parents</div>
     <div class="ni" onclick="window.open('/finance','_blank')" style="margin-top:8px;border:1px solid rgba(0,200,200,0.2)">💳 Finance Panel ↗</div>
     <div class="sb-bot">
       <div class="lo" onclick="doLogout()">🚪 Sign out</div>
@@ -770,7 +769,6 @@ textarea:focus{border-color:var(--g)}
 
     <!-- STATS -->
     <div class="sr" id="sr">
-      <div class="sc"><div class="sl2">Parents in My Scope</div><div class="sv" id="sp2">-</div></div>
       <div class="sc"><div class="sl2">Sent Today</div><div class="sv" id="st2">0</div></div>
       <div class="sc"><div class="sl2">Last Sent</div><div class="sv" id="sl3" style="font-size:18px;margin-top:6px">Never</div></div>
     </div>
@@ -821,14 +819,7 @@ textarea:focus{border-color:var(--g)}
       </div>
     </div>
 
-    <!-- TAB: PARENTS -->
-    <div id="tab-p" style="display:none">
-      <div class="sec">
-        <div class="sec-t">👥 Parents in My Scope</div>
-        <p style="font-size:14px;color:#64748b;margin-bottom:16px">Showing parents from <strong>Google Sheet → Parents tab</strong> filtered to your access level.</p>
-        <div id="pl2"><div style="color:#94a3b8;text-align:center;padding:20px 0">Loading...</div></div>
-      </div>
-    </div>
+    
   </div>
 </div>
 
@@ -897,7 +888,6 @@ function doLogin(){
       document.getElementById('aw').style.display='flex';
       setupAdminUI();
       loadStats();
-      loadParents();
     } else {
       document.getElementById('le').style.display='block';
       document.getElementById('le').textContent='❌ Incorrect username or password';
