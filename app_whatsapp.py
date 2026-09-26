@@ -2073,6 +2073,81 @@ document.addEventListener('keydown', e => {
     else submitExamResults();
   }
 });
+
+  // ── MONTHLY EVALUATION JS ──────────────────────────────────────
+  var _evN=0;
+  function evAddRow(n,mx,mk,ev){
+    _evN++;var id=_evN;
+    var tbody=document.getElementById('ev-tbody');
+    var tr=document.createElement('tr');tr.id='evr'+id;
+    tr.innerHTML='<td style="padding:6px;border:1px solid #e2e8f0"><input type="text" value="'+(n||'')+'" placeholder="Subject" style="width:100%;padding:6px;border:1px solid #e2e8f0;border-radius:6px;font-size:13px"></td>'
+      +'<td style="padding:6px;border:1px solid #e2e8f0"><input type="text" value="'+(mx||'100')+'" style="width:100%;padding:6px;border:1px solid #e2e8f0;border-radius:6px;font-size:13px;text-align:center"></td>'
+      +'<td style="padding:6px;border:1px solid #e2e8f0"><input type="text" value="'+(mk||'')+'" placeholder="Mark" style="width:100%;padding:6px;border:1px solid #e2e8f0;border-radius:6px;font-size:13px;text-align:center"></td>'
+      +'<td style="padding:6px;border:1px solid #e2e8f0"><select style="width:100%;padding:6px;border:1px solid #e2e8f0;border-radius:6px;font-size:13px"><option value="">—</option><option>Ex.</option><option>V.Good</option><option>Good</option><option>Pass</option><option>Fail</option><option>Passed</option></select></td>'
+      +'<td style="padding:6px;border:1px solid #e2e8f0;text-align:center"><button onclick="document.getElementById(\'evr'+id+'\').remove()" style="background:#fee2e2;color:#dc2626;border:none;border-radius:6px;padding:4px 8px;cursor:pointer">x</button></td>';
+    tbody.appendChild(tr);
+    if(ev){tr.querySelectorAll('select')[0].value=ev;}
+  }
+  function evRows(){
+    var out=[];
+    document.querySelectorAll('#ev-tbody tr').forEach(function(tr){
+      var inp=tr.querySelectorAll('input,select');
+      if(inp[0]&&inp[0].value.trim())out.push({name:inp[0].value.trim(),max:inp[1].value.trim()||'100',mark:inp[2].value.trim(),evaluation:inp[3].value.trim()});
+    });
+    return out;
+  }
+  function evData(){
+    return {
+      student_name:document.getElementById('ev-name').value.trim(),
+      grade:document.getElementById('ev-grade').value.trim(),
+      seat_number:document.getElementById('ev-seat').value.trim(),
+      period:document.getElementById('ev-period').value,
+      parent_phone:document.getElementById('ev-phone').value.trim(),
+      teacher:CURRENT_FULL_NAME||sessionStorage.getItem('teacher_name')||'',
+      staff:{head_of_control:document.getElementById('ev-head').value.trim(),headmistress:document.getElementById('ev-hmis').value.trim(),principal:document.getElementById('ev-principal').value.trim()},
+      subjects:evRows()
+    };
+  }
+  function evPrint(){
+    var d=evData();
+    if(!d.student_name||!d.grade||!d.period||!d.subjects.length){document.getElementById('ev-status').textContent='Please fill student info, period and at least one subject.';return;}
+    var sh=d.subjects.map(function(s){return '<th style="border:1px solid #555;padding:6px 4px;font-size:11px">'+s.name+'</th>';}).join('');
+    var mr=d.subjects.map(function(s){return '<td style="border:1px solid #555;padding:6px;text-align:center;font-size:11px">'+s.max+'</td>';}).join('');
+    var mk=d.subjects.map(function(s){return '<td style="border:1px solid #555;padding:6px;text-align:center;font-size:11px">'+s.mark+'</td>';}).join('');
+    var ev=d.subjects.map(function(s){return '<td style="border:1px solid #555;padding:6px;text-align:center;font-size:11px">'+s.evaluation+'</td>';}).join('');
+    var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Student Mark Report</title><style>body{font-family:Arial,sans-serif;margin:32px;color:#1a1a2e;font-size:12px}.hw{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px}.hl p{margin:2px 0;font-size:12px;font-weight:600;color:#1a3a5c}.logo{border:3px double #1a3a5c;border-radius:50%;width:72px;height:72px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:16px;color:#1a3a5c}.ct{text-align:center;margin-bottom:16px}.ct h2{font-size:15px;margin:0}.si{display:flex;justify-content:space-between;margin-bottom:10px;font-weight:700;font-size:12px}table{width:100%;border-collapse:collapse;margin-bottom:28px}th{background:#1a3a5c;color:#fff;border:1px solid #555;padding:7px 4px;font-size:11px}.rl{font-weight:700;text-align:center;background:#f0f4f8;border:1px solid #555;padding:6px;font-size:11px}.ft{display:flex;justify-content:space-between;margin-top:36px;text-align:center}.fc{flex:1}.fc p{margin:3px 0;font-size:11px}.fn{font-weight:700;font-size:12px}.st{border:2px solid #1a3a5c;display:inline-block;padding:6px 14px;font-weight:700;font-size:11px;margin-top:8px}@media print{body{margin:16px}}</style></head><body>'
+      +'<div class="ct"><h2>Student's Mark Report</h2><p>'+d.period+'</p></div>'
+      +'<div class="hw"><div class="hl"><p>Arab Republic of Egypt</p><p>Egyptian Ministry of Education</p><p>El Sheikh Zayed Educational Directorate</p><p>Modern Infinity Language School</p></div><div class="logo">MS</div></div>'
+      +'<div class="si"><span>Student's Name: '+d.student_name+'</span><span>Grade: '+d.grade+'</span><span>Seat Number: '+(d.seat_number||'—')+'</span></div>'
+      +'<table><thead><tr><th style="border:1px solid #555;padding:8px;width:80px">Subject</th>'+sh+'</tr></thead>'
+      +'<tbody><tr><td class="rl">Max</td>'+mr+'</tr><tr><td class="rl">Mark</td>'+mk+'</tr><tr><td class="rl">Evaluation</td>'+ev+'</tr></tbody></table>'
+      +'<div class="ft"><div class="fc"><p>Head of Control</p><p class="fn">'+(d.staff.head_of_control||'')+'</p></div><div class="fc"><p>Headmistress</p><p class="fn">'+(d.staff.headmistress||'')+'</p></div><div class="fc"><p>School Principal</p><p class="fn">'+(d.staff.principal||'')+'</p><div class="st">Modern Infinity School<br>Control</div></div></div>'
+      +'</body></html>';
+    var w=window.open('','_blank','width=900,height=700');w.document.write(html);w.document.close();setTimeout(function(){w.print();},600);
+    document.getElementById('ev-status').textContent='Report opened — print or save as PDF.';
+  }
+  async function evSend(){
+    var d=evData();
+    if(!d.parent_phone){document.getElementById('ev-status').textContent='Please enter parent WhatsApp number.';return;}
+    if(!d.subjects.length){document.getElementById('ev-status').textContent='Please add at least one subject.';return;}
+    document.getElementById('ev-status').textContent='Sending...';
+    try{
+      var res=await fetch('/api/evaluation',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({},d,{send_whatsapp:true}))});
+      var data=await res.json();
+      if(data.ok&&data.whatsapp_sent){document.getElementById('ev-status').textContent='Saved and sent via WhatsApp!';}
+      else if(data.ok){document.getElementById('ev-status').textContent='Saved to sheet. WhatsApp: '+(data.whatsapp_error||'not sent');}
+      else{document.getElementById('ev-status').textContent='Error: '+(data.error||'unknown');}
+    }catch(e){document.getElementById('ev-status').textContent='Connection error';}
+  }
+  // Patch switchTab to handle eval pane
+  var _origSwitch=switchTab;
+  switchTab=function(tab,btn){
+    var ep=document.getElementById('eval-content');
+    if(ep)ep.style.display=tab==='eval'?'block':'none';
+    if(tab!=='eval')_origSwitch(tab,btn);
+    document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
+    if(btn)btn.classList.add('active');
+  };
 </script>
 </body>
 </html>
@@ -2800,6 +2875,76 @@ def unified_portal():
     _html = _b64.b64decode(b'PCFET0NUWVBFIGh0bWw+CjxodG1sIGxhbmc9ImVuIj4KPGhlYWQ+CjxtZXRhIGNoYXJzZXQ9IlVURi04Ij4KPG1ldGEgbmFtZT0idmlld3BvcnQiIGNvbnRlbnQ9IndpZHRoPWRldmljZS13aWR0aCxpbml0aWFsLXNjYWxlPTEuMCI+Cjx0aXRsZT5Nb2Rlcm4gSW5maW5pdHkgU2Nob29sIC0gU3RhZmYgUG9ydGFsPC90aXRsZT4KPHN0eWxlPgoqe2JveC1zaXppbmc6Ym9yZGVyLWJveDttYXJnaW46MDtwYWRkaW5nOjB9CmJvZHl7Zm9udC1mYW1pbHk6J1NlZ29lIFVJJyxBcmlhbCxzYW5zLXNlcmlmO2JhY2tncm91bmQ6bGluZWFyLWdyYWRpZW50KDEzNWRlZywjMEYxQzJFLCMxYTNhMmEpO21pbi1oZWlnaHQ6MTAwdmg7ZGlzcGxheTpmbGV4O2FsaWduLWl0ZW1zOmNlbnRlcjtqdXN0aWZ5LWNvbnRlbnQ6Y2VudGVyfQojbG9naW4tYm94e2JhY2tncm91bmQ6I2ZmZjtib3JkZXItcmFkaXVzOjE2cHg7cGFkZGluZzo0MHB4IDM2cHg7d2lkdGg6MTAwJTttYXgtd2lkdGg6NDIwcHg7Ym94LXNoYWRvdzowIDIwcHggNjBweCByZ2JhKDAsMCwwLC40KX0KLmljb3t0ZXh0LWFsaWduOmNlbnRlcjtmb250LXNpemU6NTJweDttYXJnaW4tYm90dG9tOjhweH0KaDF7dGV4dC1hbGlnbjpjZW50ZXI7Zm9udC1zaXplOjIycHg7Zm9udC13ZWlnaHQ6NzAwO2NvbG9yOiMwRjFDMkV9Ci5zdWJ7dGV4dC1hbGlnbjpjZW50ZXI7Zm9udC1zaXplOjEzcHg7Y29sb3I6IzY0NzQ4YjttYXJnaW46NHB4IDAgMjhweH0KLmxme21hcmdpbi1ib3R0b206MTZweH0KLmxmIGxhYmVse2Rpc3BsYXk6YmxvY2s7Zm9udC1zaXplOjEycHg7Zm9udC13ZWlnaHQ6NzAwO2NvbG9yOiM0NzU1Njk7dGV4dC10cmFuc2Zvcm06dXBwZXJjYXNlO2xldHRlci1zcGFjaW5nOi4wNWVtO21hcmdpbi1ib3R0b206NnB4fQoubGYgaW5wdXR7d2lkdGg6MTAwJTtwYWRkaW5nOjEzcHggMTRweDtib3JkZXI6MnB4IHNvbGlkICNlMmU4ZjA7Ym9yZGVyLXJhZGl1czo5cHg7Zm9udC1zaXplOjE1cHg7b3V0bGluZTpub25lO2JhY2tncm91bmQ6I2Y4ZmFmYzt0cmFuc2l0aW9uOmJvcmRlci1jb2xvciAuMnN9Ci5sZiBpbnB1dDpmb2N1c3tib3JkZXItY29sb3I6IzAwQzhDODtiYWNrZ3JvdW5kOiNmZmZ9CiNidG57d2lkdGg6MTAwJTtwYWRkaW5nOjE0cHg7YmFja2dyb3VuZDojMEYxQzJFO2NvbG9yOiNmZmY7Ym9yZGVyOm5vbmU7Ym9yZGVyLXJhZGl1czo5cHg7Zm9udC1zaXplOjE1cHg7Zm9udC13ZWlnaHQ6NzAwO2N1cnNvcjpwb2ludGVyfQojYnRuOmhvdmVye29wYWNpdHk6Ljg4fQojYnRuOmRpc2FibGVke29wYWNpdHk6LjY7Y3Vyc29yOm5vdC1hbGxvd2VkfQojZXJye2Rpc3BsYXk6bm9uZTtiYWNrZ3JvdW5kOiNmZWUyZTI7Y29sb3I6I2RjMjYyNjtib3JkZXItcmFkaXVzOjhweDtwYWRkaW5nOjEwcHggMTRweDtmb250LXNpemU6MTNweDtmb250LXdlaWdodDo2MDA7bWFyZ2luLXRvcDoxNHB4O3RleHQtYWxpZ246Y2VudGVyfQojcGFuZWx7ZGlzcGxheTpub25lO3Bvc2l0aW9uOmZpeGVkO2luc2V0OjA7YmFja2dyb3VuZDojZjBmNGY4fQojbG9hZGluZ3tkaXNwbGF5Om5vbmU7cG9zaXRpb246Zml4ZWQ7aW5zZXQ6MDtiYWNrZ3JvdW5kOmxpbmVhci1ncmFkaWVudCgxMzVkZWcsIzBGMUMyRSwjMWEzYTJhKTt6LWluZGV4OjEwO2FsaWduLWl0ZW1zOmNlbnRlcjtqdXN0aWZ5LWNvbnRlbnQ6Y2VudGVyO2ZsZXgtZGlyZWN0aW9uOmNvbHVtbjtnYXA6MTZweH0KI2xvYWRpbmcgLnNwaW57d2lkdGg6NDhweDtoZWlnaHQ6NDhweDtib3JkZXI6NHB4IHNvbGlkIHJnYmEoMjU1LDI1NSwyNTUsLjIpO2JvcmRlci10b3AtY29sb3I6IzAwQzhDODtib3JkZXItcmFkaXVzOjUwJTthbmltYXRpb246c3BpbiAuOHMgbGluZWFyIGluZmluaXRlfQojbG9hZGluZyBwe2NvbG9yOiNmZmY7Zm9udC1zaXplOjE1cHg7Zm9udC13ZWlnaHQ6NjAwO2xldHRlci1zcGFjaW5nOi4wMmVtfQpAa2V5ZnJhbWVzIHNwaW57dG97dHJhbnNmb3JtOnJvdGF0ZSgzNjBkZWcpfX0KaWZyYW1le3dpZHRoOjEwMCU7aGVpZ2h0OjEwMCU7Ym9yZGVyOm5vbmU7dmlzaWJpbGl0eTpoaWRkZW59Cjwvc3R5bGU+CjwvaGVhZD4KPGJvZHk+CjxkaXYgaWQ9ImxvZ2luLWJveCI+CiAgPGRpdiBjbGFzcz0iaWNvIj4mIzEyNzk4Mzs8L2Rpdj4KICA8aDE+TW9kZXJuIEluZmluaXR5IFNjaG9vbDwvaDE+CiAgPHAgY2xhc3M9InN1YiI+U3RhZmYgUG9ydGFsICZtZGFzaDsgUG93ZXJlZCBieSBTbWFydmV4PC9wPgogIDxkaXYgY2xhc3M9ImxmIj48bGFiZWw+VXNlcm5hbWU8L2xhYmVsPgogICAgPGlucHV0IHR5cGU9InRleHQiIGlkPSJ1IiBwbGFjZWhvbGRlcj0iRW50ZXIgeW91ciB1c2VybmFtZSIgYXV0b2NvbXBsZXRlPSJvZmYiPgogIDwvZGl2PgogIDxkaXYgY2xhc3M9ImxmIj48bGFiZWw+UGFzc3dvcmQ8L2xhYmVsPgogICAgPGlucHV0IHR5cGU9InBhc3N3b3JkIiBpZD0icCIgcGxhY2Vob2xkZXI9IkVudGVyIHlvdXIgcGFzc3dvcmQiIG9ua2V5ZG93bj0iaWYoZXZlbnQua2V5PT09J0VudGVyJylnbygpIj4KICA8L2Rpdj4KICA8YnV0dG9uIGlkPSJidG4iIG9uY2xpY2s9ImdvKCkiPlNpZ24gSW48L2J1dHRvbj4KICA8ZGl2IGlkPSJlcnIiPjwvZGl2Pgo8L2Rpdj4KPGRpdiBpZD0ibG9hZGluZyI+PGRpdiBjbGFzcz0ic3BpbiI+PC9kaXY+PHA+TG9hZGluZyBwYW5lbC4uLjwvcD48L2Rpdj4KPGRpdiBpZD0icGFuZWwiPjxpZnJhbWUgaWQ9ImZyIiBzcmM9ImFib3V0OmJsYW5rIj48L2lmcmFtZT48L2Rpdj4KPHNjcmlwdD4KdmFyIEZJTj17ImZpbmFuY2UiOiJmaW5hbmNlMjAyNiIsImZpbmFuY2VfYWRtaW4iOiJtb2Rlcm5pbmZpbml0eTIwMjYifTsKdmFyIF91PSIiLF9wPSIiLF9kYXRhPW51bGw7CgpmdW5jdGlvbiBwb3J0YWxMb2dvdXQoKXsKICBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgncGFuZWwnKS5zdHlsZS5kaXNwbGF5PSdub25lJzsKICBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgnbG9hZGluZycpLnN0eWxlLmRpc3BsYXk9J25vbmUnOwogIGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdsb2dpbi1ib3gnKS5zdHlsZS5kaXNwbGF5PSdibG9jayc7CiAgZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ2ZyJykuc3JjPSdhYm91dDpibGFuayc7CiAgZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ2ZyJykuc3R5bGUudmlzaWJpbGl0eT0naGlkZGVuJzsKICBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgndScpLnZhbHVlPScnOwogIGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdwJykudmFsdWU9Jyc7CiAgZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ2VycicpLnN0eWxlLmRpc3BsYXk9J25vbmUnOwogIGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdidG4nKS50ZXh0Q29udGVudD0nU2lnbiBJbic7CiAgZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ2J0bicpLmRpc2FibGVkPWZhbHNlOwogIF91PScnO19wPScnO19kYXRhPW51bGw7Cn0KCmFzeW5jIGZ1bmN0aW9uIGdvKCl7CiAgX3U9ZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ3UnKS52YWx1ZS50cmltKCk7CiAgX3A9ZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ3AnKS52YWx1ZS50cmltKCk7CiAgdmFyIGVycj1kb2N1bWVudC5nZXRFbGVtZW50QnlJZCgnZXJyJyk7CiAgdmFyIGJ0bj1kb2N1bWVudC5nZXRFbGVtZW50QnlJZCgnYnRuJyk7CiAgZXJyLnN0eWxlLmRpc3BsYXk9J25vbmUnOwogIGlmKCFfdXx8IV9wKXtlcnIudGV4dENvbnRlbnQ9J1BsZWFzZSBlbnRlciB1c2VybmFtZSBhbmQgcGFzc3dvcmQnO2Vyci5zdHlsZS5kaXNwbGF5PSdibG9jayc7cmV0dXJuO30KICBpZihGSU5bX3VdJiZGSU5bX3VdPT09X3Ape3Nob3coJy9maW5hbmNlJyk7cmV0dXJuO30KICBidG4uZGlzYWJsZWQ9dHJ1ZTtidG4udGV4dENvbnRlbnQ9J1NpZ25pbmcgaW4uLi4nOwogIHRyeXsKICAgIHZhciByPWF3YWl0IGZldGNoKCcvYXBpL2xvZ2luJyx7bWV0aG9kOidQT1NUJyxoZWFkZXJzOnsnQ29udGVudC1UeXBlJzonYXBwbGljYXRpb24vanNvbid9LGJvZHk6SlNPTi5zdHJpbmdpZnkoe3VzZXJuYW1lOl91LHBhc3N3b3JkOl9wfSl9KTsKICAgIHZhciBkPWF3YWl0IHIuanNvbigpOwogICAgaWYoZC5vayl7X2RhdGE9ZDtzaG93KCcvYWRtaW4nKTtidG4uZGlzYWJsZWQ9ZmFsc2U7YnRuLnRleHRDb250ZW50PSdTaWduIEluJztyZXR1cm47fQogIH1jYXRjaChlKXt9CiAgdHJ5ewogICAgdmFyIHIyPWF3YWl0IGZldGNoKCcvYXBpL3RlYWNoZXItbG9naW4nLHttZXRob2Q6J1BPU1QnLGhlYWRlcnM6eydDb250ZW50LVR5cGUnOidhcHBsaWNhdGlvbi9qc29uJ30sYm9keTpKU09OLnN0cmluZ2lmeSh7dXNlcm5hbWU6X3UscGFzc3dvcmQ6X3B9KX0pOwogICAgdmFyIGQyPWF3YWl0IHIyLmpzb24oKTsKICAgIGlmKGQyLm9rKXtfZGF0YT1kMjtzaG93KCcvaG9tZXdvcmstcGFuZWwnKTtidG4uZGlzYWJsZWQ9ZmFsc2U7YnRuLnRleHRDb250ZW50PSdTaWduIEluJztyZXR1cm47fQogIH1jYXRjaChlKXt9CiAgZXJyLnRleHRDb250ZW50PSdJbmNvcnJlY3QgdXNlcm5hbWUgb3IgcGFzc3dvcmQnOwogIGVyci5zdHlsZS5kaXNwbGF5PSdibG9jayc7CiAgZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ3AnKS52YWx1ZT0nJzsKICBidG4uZGlzYWJsZWQ9ZmFsc2U7YnRuLnRleHRDb250ZW50PSdTaWduIEluJzsKfQoKZnVuY3Rpb24gc2hvdyh1cmwpewogIC8vIEhpZGUgbG9naW4sIHNob3cgc3Bpbm5lciwga2VlcCBpZnJhbWUgaW52aXNpYmxlIHVudGlsIHJlYWR5CiAgZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ2xvZ2luLWJveCcpLnN0eWxlLmRpc3BsYXk9J25vbmUnOwogIGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdsb2FkaW5nJykuc3R5bGUuZGlzcGxheT0nZmxleCc7CiAgZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ3BhbmVsJykuc3R5bGUuZGlzcGxheT0nYmxvY2snOwogIHZhciBmcj1kb2N1bWVudC5nZXRFbGVtZW50QnlJZCgnZnInKTsKICBmci5zdHlsZS52aXNpYmlsaXR5PSdoaWRkZW4nOwogIGZyLm9ubG9hZD1mdW5jdGlvbigpewogICAgdHJ5ewogICAgICB2YXIgZnc9ZnIuY29udGVudFdpbmRvdzsKICAgICAgdmFyIGZkPWZ3LmRvY3VtZW50OwogICAgICAvLyBPdmVycmlkZSBkb0xvZ291dCBpbiB0aGUgaWZyYW1lCiAgICAgIGZ3LmRvTG9nb3V0PWZ1bmN0aW9uKCl7IHdpbmRvdy5wb3J0YWxMb2dvdXQoKTsgfTsKICAgICAgaWYodXJsPT09Jy9hZG1pbicpewogICAgICAgIHZhciBsdT1mZC5nZXRFbGVtZW50QnlJZCgnbHUnKSxscD1mZC5nZXRFbGVtZW50QnlJZCgnbHAnKTsKICAgICAgICBpZihsdSYmbHApewogICAgICAgICAgbHUudmFsdWU9X3U7IGxwLnZhbHVlPV9wOwogICAgICAgICAgZncuZG9Mb2dpbigpOwogICAgICAgICAgLy8gV2FpdCBmb3IgZG9Mb2dpbiB0byBjb21wbGV0ZSB0aGVuIHJldmVhbAogICAgICAgICAgc2V0VGltZW91dChmdW5jdGlvbigpewogICAgICAgICAgICBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgnbG9hZGluZycpLnN0eWxlLmRpc3BsYXk9J25vbmUnOwogICAgICAgICAgICBmci5zdHlsZS52aXNpYmlsaXR5PSd2aXNpYmxlJzsKICAgICAgICAgIH0sIDYwMCk7CiAgICAgICAgfQogICAgICB9IGVsc2UgaWYodXJsPT09Jy9maW5hbmNlJyl7CiAgICAgICAgdmFyIGZ1PWZkLmdldEVsZW1lbnRCeUlkKCdmdScpLGZwPWZkLmdldEVsZW1lbnRCeUlkKCdmcCcpOwogICAgICAgIGlmKGZ1JiZmcCl7CiAgICAgICAgICB2YXIgbHM9ZmQuZ2V0RWxlbWVudEJ5SWQoJ2xvZ2luLXNjcmVlbicpOwogICAgICAgICAgdmFyIG1wPWZkLmdldEVsZW1lbnRCeUlkKCdmaW4tbWFpbi1wYW5lbCcpfHxmZC5nZXRFbGVtZW50QnlJZCgnbWFpbi1wYW5lbCcpOwogICAgICAgICAgaWYobHMpIGxzLnN0eWxlLmRpc3BsYXk9J25vbmUnOwogICAgICAgICAgaWYobXApIG1wLnN0eWxlLmRpc3BsYXk9J2Jsb2NrJzsKICAgICAgICAgIGlmKHR5cGVvZiBmdy5sb2FkU3R1ZGVudHM9PT0iZnVuY3Rpb24iKSBmdy5sb2FkU3R1ZGVudHMoKTsKICAgICAgICB9CiAgICAgICAgZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ2xvYWRpbmcnKS5zdHlsZS5kaXNwbGF5PSdub25lJzsKICAgICAgICBmci5zdHlsZS52aXNpYmlsaXR5PSd2aXNpYmxlJzsKICAgICAgfSBlbHNlIGlmKHVybD09PScvaG9tZXdvcmstcGFuZWwnKXsKICAgICAgICB2YXIgbj1fZGF0YSYmKF9kYXRhLmZ1bGxfbmFtZXx8X2RhdGEubmFtZSl8fF91OwogICAgICAgIGZ3LnNlc3Npb25TdG9yYWdlLnNldEl0ZW0oJ3RlYWNoZXJfdXNlcicsX3UpOwogICAgICAgIGZ3LnNlc3Npb25TdG9yYWdlLnNldEl0ZW0oJ3RlYWNoZXJfbmFtZScsbik7CiAgICAgICAgdmFyIGxzMj1mZC5nZXRFbGVtZW50QnlJZCgnbG9naW4tc2NyZWVuJyksbXAyPWZkLmdldEVsZW1lbnRCeUlkKCdtYWluLXBhbmVsJyk7CiAgICAgICAgaWYobHMyKSBsczIuc3R5bGUuZGlzcGxheT0nbm9uZSc7CiAgICAgICAgaWYobXAyKSBtcDIuc3R5bGUuZGlzcGxheT0nYmxvY2snOwogICAgICAgIHZhciB0Zj1mZC5nZXRFbGVtZW50QnlJZCgndGVhY2hlcicpLGV0Zj1mZC5nZXRFbGVtZW50QnlJZCgnZXgtdGVhY2hlcicpOwogICAgICAgIGlmKHRmKSB0Zi52YWx1ZT1uOwogICAgICAgIGlmKGV0ZikgZXRmLnZhbHVlPW47CiAgICAgICAgZncuZG9Mb2dvdXQ9ZnVuY3Rpb24oKXsgd2luZG93LnBvcnRhbExvZ291dCgpOyB9OwogICAgICAgIGRvY3VtZW50LmdldEVsZW1lbnRCeUlkKCdsb2FkaW5nJykuc3R5bGUuZGlzcGxheT0nbm9uZSc7CiAgICAgICAgZnIuc3R5bGUudmlzaWJpbGl0eT0ndmlzaWJsZSc7CiAgICAgIH0KICAgIH1jYXRjaChlKXsKICAgICAgY29uc29sZS53YXJuKCdhdXRvLWxvZ2luJyxlKTsKICAgICAgZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ2xvYWRpbmcnKS5zdHlsZS5kaXNwbGF5PSdub25lJzsKICAgICAgZnIuc3R5bGUudmlzaWJpbGl0eT0ndmlzaWJsZSc7CiAgICB9CiAgfTsKICBmci5zcmM9dXJsOwp9Cjwvc2NyaXB0Pgo8L2JvZHk+CjwvaHRtbD4=').decode('utf-8')
     return _html, 200, [('Content-Type', 'text/html; charset=utf-8')]
 
+
+
+@app.route('/api/staff', methods=['GET'])
+def get_staff():
+    try:
+        rows = read_tab('Staff')
+        return jsonify({'ok': True, 'staff': rows})
+    except:
+        return jsonify({'ok': True, 'staff': []})
+
+@app.route('/api/staff', methods=['POST'])
+def save_staff():
+    try:
+        data = request.get_json()
+        rows = data.get('rows', [])
+        wb = get_client().open_by_key(SHEET_ID)
+        try:
+            ws = wb.worksheet('Staff')
+            ws.clear()
+        except:
+            ws = wb.add_worksheet(title='Staff', rows=100, cols=5)
+        ws.append_row(['Grade Range', 'Role', 'Name'])
+        for r in rows:
+            ws.append_row([r.get('grade_range',''), r.get('role',''), r.get('name','')])
+        return jsonify({'ok': True})
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)}), 500
+
+@app.route('/api/evaluation', methods=['POST'])
+def save_evaluation():
+    import datetime as _dt, json as _json
+    try:
+        data = request.get_json()
+        student_name = data.get('student_name','')
+        grade        = data.get('grade','')
+        seat_number  = data.get('seat_number','')
+        period       = data.get('period','')
+        subjects     = data.get('subjects',[])
+        teacher      = data.get('teacher','')
+        parent_phone = data.get('parent_phone','')
+        send_wa      = data.get('send_whatsapp', False)
+        wb = get_client().open_by_key(SHEET_ID)
+        try:
+            ws = wb.worksheet('Evaluations')
+        except:
+            ws = wb.add_worksheet(title='Evaluations', rows=1000, cols=10)
+            ws.append_row(['Student Name','Grade','Seat','Period','Teacher','Subjects','Date'])
+        ws.append_row([student_name, grade, seat_number, period, teacher,
+                       _json.dumps(subjects), _dt.datetime.now().strftime('%Y-%m-%d')])
+        result = {'ok': True}
+        if send_wa and parent_phone:
+            lines = ['*Student Mark Report* - ' + period, grade + ' | ' + student_name, '']
+            for s in subjects:
+                lines.append(s['name'] + ': ' + str(s['mark']) + '/' + str(s['max']) + ' - ' + s['evaluation'])
+            lines += ['', SCHOOL['phone']]
+            msg = '\n'.join(lines)
+            clean_phone = re.sub(r'\D', '', str(parent_phone))
+            wa_url = f'https://graph.facebook.com/v19.0/{PHONE_NUMBER_ID}/messages'
+            wa_payload = _json.dumps({'messaging_product':'whatsapp','to':clean_phone,'type':'text','text':{'body':msg}}).encode()
+            wa_req = urllib.request.Request(wa_url, data=wa_payload, method='POST')
+            wa_req.add_header('Authorization', f'Bearer {ACCESS_TOKEN}')
+            wa_req.add_header('Content-Type', 'application/json')
+            try:
+                with urllib.request.urlopen(wa_req) as wr:
+                    result['whatsapp_sent'] = True
+            except Exception as we:
+                result['whatsapp_error'] = str(we)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'ok': False, 'error': str(e)}), 500
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
