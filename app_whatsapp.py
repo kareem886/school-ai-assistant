@@ -1697,15 +1697,15 @@ textarea { resize: vertical; min-height: 70px; }
       <div style="padding:4px 0 16px 0">
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px">
           <div class="field"><label>Student Name <span>*</span></label>
-            <input id="ev-name" type="text" placeholder="Full student name" class="input-field"></div>
+            <input id="ev-name" type="text" placeholder="Full student name" style="width:100%;padding:11px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;background:#f8fafc"></div>
           <div class="field"><label>Grade &amp; Section <span>*</span></label>
-            <input id="ev-grade" type="text" placeholder="e.g. Grade 4 - A" class="input-field"></div>
+            <input id="ev-grade" type="text" placeholder="e.g. Grade 4 - A" style="width:100%;padding:11px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;background:#f8fafc"></div>
           <div class="field"><label>Seat Number</label>
-            <input id="ev-seat" type="text" placeholder="e.g. 81" class="input-field"></div>
+            <input id="ev-seat" type="text" placeholder="e.g. 81" style="width:100%;padding:11px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;background:#f8fafc"></div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
           <div class="field"><label>Period <span>*</span></label>
-            <select id="ev-period" class="input-field">
+            <select id="ev-period" style="width:100%;padding:11px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;background:#f8fafc">
               <option value="">Select period...</option>
               <option>Term 1</option><option>Term 2</option><option>Final Year 2025/2026</option>
               <option>Monthly - September</option><option>Monthly - October</option>
@@ -1715,12 +1715,12 @@ textarea { resize: vertical; min-height: 70px; }
               <option>Monthly - May</option><option>Monthly - June</option>
             </select></div>
           <div class="field"><label>Parent WhatsApp Number</label>
-            <input id="ev-phone" type="text" placeholder="e.g. 201012345678" class="input-field"></div>
+            <input id="ev-phone" type="text" placeholder="e.g. 201012345678" style="width:100%;padding:11px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;background:#f8fafc"></div>
         </div>
         <div style="margin-bottom:14px">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-            <label style="font-weight:700">Subjects <span style="color:red">*</span></label>
-            <button onclick="evAddRow()" class="btn-green" style="padding:7px 16px;font-size:13px">+ Add Subject</button>
+            <label style="font-weight:700;font-size:14px">Subjects <span style="color:red">*</span></label>
+            <button onclick="evAddRow()" class="btn-green" style="padding:8px 18px;font-size:13px">+ Add Subject</button>
           </div>
           <table style="width:100%;border-collapse:collapse;font-size:13px">
             <thead><tr style="background:#f8fafc">
@@ -1735,11 +1735,11 @@ textarea { resize: vertical; min-height: 70px; }
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:16px">
           <div class="field"><label>Head of Control</label>
-            <input id="ev-head" type="text" placeholder="Name" class="input-field"></div>
+            <input id="ev-head" type="text" placeholder="Name" style="width:100%;padding:11px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;background:#f8fafc"></div>
           <div class="field"><label>Headmistress</label>
-            <input id="ev-hmis" type="text" placeholder="Name" class="input-field"></div>
+            <input id="ev-hmis" type="text" placeholder="Name" style="width:100%;padding:11px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;background:#f8fafc"></div>
           <div class="field"><label>School Principal</label>
-            <input id="ev-principal" type="text" placeholder="Name" class="input-field"></div>
+            <input id="ev-principal" type="text" placeholder="Name" style="width:100%;padding:11px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;background:#f8fafc"></div>
         </div>
         <div style="display:flex;gap:12px;margin-bottom:12px">
           <button onclick="evPrint()" style="flex:1;padding:13px;background:#0F1C2E;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">Generate PDF</button>
@@ -1748,6 +1748,8 @@ textarea { resize: vertical; min-height: 70px; }
         <div id="ev-status" style="font-size:13px;font-weight:600;text-align:center;min-height:18px;color:#0F1C2E"></div>
       </div>
     </div>
+
+    
       <div class="row-2">
         <div class="field">
           <label>🎓 Grade <span>*</span></label>
@@ -1900,6 +1902,14 @@ window.onload = function() {
 
 // ── Tab switching ──────────────────────────────────────────────────────────
 function switchTab(tab, btn) {
+    var ep = document.getElementById('tab-eval');
+    if(ep) ep.style.display = (tab === 'eval') ? 'block' : 'none';
+    if(tab === 'eval') {
+      document.querySelectorAll('.tab-panel').forEach(function(p){ if(p.id !== 'tab-eval') p.style.display='none'; p.classList.remove('active'); });
+      document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
+      if(btn) btn.classList.add('active');
+      return;
+    }
     // handle eval pane
     var ep = document.getElementById('tab-eval');
     if(ep) ep.style.display = tab === 'eval' ? 'block' : 'none';
