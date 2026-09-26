@@ -1903,13 +1903,19 @@ window.onload = function() {
 // ── Tab switching ──────────────────────────────────────────────────────────
 function switchTab(tab, btn) {
     var ep = document.getElementById('tab-eval');
-    if(ep) ep.style.display = (tab === 'eval') ? 'block' : 'none';
     if(tab === 'eval') {
-      document.querySelectorAll('.tab-panel').forEach(function(p){ if(p.id !== 'tab-eval') p.style.display='none'; p.classList.remove('active'); });
+      // Show eval pane and its parent container
+      if(ep) {
+        var container = ep.parentElement;
+        if(container) container.style.display = 'block';
+        Array.from(container.children).forEach(function(c){ c.style.display = (c === ep) ? 'block' : 'none'; });
+      }
       document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
       if(btn) btn.classList.add('active');
       return;
     }
+    // Hide eval pane when switching away
+    if(ep) ep.style.display = 'none';
     // handle eval pane
     var ep = document.getElementById('tab-eval');
     if(ep) ep.style.display = tab === 'eval' ? 'block' : 'none';
