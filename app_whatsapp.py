@@ -1617,6 +1617,7 @@ textarea { resize: vertical; min-height: 70px; }
   <div class="tabs">
     <button class="tab-btn active" onclick="switchTab('homework', this)">📚 Add Homework</button>
     <button class="tab-btn" onclick="switchTab('exams', this)">📝 Exam Results</button>
+    <button class="tab-btn" onclick="switchTab('eval', this)">📋 Monthly Evaluation</button>
   </div>
 
   <div class="card">
@@ -1690,6 +1691,63 @@ textarea { resize: vertical; min-height: 70px; }
         <label>👤 Teacher Name <span>*</span></label>
         <input type="text" id="ex-teacher" placeholder="e.g. Mr. Hassan">
       </div>
+
+    <!-- MONTHLY EVALUATION TAB -->
+    <div class="tab-panel" id="tab-eval" style="display:none">
+      <div style="padding:4px 0 16px 0">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px">
+          <div class="field"><label>Student Name <span>*</span></label>
+            <input id="ev-name" type="text" placeholder="Full student name" class="input-field"></div>
+          <div class="field"><label>Grade &amp; Section <span>*</span></label>
+            <input id="ev-grade" type="text" placeholder="e.g. Grade 4 - A" class="input-field"></div>
+          <div class="field"><label>Seat Number</label>
+            <input id="ev-seat" type="text" placeholder="e.g. 81" class="input-field"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+          <div class="field"><label>Period <span>*</span></label>
+            <select id="ev-period" class="input-field">
+              <option value="">Select period...</option>
+              <option>Term 1</option><option>Term 2</option><option>Final Year 2025/2026</option>
+              <option>Monthly - September</option><option>Monthly - October</option>
+              <option>Monthly - November</option><option>Monthly - December</option>
+              <option>Monthly - January</option><option>Monthly - February</option>
+              <option>Monthly - March</option><option>Monthly - April</option>
+              <option>Monthly - May</option><option>Monthly - June</option>
+            </select></div>
+          <div class="field"><label>Parent WhatsApp Number</label>
+            <input id="ev-phone" type="text" placeholder="e.g. 201012345678" class="input-field"></div>
+        </div>
+        <div style="margin-bottom:14px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <label style="font-weight:700">Subjects <span style="color:red">*</span></label>
+            <button onclick="evAddRow()" class="btn-green" style="padding:7px 16px;font-size:13px">+ Add Subject</button>
+          </div>
+          <table style="width:100%;border-collapse:collapse;font-size:13px">
+            <thead><tr style="background:#f8fafc">
+              <th style="padding:9px;border:1px solid #e2e8f0;text-align:left">Subject</th>
+              <th style="padding:9px;border:1px solid #e2e8f0;width:70px;text-align:center">Max</th>
+              <th style="padding:9px;border:1px solid #e2e8f0;width:70px;text-align:center">Mark</th>
+              <th style="padding:9px;border:1px solid #e2e8f0;width:120px;text-align:center">Evaluation</th>
+              <th style="padding:9px;border:1px solid #e2e8f0;width:36px"></th>
+            </tr></thead>
+            <tbody id="ev-tbody"></tbody>
+          </table>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:16px">
+          <div class="field"><label>Head of Control</label>
+            <input id="ev-head" type="text" placeholder="Name" class="input-field"></div>
+          <div class="field"><label>Headmistress</label>
+            <input id="ev-hmis" type="text" placeholder="Name" class="input-field"></div>
+          <div class="field"><label>School Principal</label>
+            <input id="ev-principal" type="text" placeholder="Name" class="input-field"></div>
+        </div>
+        <div style="display:flex;gap:12px;margin-bottom:12px">
+          <button onclick="evPrint()" style="flex:1;padding:13px;background:#0F1C2E;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">Generate PDF</button>
+          <button onclick="evSend()" class="btn-green" style="flex:1;padding:13px;font-size:14px;font-weight:700;border-radius:10px">Send via WhatsApp</button>
+        </div>
+        <div id="ev-status" style="font-size:13px;font-weight:600;text-align:center;min-height:18px;color:#0F1C2E"></div>
+      </div>
+    </div>
       <div class="row-2">
         <div class="field">
           <label>🎓 Grade <span>*</span></label>
@@ -1842,6 +1900,9 @@ window.onload = function() {
 
 // ── Tab switching ──────────────────────────────────────────────────────────
 function switchTab(tab, btn) {
+    // handle eval pane
+    var ep = document.getElementById('tab-eval');
+    if(ep) ep.style.display = tab === 'eval' ? 'block' : 'none';
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-' + tab).classList.add('active');
