@@ -1901,29 +1901,7 @@ window.onload = function() {
 };
 
 // ── Tab switching ──────────────────────────────────────────────────────────
-function switchTab(tab, btn) {
-    var ep = document.getElementById('tab-eval');
-    if(tab === 'eval') {
-      // Show eval pane and its parent container
-      if(ep) {
-        var container = ep.parentElement;
-        if(container) container.style.display = 'block';
-        Array.from(container.children).forEach(function(c){ c.style.display = (c === ep) ? 'block' : 'none'; });
-      }
-      document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
-      if(btn) btn.classList.add('active');
-      return;
-    }
-    // Hide eval pane when switching away
-    if(ep) ep.style.display = 'none';
-    // handle eval pane
-    var ep = document.getElementById('tab-eval');
-    if(ep) ep.style.display = tab === 'eval' ? 'block' : 'none';
-  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('tab-' + tab).classList.add('active');
-  btn.classList.add('active');
-}
+
 
 // ── Sync teacher name across tabs ─────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', function() {
@@ -2216,15 +2194,26 @@ document.addEventListener('keydown', e => {
       else{document.getElementById('ev-status').textContent='Error: '+(data.error||'unknown');}
     }catch(e){document.getElementById('ev-status').textContent='Connection error';}
   }
-  // Patch switchTab to handle eval pane
-  var _origSwitch=switchTab;
-  switchTab=function(tab,btn){
-    var ep=document.getElementById('eval-content');
-    if(ep)ep.style.display=tab==='eval'?'block':'none';
-    if(tab!=='eval')_origSwitch(tab,btn);
-    document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
-    if(btn)btn.classList.add('active');
-  };
+
+
+function switchTab(tab, btn) {
+  // Hide all panels
+  document.querySelectorAll('.tab-panel').forEach(function(p) {
+    p.style.display = 'none';
+    p.classList.remove('active');
+  });
+  // Show the correct panel
+  var target = document.getElementById('tab-' + tab);
+  if (target) {
+    // Make sure parent container is visible
+    if (target.parentElement) target.parentElement.style.display = 'block';
+    target.style.display = 'block';
+    target.classList.add('active');
+  }
+  // Update tab button highlight
+  document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+  if (btn) btn.classList.add('active');
+}
 </script>
 </body>
 </html>
