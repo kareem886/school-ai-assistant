@@ -1617,7 +1617,6 @@ textarea { resize: vertical; min-height: 70px; }
   <div class="tabs">
     <button class="tab-btn active" onclick="switchTab('homework', this)">📚 Add Homework</button>
     <button class="tab-btn" onclick="switchTab('exams', this)">📝 Exam Results</button>
-    <button class="tab-btn" onclick="switchTab('eval', this)">📋 Monthly Evaluation</button>
   </div>
 
   <div class="card">
@@ -2073,64 +2072,7 @@ document.addEventListener('keydown', e => {
 });
 
   // ── MONTHLY EVALUATION JS ──────────────────────────────────────
-  var _evN=0;
-  function evAddRow(n,mx,mk,ev){
-    _evN++;
-    var tbody=document.getElementById('ev-tbody');
-    var tr=document.createElement('tr');
-    tr.setAttribute('data-evid', _evN);
-    var cells = [
-      createInput('text', n||'', 'Subject'),
-      createInput('text', mx||'100', ''),
-      createInput('text', mk||'', 'Mark'),
-      createSelect(['Ex.','V.Good','Good','Pass','Fail','Passed'], ev||'')
-    ];
-    cells.forEach(function(td){ tr.appendChild(td); });
-    var tdDel = document.createElement('td');
-    tdDel.style.cssText = 'padding:6px;border:1px solid #e2e8f0;text-align:center';
-    var btn = document.createElement('button');
-    btn.textContent = 'x';
-    btn.style.cssText = 'background:#fee2e2;color:#dc2626;border:none;border-radius:6px;padding:4px 8px;cursor:pointer';
-    btn.onclick = function(){ tr.parentNode.removeChild(tr); };
-    tdDel.appendChild(btn);
-    tr.appendChild(tdDel);
-    tbody.appendChild(tr);
-  }
-  function createInput(type, val, ph){
-    var td = document.createElement('td');
-    td.style.cssText = 'padding:6px;border:1px solid #e2e8f0';
-    var inp = document.createElement('input');
-    inp.type = type; inp.value = val; inp.placeholder = ph;
-    inp.style.cssText = 'width:100%;padding:6px;border:1px solid #e2e8f0;border-radius:6px;font-size:13px;text-align:center';
-    td.appendChild(inp);
-    return td;
-  }
-  function createSelect(options, selected){
-    var td = document.createElement('td');
-    td.style.cssText = 'padding:6px;border:1px solid #e2e8f0';
-    var sel = document.createElement('select');
-    sel.style.cssText = 'width:100%;padding:6px;border:1px solid #e2e8f0;border-radius:6px;font-size:13px';
-    var blank = document.createElement('option');
-    blank.value=''; blank.textContent='—';
-    sel.appendChild(blank);
-    options.forEach(function(o){
-      var opt = document.createElement('option');
-      opt.value = o; opt.textContent = o;
-      if(o === selected) opt.selected = true;
-      sel.appendChild(opt);
-    });
-    td.appendChild(sel);
-    return td;
-  }
 
-  function evRows(){
-    var out=[];
-    document.querySelectorAll('#ev-tbody tr').forEach(function(tr){
-      var inp=tr.querySelectorAll('input,select');
-      if(inp[0]&&inp[0].value.trim())out.push({name:inp[0].value.trim(),max:inp[1].value.trim()||'100',mark:inp[2].value.trim(),evaluation:inp[3].value.trim()});
-    });
-    return out;
-  }
 
 
 function switchTab(tab, btn) {
