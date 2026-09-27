@@ -1375,7 +1375,7 @@ def root():
     """Root route — redirect portal subdomain to /portal."""
     from flask import redirect, request as freq
     host = freq.host or ''
-    if 'portal.smarvexai.com' in host:
+    if 'moderninfinityportal.smarvexai.com' in host:
         return redirect('/portal', code=301)
     return redirect('/portal', code=302)
 
