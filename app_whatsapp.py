@@ -2744,7 +2744,7 @@ def finance_students():
             if not str(d.get("Student ID", "")).strip():
                 continue
             student_grade = str(d.get("Grade", "")).strip()
-            if grade and grade.lower() not in student_grade.lower():
+            if grade and student_grade.lower() != grade.lower():
                 continue
             if str(d.get("Active", "yes")).strip().lower() != "yes":
                 continue
