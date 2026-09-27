@@ -1370,6 +1370,15 @@ def announcements_api():
     active = [r for r in rows if str(r.get("Status","")).lower() == "active"]
     return jsonify({"announcements": active, "count": len(active)})
 
+@app.route('/')
+def root():
+    """Root route — redirect portal subdomain to /portal."""
+    from flask import redirect, request as freq
+    host = freq.host or ''
+    if 'portal.smarvexai.com' in host:
+        return redirect('/portal', code=301)
+    return redirect('/portal', code=302)
+
 @app.route('/health')
 def health():
     rows = read_tab("Homework")
