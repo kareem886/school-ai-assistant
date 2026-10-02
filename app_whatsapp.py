@@ -2832,6 +2832,44 @@ def unified_portal():
 
 
 
+
+# ─── TELEGRAM BOT ───────────────────────────────────────────────────────────
+
+TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN", "")
+TELEGRAM_API = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}"
+
+def send_telegram(chat_id, text):
+    try:
+        requests.post(f"{TELEGRAM_API}/sendMessage", json={
+            "chat_id": chat_id,
+            "text": text
+        }, timeout=10)
+    except Exception as e:
+        logger.error(f"Telegram send error: {e}")
+
+@app.route("/telegram", methods=["POST"])
+def telegram_webhook():
+    try:
+        data = request.get_json()
+        message = data.get("message", {})
+        chat_id = message.get("chat", {}).get("id")
+        text = message.get("text", "").strip()
+        if not chat_id or not text:
+            return "ok", 200
+        reply = process_message(text)
+        send_telegram(chat_id, reply)
+        return "ok", 200
+    except Exception as e:
+        logger.error(f"Telegram webhook error: {e}")
+        return "ok", 200
+
+@app.route("/telegram/set-webhook", methods=["GET"])
+def set_telegram_webhook():
+    base_url = request.host_url.rstrip("/")
+    webhook_url = f"{base_url}/telegram"
+    resp = requests.post(f"{TELEGRAM_API}/setWebhook", json={"url": webhook_url})
+    return jsonify({"status": "done", "webhook": webhook_url, "result": resp.json()})
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     logger.info(f"Starting on port {port}")
