@@ -2865,8 +2865,7 @@ def telegram_webhook():
 
 @app.route("/telegram/set-webhook", methods=["GET"])
 def set_telegram_webhook():
-    base_url = request.host_url.rstrip("/")
-    webhook_url = f"{base_url}/telegram"
+    webhook_url = "https://web-production-a1442.up.railway.app/telegram"
     resp = requests.post(f"{TELEGRAM_API}/setWebhook", json={"url": webhook_url})
     return jsonify({"status": "done", "webhook": webhook_url, "result": resp.json()})
 
