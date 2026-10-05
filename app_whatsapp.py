@@ -266,9 +266,21 @@ def process_message(msg, from_phone=""):
         if not grade:
             return ("📚 \u062d\u062f\u062f \u0627\u0644\u0635\u0641 \u0645\u0646 \u0641\u0636\u0644\u0643\n\u0645\u062b\u0627\u0644: *\u0648\u0627\u062c\u0628 \u0627\u0644\u0635\u0641 \u0627\u0644\u0633\u0627\u0628\u0639*") if is_arabic else                    ("📚 Please specify the grade\nExample: *Homework for Grade 7*")
         rows = read_tab("Homework")
-        hw = [r for r in rows if grade.lower() in str(r.get("Grade","")).lower() and str(r.get("Assignment","")).strip()]
+        from datetime import datetime, date as _date
+        today = _date.today()
+        def _is_upcoming(r):
+            due = str(r.get("Due Date","")).strip()
+            if not due:
+                return True
+            for fmt in ("%d/%m/%Y", "%Y-%m-%d", "%m/%d/%Y", "%d-%m-%Y"):
+                try:
+                    return datetime.strptime(due, fmt).date() >= today
+                except:
+                    pass
+            return True
+        hw = [r for r in rows if grade.lower() in str(r.get("Grade","")).lower() and str(r.get("Assignment","")).strip() and _is_upcoming(r)]
         if not hw:
-            return (f"📚 \u0644\u0627 \u064a\u0648\u062c\u062f \u0648\u0627\u062c\u0628 \u0644\u0640 {grade}\n📞 {SCHOOL['phone']}") if is_arabic else                    (f"📚 No homework for {grade}\n📞 {SCHOOL['phone']}")
+            return (f"📚 \u0644\u0627 \u064a\u0648\u062c\u062f \u0648\u0627\u062c\u0628 \u0642\u0627\u062f\u0645 \u0644\u0640 {grade}\n📞 {SCHOOL['phone']}") if is_arabic else                    (f"📚 No upcoming homework for {grade}\n📞 {SCHOOL['phone']}")
         if is_arabic:
             r = f"📚 \u0648\u0627\u062c\u0628\u0627\u062a {grade}\n\n"
             for h in hw:
