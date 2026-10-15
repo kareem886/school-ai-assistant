@@ -2520,13 +2520,14 @@ input:checked+.slider:before{transform:translateX(24px)}
     <!-- Filters -->
     <div class="filters">
       <div class="filter-group">
-        <label>Educational Stage</label>
+        <label>Grade</label>
         <select id="gradeFilter">
-          <option value="">All Stages</option>
-          <option value="KG">KG</option>
-          <option value="Primary">Primary</option>
-          <option value="Preparatory">Preparatory</option>
-          <option value="Secondary">Secondary</option>
+          <option value="">All Grades</option>
+          <option>KG1</option><option>KG2</option>
+          <option>Grade 1</option><option>Grade 2</option><option>Grade 3</option>
+          <option>Grade 4</option><option>Grade 5</option><option>Grade 6</option>
+          <option>Grade 7</option><option>Grade 8</option><option>Grade 9</option>
+          <option>Grade 10</option><option>Grade 11</option><option>Grade 12</option>
         </select>
       </div>
       <div class="filter-group">
@@ -2754,7 +2755,7 @@ def finance_students():
             d = {headers[j]: row[j] if j < len(row) else "" for j in range(len(headers))}
             if not str(d.get("Student ID", "")).strip():
                 continue
-            student_grade = str(d.get("Educational Stage", d.get("Grade", ""))).strip()
+            student_grade = str(d.get("Grade", "")).strip()
             if grade and student_grade.lower() != grade.lower():
                 continue
             if str(d.get("Active", "yes")).strip().lower() != "yes":
@@ -2762,7 +2763,7 @@ def finance_students():
             payment_col = next((h for h in headers if "payment" in h.lower() and "status" in h.lower()), "Payment Status")
             students.append({
                 "id": str(d.get("Student ID", "")).strip(),
-                "name": str(d.get("Full Name (English)", d.get("Full Name", d.get("Student Name", "")))).strip(),
+                "name": str(d.get("Full Name", d.get("Student Name", ""))).strip(),
                 "grade": student_grade,
                 "payment_status": str(d.get(payment_col, "")).strip(),
                 "row_index": i
