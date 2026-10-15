@@ -1272,23 +1272,29 @@ def api_parents():
         grades_param = request.args.get("grades", "")
         allowed = [g.strip() for g in grades_param.split(",") if g.strip()]
         rows = read_tab("Students")
-        parents = []
-        seen = set()
+        # Group by phone so siblings with the same number count as ONE parent
+        phone_map = {}
         for r in rows:
             if not (str(r.get("Active", "yes")).lower() == "yes" and r.get("Parent Phone", "")):
                 continue
             grade = r.get("Grade", "")
-            if allowed:
-                if not any(a.lower() in grade.lower() for a in allowed):
-                    continue
             phone = str(r.get("Parent Phone", "")).strip()
-            if phone in seen:
-                continue
-            seen.add(phone)
+            if phone not in phone_map:
+                phone_map[phone] = {"name": r.get("Parent Name", ""), "grades": set()}
+            phone_map[phone]["grades"].add(grade)
+        # Apply grade filter: include parent if ANY of their children match
+        parents = []
+        for phone, v in phone_map.items():
+            if allowed:
+                if not any(
+                    any(a.lower() in g.lower() for a in allowed)
+                    for g in v["grades"]
+                ):
+                    continue
             parents.append({
-                "name":  r.get("Parent Name", ""),
+                "name":  v["name"],
                 "phone": phone,
-                "grade": grade,
+                "grade": ", ".join(sorted(v["grades"])),
                 "active": True
             })
         return jsonify({"parents": parents, "count": len(parents)})
@@ -1310,35 +1316,42 @@ def broadcast():
 
     try:
         rows = read_tab("Students")
-        seen_phones = set()
-        all_parents = []
+        # Group all active students by phone — collect all grades per phone
+        phone_map = {}  # phone -> {Name, grades: set()}
         for r in rows:
             if not (str(r.get("Active", "yes")).lower() == "yes" and r.get("Parent Phone", "")):
                 continue
             ph = str(r.get("Parent Phone", "")).strip()
-            if ph in seen_phones:
-                continue
-            seen_phones.add(ph)
-            all_parents.append({
-                "Name": r.get("Parent Name", ""),
-                "Phone": ph,
-                "Grade": r.get("Grade", "")
-            })
+            grade = r.get("Grade", "")
+            if ph not in phone_map:
+                phone_map[ph] = {"Name": r.get("Parent Name", ""), "grades": set()}
+            phone_map[ph]["grades"].add(grade)
+        all_parents = [
+            {"Name": v["Name"], "Phone": ph, "grades": v["grades"]}
+            for ph, v in phone_map.items()
+        ]
     except Exception as e:
         return jsonify({"error": f"Could not load parents: {e}"}), 500
 
     # Enforce admin scope first (server-side security)
+    # A parent qualifies if ANY of their children's grades fall within scope
     if admin_scope:
         all_parents = [
             p for p in all_parents
-            if any(s.lower() in str(p.get("Grade", "")).lower() for s in admin_scope)
+            if any(
+                any(s.lower() in g.lower() for s in admin_scope)
+                for g in p["grades"]
+            )
         ]
 
-    # Then apply the UI grade selection
+    # Then apply the UI grade selection — parent qualifies if ANY child matches
     if "All" not in grades:
         all_parents = [
             p for p in all_parents
-            if any(g.lower() in str(p.get("Grade", "")).lower() for g in grades)
+            if any(
+                any(g.lower() in gr.lower() for g in grades)
+                for gr in p["grades"]
+            )
         ]
 
     broadcast_msg = f"📢 Modern Infinity School\n\n{message}\n\n📞 For more info: {SCHOOL['phone']}"
@@ -1347,7 +1360,7 @@ def broadcast():
 
     sent = 0
     failed = 0
-    already_sent = set()   # prevent duplicate sends to same number
+    already_sent = set()   # final safety net against any remaining duplicates
     for parent in all_parents:
         phone = str(parent.get("Phone", "")).strip()
         if not phone:
@@ -1356,7 +1369,6 @@ def broadcast():
             phone = "20" + phone.lstrip("0")
         phone = phone.lstrip("+")
         if phone in already_sent:
-            logger.warning(f"[broadcast] Skipping duplicate phone: {phone[:6]}***")
             continue
         already_sent.add(phone)
         if media_id:
