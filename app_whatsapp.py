@@ -2893,13 +2893,16 @@ def admin_populate_students():
         rows = data.get('rows', [])
         if not rows:
             return jsonify({"error": "no rows provided"}), 400
+        append = data.get('append', False)
+        start_row = data.get('start_row', 2)
         wb = get_client().open_by_key(SHEET_ID)
         ws = wb.worksheet("Students")
-        # Clear existing data from row 2 onwards
-        ws.batch_clear(["A2:L900"])
-        # Write all rows
-        ws.update('A2', rows)
-        return jsonify({"ok": True, "written": len(rows)})
+        if not append:
+            # Clear existing data from row 2 onwards
+            ws.batch_clear(["A2:L1000"])
+        # Write all rows starting at start_row
+        ws.update(f'A{start_row}', rows)
+        return jsonify({"ok": True, "written": len(rows), "start_row": start_row})
     except Exception as e:
         logger.error(f"[admin/populate-students] {e}")
         return jsonify({"error": str(e)}), 500
