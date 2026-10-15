@@ -2881,6 +2881,30 @@ def set_telegram_webhook():
     resp = requests.post(f"{TELEGRAM_API}/setWebhook", json={"url": webhook_url})
     return jsonify({"status": "done", "webhook": webhook_url, "result": resp.json()})
 
+@app.route('/api/admin/populate-students', methods=['POST'])
+def admin_populate_students():
+    """Temporary admin endpoint to populate Students sheet. Protected by secret token."""
+    token = request.headers.get('X-Admin-Token', '')
+    expected = os.environ.get('ADMIN_POPULATE_TOKEN', 'smarvex-populate-2026')
+    if token != expected:
+        return jsonify({"error": "unauthorized"}), 401
+    try:
+        data = request.get_json()
+        rows = data.get('rows', [])
+        if not rows:
+            return jsonify({"error": "no rows provided"}), 400
+        wb = get_client().open_by_key(SHEET_ID)
+        ws = wb.worksheet("Students")
+        # Clear existing data from row 2 onwards
+        ws.batch_clear(["A2:L900"])
+        # Write all rows
+        ws.update('A2', rows)
+        return jsonify({"ok": True, "written": len(rows)})
+    except Exception as e:
+        logger.error(f"[admin/populate-students] {e}")
+        return jsonify({"error": str(e)}), 500
+
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     logger.info(f"Starting on port {port}")
