@@ -557,8 +557,14 @@ def webhook():
         from_num = msg_obj.get('from', '')
         if msg_obj.get('type','') == 'text':
             body = msg_obj.get('text', {}).get('body', '')
-            reply = process_message(body, from_phone=from_num)
-            send_whatsapp(from_num, reply)
+            import threading
+            def handle():
+                try:
+                    reply = process_message(body, from_phone=from_num)
+                    send_whatsapp(from_num, reply)
+                except Exception as ex:
+                    logger.error(f"Webhook handle error: {ex}")
+            threading.Thread(target=handle, daemon=True).start()
     except Exception as e:
         logger.error(f"Webhook error: {e}")
     return 'OK', 200
