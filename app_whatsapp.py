@@ -204,14 +204,29 @@ def extract_grade(m):
             return f'Grade {num}'
     return None
 
+def _normalize_phone(phone):
+    """
+    Normalize an Egyptian phone number to local 11-digit format (01XXXXXXXXX).
+    WhatsApp sends numbers with country code: 201XXXXXXXXX → 01XXXXXXXXX
+    Handles: +201..., 201..., 01..., 1... (9 digits after stripping 20)
+    """
+    p = str(phone).lstrip('+').strip().replace(' ', '').replace('-', '')
+    # Strip Egyptian country code 20 → local 0X format
+    if p.startswith('20') and len(p) == 12:
+        p = '0' + p[2:]
+    # If 10 digits starting with 1 (missed leading 0)
+    elif len(p) == 10 and p.startswith('1'):
+        p = '0' + p
+    return p
+
 def is_registered_parent(from_phone):
     """Return True if this phone number appears in any row of the Students tab as Parent Phone."""
     try:
         rows = read_tab("Students")
-        norm = from_phone.lstrip('+').strip()
+        norm = _normalize_phone(from_phone)
         for r in rows:
-            p = str(r.get("Parent Phone", "")).lstrip('+').strip()
-            if p and (p == norm or p.lstrip('0') == norm.lstrip('0')):
+            p = _normalize_phone(r.get("Parent Phone", ""))
+            if p and p == norm:
                 return True
         return False
     except Exception as e:
@@ -222,15 +237,13 @@ def get_parent_students(from_phone):
     """Return list of student IDs linked to this parent phone (reads Students tab)."""
     try:
         rows = read_tab("Students")
-        # Normalise: strip +, spaces, leading zeros for comparison
-        norm = from_phone.lstrip('+').strip()
+        norm = _normalize_phone(from_phone)
         matched = []
         for r in rows:
-            p = str(r.get("Parent Phone", "")).lstrip('+').strip()
+            p = _normalize_phone(r.get("Parent Phone", ""))
             if not p:
                 continue
-            # Match if identical OR one is the local version of the other
-            if p == norm or p.lstrip('0') == norm.lstrip('0'):
+            if p == norm:
                 sid = str(r.get("Student ID", "")).strip().upper()
                 if sid:
                     matched.append(sid)
