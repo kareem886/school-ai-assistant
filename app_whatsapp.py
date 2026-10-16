@@ -9,7 +9,7 @@ try:
     from flask_cors import CORS
     _has_cors = True
 except ImportError:
-    _has_cors = False, send_from_directory
+    _has_cors = False
 import gspread
 from google.oauth2.service_account import Credentials
 
@@ -140,7 +140,10 @@ def send_whatsapp(to_phone, message):
     }
     try:
         res = requests.post(META_API_URL, headers=headers, json=payload, timeout=10)
-        logger.info(f"[wa] sent to {to_phone[:6]}***: {res.status_code}")
+        if res.status_code == 200:
+            logger.info(f"[wa] sent to {to_phone[:6]}***: OK")
+        else:
+            logger.error(f"[wa] FAILED to {to_phone[:6]}***: {res.status_code} — {res.text[:300]}")
         return res.status_code == 200
     except Exception as e:
         logger.error(f"[wa] error: {e}")
@@ -555,7 +558,9 @@ def webhook():
             return 'OK', 200
         msg_obj = messages[0]
         from_num = msg_obj.get('from', '')
-        if msg_obj.get('type','') == 'text':
+        msg_type = msg_obj.get('type', '')
+
+        if msg_type == 'text':
             body = msg_obj.get('text', {}).get('body', '')
             import threading
             def handle():
@@ -565,6 +570,28 @@ def webhook():
                 except Exception as ex:
                     logger.error(f"Webhook handle error: {ex}")
             threading.Thread(target=handle, daemon=True).start()
+
+        elif msg_type in ('image', 'audio', 'video', 'document', 'sticker'):
+            # Non-text media — reply with a helpful nudge
+            import threading
+            def handle_media():
+                try:
+                    send_whatsapp(from_num,
+                        "مرحباً 👋 لا أستطيع قراءة الصور أو المقاطع الصوتية.\n"
+                        "من فضلك أرسل رسالتك *نصاً*.\n\n"
+                        "Hello 👋 I can only read text messages — please type your request.")
+                except Exception as ex:
+                    logger.error(f"Webhook media handle error: {ex}")
+            threading.Thread(target=handle_media, daemon=True).start()
+
+        elif msg_type == 'reaction':
+            # Emoji reactions — ignore silently, no reply needed
+            pass
+
+        else:
+            # Unknown type — log it so we can see what's being sent
+            logger.warning(f"[webhook] Unhandled message type '{msg_type}' from {from_num[:6]}***")
+
     except Exception as e:
         logger.error(f"Webhook error: {e}")
     return 'OK', 200
