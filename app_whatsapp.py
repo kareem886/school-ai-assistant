@@ -2243,10 +2243,13 @@ async function submitTeacherCp(){
   if(!cur||!nw||!cf){errEl.textContent='All fields are required.';errEl.style.display='block';return;}
   if(nw!==cf){errEl.textContent='New passwords do not match.';errEl.style.display='block';return;}
   if(nw.length<6){errEl.textContent='Password must be at least 6 characters.';errEl.style.display='block';return;}
+  // Resolve username from variable or sessionStorage fallback
+  const uname = CURRENT_TEACHER || sessionStorage.getItem('teacher_user') || '';
+  if(!uname){errEl.textContent='Session expired. Please sign out and log in again.';errEl.style.display='block';return;}
   try {
     const res = await fetch('/api/teacher-change-password',{method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({username:CURRENT_TEACHER,current_password:cur,new_password:nw})});
+      body:JSON.stringify({username:uname,current_password:cur,new_password:nw})});
     const d = await res.json();
     if(d.ok){
       okEl.style.display='block';
