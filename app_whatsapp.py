@@ -961,7 +961,58 @@ textarea:focus{border-color:var(--g)}
 .g-senior{background:#fef3c7;color:#92400e}
 .g-kg{background:#f3e8ff;color:#7e22ce}
 
-@media(max-width:768px){.sb{display:none}.mn{margin-left:0;padding:16px}.sr{grid-template-columns:1fr}.gg{grid-template-columns:repeat(2,1fr)}}
+/* ── HAMBURGER BUTTON ── */
+.hbg{display:none;position:fixed;top:14px;left:14px;z-index:300;background:var(--n);border:none;border-radius:10px;width:42px;height:42px;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 12px rgba(0,0,0,.3)}
+.hbg span{display:block;width:20px;height:2px;background:#fff;margin:4px auto;border-radius:2px;transition:.2s}
+
+/* ── SIDEBAR OVERLAY ── */
+.sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:149}
+.sb-overlay.show{display:block}
+
+/* ── MOBILE TOP BAR ── */
+.mob-top{display:none;position:fixed;top:0;left:0;right:0;height:58px;background:var(--n);z-index:200;align-items:center;padding:0 16px 0 64px;gap:10px}
+.mob-top .mob-title{color:#fff;font-size:14px;font-weight:600;flex:1}
+.mob-top .mob-online{display:flex;align-items:center;gap:5px;background:rgba(37,211,102,.15);color:#4ade80;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:500}
+.mob-top .mob-online .spd{width:6px;height:6px;flex-shrink:0}
+
+/* ── MOBILE BOTTOM NAV ── */
+.mob-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--n);border-top:1px solid rgba(255,255,255,.08);z-index:200;padding:0 0 env(safe-area-inset-bottom)}
+.mob-nav-inner{display:flex;align-items:stretch}
+.mob-nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 4px;color:rgba(255,255,255,.5);font-size:10px;font-weight:500;cursor:pointer;gap:3px;transition:.15s;border:none;background:transparent;font-family:inherit}
+.mob-nav-item .mni{font-size:20px}
+.mob-nav-item.active{color:var(--g)}
+.mob-nav-item:active{background:rgba(255,255,255,.05)}
+
+@media(max-width:768px){
+  /* sidebar slides in as overlay */
+  .sb{position:fixed;top:0;left:-290px;height:100vh;width:270px;z-index:250;transition:left .25s cubic-bezier(.4,0,.2,1);padding-top:70px}
+  .sb.open{left:0}
+  /* hamburger visible */
+  .hbg{display:flex}
+  /* mobile top bar visible */
+  .mob-top{display:flex}
+  /* bottom nav visible */
+  .mob-nav{display:block}
+  /* main shifts for top bar, clears bottom nav */
+  .mn{margin-left:0;padding:80px 16px 90px}
+  /* hide the desktop header row since mobile top bar covers it */
+  .tb2{display:none}
+  /* stats: single column */
+  .sr{grid-template-columns:1fr}
+  /* grade grid: 2 columns on mobile */
+  .gg{grid-template-columns:repeat(2,1fr)}
+  /* cards full width */
+  .lc{padding:32px 24px}
+  .role-cards{grid-template-columns:1fr 1fr 1fr}
+  .role-card .rl{font-size:10px}
+  .role-card .rs{font-size:9px;display:none}
+}
+@media(max-width:420px){
+  .role-cards{grid-template-columns:1fr}
+  .role-card{display:flex;align-items:center;gap:10px;text-align:left;padding:10px 14px}
+  .role-card .ri{font-size:20px;margin-bottom:0}
+  .role-card .rs{display:block;font-size:10px}
+}
 </style>
 </head>
 <body>
@@ -1006,8 +1057,20 @@ textarea:focus{border-color:var(--g)}
 <!-- ════════════════════════════════════════════════════ APP ══ -->
 <div class="aw" id="aw">
 
+  <!-- HAMBURGER -->
+  <button class="hbg" id="hbgBtn" onclick="toggleSidebar()"><span></span><span></span><span></span></button>
+
+  <!-- SIDEBAR OVERLAY -->
+  <div class="sb-overlay" id="sbOverlay" onclick="closeSidebar()"></div>
+
+  <!-- MOBILE TOP BAR -->
+  <div class="mob-top" id="mobTop">
+    <div class="mob-title">Modern Infinity</div>
+    <div class="mob-online"><div class="spd" style="width:6px;height:6px;border-radius:50%;background:#22c55e;animation:pu 2s infinite"></div>Online</div>
+  </div>
+
   <!-- SIDEBAR -->
-  <div class="sb">
+  <div class="sb" id="mainSb">
     <div class="sl">
       <div class="si">📢</div>
       <div class="st">Modern Infinity<span>Admin Panel</span></div>
@@ -1111,8 +1174,30 @@ textarea:focus{border-color:var(--g)}
       </div>
     </div>
 
-    
+
   </div>
+
+  <!-- MOBILE BOTTOM NAV -->
+  <nav class="mob-nav" id="mobNav">
+    <div class="mob-nav-inner">
+      <button class="mob-nav-item active" id="mnb-b" onclick="showTab('b');closeMobMenu()">
+        <span class="mni">📣</span>Announce
+      </button>
+      <button class="mob-nav-item" id="mnb-h" onclick="showTab('h');closeMobMenu()">
+        <span class="mni">📋</span>History
+      </button>
+      <button class="mob-nav-item" id="mnb-f" onclick="window.open('/finance','_blank')">
+        <span class="mni">💳</span>Finance
+      </button>
+      <button class="mob-nav-item" id="mnb-cp" onclick="openChangePwd();closeSidebar()">
+        <span class="mni">🔑</span>Password
+      </button>
+      <button class="mob-nav-item" id="mnb-out" onclick="doLogout()">
+        <span class="mni">🚪</span>Sign out
+      </button>
+    </div>
+  </nav>
+
 </div>
 
 <!-- MODAL -->
@@ -1126,6 +1211,19 @@ textarea:focus{border-color:var(--g)}
 </div>
 
 <script>
+// ── Mobile sidebar ─────────────────────────────────────────────
+function toggleSidebar(){
+  var sb=document.getElementById('mainSb');
+  var ov=document.getElementById('sbOverlay');
+  var open=sb.classList.toggle('open');
+  if(open){ov.classList.add('show');}else{ov.classList.remove('show');}
+}
+function closeSidebar(){
+  document.getElementById('mainSb').classList.remove('open');
+  document.getElementById('sbOverlay').classList.remove('show');
+}
+function closeMobMenu(){closeSidebar();}
+
 // ── State ──────────────────────────────────────────────────────
 var CURRENT_USER = null;   // {username, label, grades}
 var ALL_PARENTS  = [];
@@ -1497,6 +1595,11 @@ function showTab(t){
   document.getElementById('pt').textContent = tt[t][0];
   document.getElementById('ps').textContent = tt[t][1];
   document.querySelectorAll('.ni').forEach(function(e,i){ e.classList.toggle('active',['b','h','p'][i]===t); });
+  // sync mobile bottom nav
+  ['b','h'].forEach(function(k){
+    var btn=document.getElementById('mnb-'+k);
+    if(btn) btn.classList.toggle('active', k===t);
+  });
   if(t==='p') loadParents();
 }
 
