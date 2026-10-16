@@ -630,10 +630,13 @@ def webhook():
             return 'OK', 200
         msg_obj = messages[0]
         msg_id   = msg_obj.get('id', '')
+        _raw_from = msg_obj.get('from', '')
+        _raw_type = msg_obj.get('type', '')
+        logger.info(f"[webhook] INCOMING msg_id={msg_id[:20]}*** from={_raw_from[:8] if _raw_from else 'EMPTY'} type={_raw_type} keys={list(msg_obj.keys())}")
         if _is_duplicate_msg(msg_id):
             return 'OK', 200
-        from_num = msg_obj.get('from', '').strip()
-        msg_type = msg_obj.get('type', '')
+        from_num = _raw_from.strip()
+        msg_type = _raw_type
 
         if not from_num:
             # Fallback 1: some WhatsApp clients use 'from_user_id' (e.g. EG.139XXXXXXXXX for Egyptian biz accounts)
