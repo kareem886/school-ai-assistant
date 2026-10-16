@@ -130,6 +130,9 @@ def read_tab(tab_name):
 def send_whatsapp(to_phone, message):
     if not ACCESS_TOKEN:
         return False
+    if not to_phone:
+        logger.error("[wa] send_whatsapp called with empty to_phone — skipping")
+        return False
     headers = {"Authorization": f"Bearer {ACCESS_TOKEN}", "Content-Type": "application/json"}
     payload = {
         "messaging_product": "whatsapp",
@@ -610,8 +613,12 @@ def webhook():
         if not messages:
             return 'OK', 200
         msg_obj = messages[0]
-        from_num = msg_obj.get('from', '')
+        from_num = msg_obj.get('from', '').strip()
         msg_type = msg_obj.get('type', '')
+
+        if not from_num:
+            logger.warning(f"[webhook] Message with no 'from' field, type={msg_type} — skipping")
+            return 'OK', 200
 
         if msg_type == 'text':
             body = msg_obj.get('text', {}).get('body', '')
