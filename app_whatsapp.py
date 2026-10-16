@@ -29,11 +29,56 @@ ACCESS_TOKEN    = os.environ.get("ACCESS_TOKEN", "")
 VERIFY_TOKEN    = os.environ.get("VERIFY_TOKEN", "schoolai2026")
 APP_SECRET      = os.environ.get("APP_SECRET", "")
 # ── Admin accounts ─────────────────────────────────────────────────────────────────────
+# Passwords are loaded from the "Config" sheet tab at runtime (see load_passwords_from_sheet).
+# These are the hardcoded defaults used if the sheet has no password rows.
 ADMINS = {
-    "admin":        {"password": "moderninfinity2026", "label": "Super Admin",   "grades": []},
-    "admin_junior": {"password": "junior2026",         "label": "Junior Admin",  "grades": ["KG1","KG2","Primary 1","Primary 2","Primary 3","Primary 4","Primary 5","Primary 6"]},
-    "admin_senior": {"password": "senior2026",         "label": "Senior Admin",  "grades": ["Prep 1","Prep 2","Prep 3","Secondary 1","Secondary 2","Secondary 3"]},
+    "admin":         {"password": "moderninfinity2026", "label": "Super Admin",    "grades": []},
+    "admin_junior":  {"password": "junior2026",         "label": "Junior Admin",   "grades": ["KG1","KG2","Primary 1","Primary 2","Primary 3","Primary 4","Primary 5","Primary 6"]},
+    "admin_senior":  {"password": "senior2026",         "label": "Senior Admin",   "grades": ["Prep 1","Prep 2","Prep 3","Secondary 1","Secondary 2","Secondary 3"]},
+    "finance":       {"password": "finance2026",        "label": "Finance",        "grades": []},
+    "finance_admin": {"password": "moderninfinity2026", "label": "Finance Admin",  "grades": []},
 }
+
+def load_passwords_from_sheet():
+    """Load admin passwords from the Config sheet tab and update ADMINS in-place."""
+    try:
+        wb = get_client().open_by_key(SHEET_ID)
+        try:
+            ws = wb.worksheet("Config")
+        except gspread.exceptions.WorksheetNotFound:
+            # Create the Config tab with headers
+            ws = wb.add_worksheet("Config", rows=20, cols=3)
+            ws.update('A1:C1', [['username', 'password', 'last_changed']])
+            logger.info("[config] Created Config sheet tab")
+            return
+        rows = ws.get_all_records()
+        for row in rows:
+            uname = str(row.get('username', '')).strip()
+            pwd   = str(row.get('password', '')).strip()
+            if uname in ADMINS and pwd:
+                ADMINS[uname]['password'] = pwd
+        logger.info("[config] Loaded passwords from sheet")
+    except Exception as e:
+        logger.warning(f"[config] Could not load passwords from sheet: {e}")
+
+def save_password_to_sheet(username, new_password):
+    """Persist a new password for username in the Config sheet tab."""
+    wb = get_client().open_by_key(SHEET_ID)
+    try:
+        ws = wb.worksheet("Config")
+    except gspread.exceptions.WorksheetNotFound:
+        ws = wb.add_worksheet("Config", rows=20, cols=3)
+        ws.update('A1:C1', [['username', 'password', 'last_changed']])
+    rows = ws.get_all_values()
+    from datetime import datetime
+    now = datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')
+    # Find existing row for this username
+    for i, row in enumerate(rows[1:], start=2):  # skip header, 1-indexed
+        if row and row[0] == username:
+            ws.update(f'B{i}:C{i}', [[new_password, now]])
+            return
+    # Append new row
+    ws.append_row([username, new_password, now])
 META_API_URL    = f"https://graph.facebook.com/v18.0/{PHONE_NUMBER_ID}/messages"
 
 SCHOOL = {
@@ -976,7 +1021,28 @@ textarea:focus{border-color:var(--g)}
     <div class="ni" onclick="showTab('h')">📋 History</div>
     <div class="ni" onclick="window.open('/finance','_blank')" style="margin-top:8px;border:1px solid rgba(0,200,200,0.2)">💳 Finance Panel ↗</div>
     <div class="sb-bot">
+      <div class="lo" onclick="openChangePwd()" style="margin-bottom:6px;background:rgba(100,180,255,0.08);border-radius:8px">🔑 Change Password</div>
       <div class="lo" onclick="doLogout()">🚪 Sign out</div>
+    </div>
+  </div>
+
+  <!-- Change Password Modal -->
+  <div id="cpModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9999;align-items:center;justify-content:center">
+    <div style="background:#1e293b;border-radius:16px;padding:32px 28px;width:340px;max-width:95vw;box-shadow:0 8px 40px rgba(0,0,0,0.5)">
+      <h3 style="color:#fff;margin:0 0 6px;font-size:17px">🔑 Change Password</h3>
+      <p style="color:#94a3b8;font-size:12px;margin:0 0 20px">Change your admin login password</p>
+      <div id="cpErr" style="display:none;background:#7f1d1d;color:#fca5a5;padding:8px 12px;border-radius:8px;font-size:13px;margin-bottom:14px"></div>
+      <div id="cpOk" style="display:none;background:#14532d;color:#86efac;padding:8px 12px;border-radius:8px;font-size:13px;margin-bottom:14px">✅ Password changed successfully!</div>
+      <label style="color:#94a3b8;font-size:12px;display:block;margin-bottom:4px">Current Password</label>
+      <input id="cpCurrent" type="password" placeholder="Enter current password" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#fff;font-size:14px;box-sizing:border-box;margin-bottom:12px">
+      <label style="color:#94a3b8;font-size:12px;display:block;margin-bottom:4px">New Password</label>
+      <input id="cpNew" type="password" placeholder="At least 6 characters" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#fff;font-size:14px;box-sizing:border-box;margin-bottom:12px">
+      <label style="color:#94a3b8;font-size:12px;display:block;margin-bottom:4px">Confirm New Password</label>
+      <input id="cpConfirm" type="password" placeholder="Repeat new password" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#fff;font-size:14px;box-sizing:border-box;margin-bottom:20px">
+      <div style="display:flex;gap:10px">
+        <button onclick="submitChangePwd()" style="flex:1;padding:11px;background:#3b82f6;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer">Save</button>
+        <button onclick="closeCpModal()" style="flex:1;padding:11px;background:#334155;color:#cbd5e1;border:none;border-radius:8px;font-size:14px;cursor:pointer">Cancel</button>
+      </div>
     </div>
   </div>
 
@@ -1446,6 +1512,47 @@ function doLogout(){
   document.getElementById('scopeHint').innerHTML = ROLE_HINTS['admin'];
   document.getElementById('mt').value='';
 }
+
+// ── Change Password ─────────────────────────────────────────────
+function openChangePwd(){
+  document.getElementById('cpCurrent').value='';
+  document.getElementById('cpNew').value='';
+  document.getElementById('cpConfirm').value='';
+  document.getElementById('cpErr').style.display='none';
+  document.getElementById('cpOk').style.display='none';
+  var m=document.getElementById('cpModal');
+  m.style.display='flex';
+}
+function closeCpModal(){
+  document.getElementById('cpModal').style.display='none';
+}
+function submitChangePwd(){
+  var cur=document.getElementById('cpCurrent').value.trim();
+  var nw=document.getElementById('cpNew').value.trim();
+  var cf=document.getElementById('cpConfirm').value.trim();
+  var errEl=document.getElementById('cpErr');
+  var okEl=document.getElementById('cpOk');
+  errEl.style.display='none'; okEl.style.display='none';
+  if(!cur||!nw||!cf){errEl.textContent='All fields are required.';errEl.style.display='block';return;}
+  if(nw!==cf){errEl.textContent='New passwords do not match.';errEl.style.display='block';return;}
+  if(nw.length<6){errEl.textContent='Password must be at least 6 characters.';errEl.style.display='block';return;}
+  fetch('/api/change-password',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({username:CURRENT_USER.username,current_password:cur,new_password:nw})})
+  .then(function(r){return r.json();})
+  .then(function(d){
+    if(d.ok){
+      okEl.style.display='block';
+      document.getElementById('cpCurrent').value='';
+      document.getElementById('cpNew').value='';
+      document.getElementById('cpConfirm').value='';
+      setTimeout(closeCpModal,2000);
+    } else {
+      errEl.textContent=d.error||'Failed. Try again.';
+      errEl.style.display='block';
+    }
+  }).catch(function(){errEl.textContent='Network error.';errEl.style.display='block';});
+}
+document.getElementById('cpModal').addEventListener('click',function(e){if(e.target===this)closeCpModal();});
 </script>
 </body>
 </html>
@@ -1468,6 +1575,37 @@ def api_login():
             "grades": admin["grades"]   # empty list = all grades
         })
     return jsonify({"ok": False}), 401
+
+
+@app.route('/api/change-password', methods=['POST'])
+def api_change_password():
+    """Allow an admin to change their own password."""
+    data = request.get_json(force=True, silent=True) or {}
+    username    = data.get("username", "").strip()
+    current_pwd = data.get("current_password", "").strip()
+    new_pwd     = data.get("new_password", "").strip()
+
+    if not username or not current_pwd or not new_pwd:
+        return jsonify({"ok": False, "error": "Missing fields"}), 400
+
+    admin = ADMINS.get(username)
+    if not admin or admin["password"] != current_pwd:
+        return jsonify({"ok": False, "error": "Current password is incorrect"}), 401
+
+    if len(new_pwd) < 6:
+        return jsonify({"ok": False, "error": "New password must be at least 6 characters"}), 400
+
+    if new_pwd == current_pwd:
+        return jsonify({"ok": False, "error": "New password must be different from current"}), 400
+
+    try:
+        save_password_to_sheet(username, new_pwd)
+        ADMINS[username]["password"] = new_pwd
+        logger.info(f"[change-password] Password changed for {username}")
+        return jsonify({"ok": True})
+    except Exception as e:
+        logger.error(f"[change-password] Failed to save for {username}: {e}")
+        return jsonify({"ok": False, "error": "Failed to save — try again"}), 500
 
 
 @app.route('/api/parents')
@@ -2735,7 +2873,28 @@ input:checked+.slider:before{transform:translateX(24px)}
     </div>
     <div class="topbar-right">
       <span class="badge">Finance Team</span>
+      <button class="logout-btn" onclick="openFinanceCpModal()" style="background:rgba(100,180,255,0.15)">🔑 Change Password</button>
       <button class="logout-btn" onclick="doLogout()">Sign out</button>
+    </div>
+  </div>
+
+  <!-- Finance Change Password Modal -->
+  <div id="fcpModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9999;align-items:center;justify-content:center">
+    <div style="background:#1e293b;border-radius:16px;padding:32px 28px;width:340px;max-width:95vw;box-shadow:0 8px 40px rgba(0,0,0,0.5)">
+      <h3 style="color:#fff;margin:0 0 6px;font-size:17px">🔑 Change Password</h3>
+      <p style="color:#94a3b8;font-size:12px;margin:0 0 20px">Change your finance login password</p>
+      <div id="fcpErr" style="display:none;background:#7f1d1d;color:#fca5a5;padding:8px 12px;border-radius:8px;font-size:13px;margin-bottom:14px"></div>
+      <div id="fcpOk" style="display:none;background:#14532d;color:#86efac;padding:8px 12px;border-radius:8px;font-size:13px;margin-bottom:14px">✅ Password changed successfully!</div>
+      <label style="color:#94a3b8;font-size:12px;display:block;margin-bottom:4px">Current Password</label>
+      <input id="fcpCurrent" type="password" placeholder="Enter current password" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#fff;font-size:14px;box-sizing:border-box;margin-bottom:12px">
+      <label style="color:#94a3b8;font-size:12px;display:block;margin-bottom:4px">New Password</label>
+      <input id="fcpNew" type="password" placeholder="At least 6 characters" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#fff;font-size:14px;box-sizing:border-box;margin-bottom:12px">
+      <label style="color:#94a3b8;font-size:12px;display:block;margin-bottom:4px">Confirm New Password</label>
+      <input id="fcpConfirm" type="password" placeholder="Repeat new password" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#fff;font-size:14px;box-sizing:border-box;margin-bottom:20px">
+      <div style="display:flex;gap:10px">
+        <button onclick="submitFinanceCp()" style="flex:1;padding:11px;background:#3b82f6;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer">Save</button>
+        <button onclick="document.getElementById('fcpModal').style.display='none'" style="flex:1;padding:11px;background:#334155;color:#cbd5e1;border:none;border-radius:8px;font-size:14px;cursor:pointer">Cancel</button>
+      </div>
     </div>
   </div>
 
@@ -2797,34 +2956,75 @@ input:checked+.slider:before{transform:translateX(24px)}
 </div>
 
 <script>
-var FINANCE_USERS = {"finance": "finance2026", "finance_admin": "moderninfinity2026"};
 var allStudents = [];
 var changes = {};
+var FINANCE_CURRENT_USER = null;
 
 function doLogin(){
   var u = document.getElementById('fu').value.trim();
   var p = document.getElementById('fp').value.trim();
   var err = document.getElementById('fe');
   if(!u||!p){err.textContent='⚠️ Enter username and password';err.style.display='block';return;}
-  if(FINANCE_USERS[u] && FINANCE_USERS[u]===p){
-    err.style.display='none';
-    document.getElementById('login-screen').style.display='none';
-    document.getElementById('main-panel').style.display='block';
-    loadStudents();
-  } else {
-    err.textContent='❌ Incorrect username or password';
-    err.style.display='block';
-    document.getElementById('fp').value='';
-  }
+  fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})})
+  .then(function(r){return r.json();})
+  .then(function(d){
+    if(d.ok && (u==='finance'||u==='finance_admin')){
+      err.style.display='none';
+      FINANCE_CURRENT_USER = u;
+      document.getElementById('login-screen').style.display='none';
+      document.getElementById('main-panel').style.display='block';
+      loadStudents();
+    } else {
+      err.textContent='❌ Incorrect username or password';
+      err.style.display='block';
+      document.getElementById('fp').value='';
+    }
+  }).catch(function(){err.textContent='❌ Network error';err.style.display='block';});
 }
 
 function doLogout(){
-  allStudents=[]; changes={};
+  allStudents=[]; changes={}; FINANCE_CURRENT_USER=null;
   document.getElementById('main-panel').style.display='none';
   document.getElementById('login-screen').style.display='flex';
   document.getElementById('fu').value='';
   document.getElementById('fp').value='';
 }
+
+function openFinanceCpModal(){
+  document.getElementById('fcpCurrent').value='';
+  document.getElementById('fcpNew').value='';
+  document.getElementById('fcpConfirm').value='';
+  document.getElementById('fcpErr').style.display='none';
+  document.getElementById('fcpOk').style.display='none';
+  document.getElementById('fcpModal').style.display='flex';
+}
+function submitFinanceCp(){
+  var cur=document.getElementById('fcpCurrent').value.trim();
+  var nw=document.getElementById('fcpNew').value.trim();
+  var cf=document.getElementById('fcpConfirm').value.trim();
+  var errEl=document.getElementById('fcpErr');
+  var okEl=document.getElementById('fcpOk');
+  errEl.style.display='none'; okEl.style.display='none';
+  if(!cur||!nw||!cf){errEl.textContent='All fields are required.';errEl.style.display='block';return;}
+  if(nw!==cf){errEl.textContent='New passwords do not match.';errEl.style.display='block';return;}
+  if(nw.length<6){errEl.textContent='Password must be at least 6 characters.';errEl.style.display='block';return;}
+  fetch('/api/change-password',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({username:FINANCE_CURRENT_USER,current_password:cur,new_password:nw})})
+  .then(function(r){return r.json();})
+  .then(function(d){
+    if(d.ok){
+      okEl.style.display='block';
+      document.getElementById('fcpCurrent').value='';
+      document.getElementById('fcpNew').value='';
+      document.getElementById('fcpConfirm').value='';
+      setTimeout(function(){document.getElementById('fcpModal').style.display='none';},2000);
+    } else {
+      errEl.textContent=d.error||'Failed. Try again.';
+      errEl.style.display='block';
+    }
+  }).catch(function(){errEl.textContent='Network error.';errEl.style.display='block';});
+}
+document.getElementById('fcpModal').addEventListener('click',function(e){if(e.target===this)this.style.display='none';});
 
 async function loadStudents(){
   var btn = document.querySelector('.load-btn');
@@ -3130,6 +3330,11 @@ def admin_populate_students():
         logger.error(f"[admin/populate-students] {e}")
         return jsonify({"error": str(e)}), 500
 
+
+try:
+    load_passwords_from_sheet()
+except Exception as _lp_err:
+    logger.warning(f"[startup] Password load skipped: {_lp_err}")
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
