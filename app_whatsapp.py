@@ -617,11 +617,19 @@ def webhook():
         msg_type = msg_obj.get('type', '')
 
         if not from_num:
-            # Try contacts array as fallback (some WhatsApp clients omit 'from' on message obj)
-            contacts = value.get('contacts', [])
-            if contacts:
-                from_num = contacts[0].get('wa_id', '').strip()
-                logger.warning(f"[webhook] No 'from' on message, got from contacts: {from_num[:6]}*** type={msg_type}")
+            # Fallback 1: some WhatsApp clients use 'from_user_id' (e.g. EG.139XXXXXXXXX for Egyptian biz accounts)
+            raw_fuid = msg_obj.get('from_user_id', '').strip()
+            if raw_fuid:
+                # Strip country prefix like "EG." → keep digits, then normalize
+                digits = re.sub(r'^[A-Z]+\.', '', raw_fuid)
+                from_num = _normalize_phone(digits)
+                logger.warning(f"[webhook] No 'from', used from_user_id '{raw_fuid}' → normalized '{from_num[:6]}***' type={msg_type}")
+            # Fallback 2: contacts array (wa_id field)
+            if not from_num:
+                contacts = value.get('contacts', [])
+                if contacts:
+                    from_num = contacts[0].get('wa_id', '').strip()
+                    logger.warning(f"[webhook] No 'from', got from contacts wa_id: {from_num[:6]}*** type={msg_type}")
             if not from_num:
                 logger.warning(f"[webhook] Message with no 'from' field, type={msg_type}, raw_msg={str(msg_obj)[:200]}")
                 return 'OK', 200
