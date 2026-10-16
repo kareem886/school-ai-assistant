@@ -1992,7 +1992,28 @@ textarea { resize: vertical; min-height: 70px; }
     </div>
     <div class="topbar-right">
       <span class="teacher-badge" id="teacher-badge">👤 Teacher</span>
+      <button class="logout-btn" onclick="openTeacherCpModal()" style="background:rgba(100,180,255,0.15)">🔑 Change Password</button>
       <button class="logout-btn" onclick="doLogout()">Sign out</button>
+    </div>
+  </div>
+
+  <!-- Teacher Change Password Modal -->
+  <div id="tcpModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9999;align-items:center;justify-content:center">
+    <div style="background:#1e293b;border-radius:16px;padding:32px 28px;width:340px;max-width:95vw;box-shadow:0 8px 40px rgba(0,0,0,0.5)">
+      <h3 style="color:#fff;margin:0 0 6px;font-size:17px">🔑 Change Password</h3>
+      <p style="color:#94a3b8;font-size:12px;margin:0 0 20px">Change your teacher login password</p>
+      <div id="tcpErr" style="display:none;background:#7f1d1d;color:#fca5a5;padding:8px 12px;border-radius:8px;font-size:13px;margin-bottom:14px"></div>
+      <div id="tcpOk" style="display:none;background:#14532d;color:#86efac;padding:8px 12px;border-radius:8px;font-size:13px;margin-bottom:14px">✅ Password changed successfully!</div>
+      <label style="color:#94a3b8;font-size:12px;display:block;margin-bottom:4px">Current Password</label>
+      <input id="tcpCurrent" type="password" placeholder="Enter current password" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#fff;font-size:14px;box-sizing:border-box;margin-bottom:12px">
+      <label style="color:#94a3b8;font-size:12px;display:block;margin-bottom:4px">New Password</label>
+      <input id="tcpNew" type="password" placeholder="At least 6 characters" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#fff;font-size:14px;box-sizing:border-box;margin-bottom:12px">
+      <label style="color:#94a3b8;font-size:12px;display:block;margin-bottom:4px">Confirm New Password</label>
+      <input id="tcpConfirm" type="password" placeholder="Repeat new password" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:#fff;font-size:14px;box-sizing:border-box;margin-bottom:20px">
+      <div style="display:flex;gap:10px">
+        <button onclick="submitTeacherCp()" style="flex:1;padding:11px;background:#3b82f6;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer">Save</button>
+        <button onclick="document.getElementById('tcpModal').style.display='none'" style="flex:1;padding:11px;background:#334155;color:#cbd5e1;border:none;border-radius:8px;font-size:14px;cursor:pointer">Cancel</button>
+      </div>
     </div>
   </div>
 
@@ -2202,6 +2223,44 @@ function doLogout() {
   document.getElementById('login-user').value = '';
   document.getElementById('login-pass').value = '';
 }
+
+// ── Teacher Change Password ─────────────────────────────────────
+function openTeacherCpModal(){
+  document.getElementById('tcpCurrent').value='';
+  document.getElementById('tcpNew').value='';
+  document.getElementById('tcpConfirm').value='';
+  document.getElementById('tcpErr').style.display='none';
+  document.getElementById('tcpOk').style.display='none';
+  document.getElementById('tcpModal').style.display='flex';
+}
+async function submitTeacherCp(){
+  const cur=document.getElementById('tcpCurrent').value.trim();
+  const nw=document.getElementById('tcpNew').value.trim();
+  const cf=document.getElementById('tcpConfirm').value.trim();
+  const errEl=document.getElementById('tcpErr');
+  const okEl=document.getElementById('tcpOk');
+  errEl.style.display='none'; okEl.style.display='none';
+  if(!cur||!nw||!cf){errEl.textContent='All fields are required.';errEl.style.display='block';return;}
+  if(nw!==cf){errEl.textContent='New passwords do not match.';errEl.style.display='block';return;}
+  if(nw.length<6){errEl.textContent='Password must be at least 6 characters.';errEl.style.display='block';return;}
+  try {
+    const res = await fetch('/api/teacher-change-password',{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({username:CURRENT_TEACHER,current_password:cur,new_password:nw})});
+    const d = await res.json();
+    if(d.ok){
+      okEl.style.display='block';
+      document.getElementById('tcpCurrent').value='';
+      document.getElementById('tcpNew').value='';
+      document.getElementById('tcpConfirm').value='';
+      setTimeout(()=>document.getElementById('tcpModal').style.display='none',2000);
+    } else {
+      errEl.textContent=d.error||'Failed. Try again.';
+      errEl.style.display='block';
+    }
+  } catch(e){errEl.textContent='Network error.';errEl.style.display='block';}
+}
+document.getElementById('tcpModal').addEventListener('click',function(e){if(e.target===this)this.style.display='none';});
 
 window.onload = function() {
   const tmr = new Date(); tmr.setDate(tmr.getDate()+1);
@@ -2693,6 +2752,51 @@ def teacher_login():
         logger.error(f"[teacher-login] {e}")
         return jsonify({"ok": False, "error": "Login service unavailable"}), 500
 
+
+
+@app.route('/api/teacher-change-password', methods=['POST'])
+def teacher_change_password():
+    """Allow a teacher to change their own password in the Teachers sheet."""
+    data = request.get_json(force=True, silent=True) or {}
+    username    = str(data.get("username", "")).strip().lower()
+    current_pwd = str(data.get("current_password", "")).strip()
+    new_pwd     = str(data.get("new_password", "")).strip()
+
+    if not username or not current_pwd or not new_pwd:
+        return jsonify({"ok": False, "error": "Missing fields"}), 400
+    if len(new_pwd) < 6:
+        return jsonify({"ok": False, "error": "New password must be at least 6 characters"}), 400
+    if new_pwd == current_pwd:
+        return jsonify({"ok": False, "error": "New password must be different from current"}), 400
+
+    try:
+        wb = get_client().open_by_key(SHEET_ID)
+        ws = wb.worksheet("Teachers")
+        all_values = ws.get_all_values()
+        if not all_values:
+            return jsonify({"ok": False, "error": "Teachers sheet is empty"}), 500
+        headers = all_values[0]
+        try:
+            u_col = headers.index("Username")
+            p_col = headers.index("Password")
+        except ValueError:
+            return jsonify({"ok": False, "error": "Sheet format error"}), 500
+
+        for i, row in enumerate(all_values[1:], start=2):
+            row_user = row[u_col].strip().lower() if len(row) > u_col else ""
+            row_pass = row[p_col].strip() if len(row) > p_col else ""
+            if row_user == username:
+                if row_pass != current_pwd:
+                    return jsonify({"ok": False, "error": "Current password is incorrect"}), 401
+                # Update password cell (gspread is 1-indexed, +1 for header)
+                ws.update_cell(i, p_col + 1, new_pwd)
+                logger.info(f"[teacher-change-password] Password updated for {username}")
+                return jsonify({"ok": True})
+
+        return jsonify({"ok": False, "error": "Teacher account not found"}), 404
+    except Exception as e:
+        logger.error(f"[teacher-change-password] {e}")
+        return jsonify({"ok": False, "error": "Service error — try again"}), 500
 
 
 @app.route('/setup-teachers-tab')
