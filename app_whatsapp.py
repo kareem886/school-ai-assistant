@@ -213,14 +213,96 @@ ARABIC_GRADE_MAP = {
 }
 
 def extract_grade(m):
+    """Extract grade name from message text. Returns canonical grade string or None."""
+    # --- KG ---
+    if 'kg1' in m or 'k.g.1' in m or 'kg 1' in m or '\u0643\u064a \u062c\u064a 1' in m or '\u0643\u064a\u062c\u064a1' in m:
+        return 'KG1'
+    if 'kg2' in m or 'k.g.2' in m or 'kg 2' in m or '\u0643\u064a \u062c\u064a 2' in m or '\u0643\u064a\u062c\u064a2' in m:
+        return 'KG2'
+    if 'kg' in m or '\u0643\u064a \u062c\u064a' in m or '\u0643\u064a\u062c\u064a' in m:
+        return 'KG1'  # default KG to KG1 if no number
+
+    # --- Primary (1-6) ---
+    for n in ['6','5','4','3','2','1']:
+        if f'primary {n}' in m or f'primary{n}' in m:
+            return f'Primary {n}'
+        # Arabic: \u0628\u0631\u064a\u0645\u0631\u064a / \u0627\u0628\u062a\u062f\u0627\u0626\u064a
+        if f'\u0628\u0631\u064a\u0645\u0631\u064a {n}' in m or f'\u0627\u0628\u062a\u062f\u0627\u0626\u064a {n}' in m or f'\u0627\u0644\u0628\u0631\u064a\u0645\u0631\u064a {n}' in m:
+            return f'Primary {n}'
+
+    # --- Prep (1-3) ---
+    for n in ['3','2','1']:
+        if f'prep {n}' in m or f'prep{n}' in m:
+            return f'Prep {n}'
+        if f'\u0628\u0631\u064a\u0628 {n}' in m or f'\u0625\u0639\u062f\u0627\u062f\u064a {n}' in m or f'\u0627\u0639\u062f\u0627\u062f\u064a {n}' in m or f'\u0627\u0644\u0625\u0639\u062f\u0627\u062f\u064a {n}' in m:
+            return f'Prep {n}'
+
+    # --- Secondary (1-3) ---
+    for n in ['3','2','1']:
+        if f'secondary {n}' in m or f'secondary{n}' in m:
+            return f'Secondary {n}'
+        if f'\u0633\u0643\u0646\u062f\u0631\u064a {n}' in m or f'\u062b\u0627\u0646\u0648\u064a {n}' in m or f'\u0627\u0644\u062b\u0627\u0646\u0648\u064a {n}' in m:
+            return f'Secondary {n}'
+
+    # --- Legacy "Grade X" style (for backward compat) ---
+    LEGACY_MAP = {
+        '1': 'Primary 1', '2': 'Primary 2', '3': 'Primary 3',
+        '4': 'Primary 4', '5': 'Primary 5', '6': 'Primary 6',
+        '7': 'Prep 1',    '8': 'Prep 2',    '9': 'Prep 3',
+        '10': 'Secondary 1', '11': 'Secondary 2', '12': 'Secondary 3',
+    }
     for g in ['12','11','10','9','8','7','6','5','4','3','2','1']:
         if f'grade {g}' in m or f'grade{g}' in m:
-            return f'Grade {g}'
+            return LEGACY_MAP.get(g, f'Primary {g}')
         if f'\u0627\u0644\u0635\u0641 {g}' in m or f'\u0635\u0641 {g}' in m or f'\u0635\u0641{g}' in m:
-            return f'Grade {g}'
-    for word, num in ARABIC_GRADE_MAP.items():
-        if word in m:
-            return f'Grade {num}'
+            return LEGACY_MAP.get(g, f'Primary {g}')
+
+    # --- Arabic ordinal words (map to new names) ---
+    ARABIC_ORDINAL_TO_GRADE = {
+        '\u0627\u0644\u0623\u0648\u0644': None, '\u0627\u0644\u0627\u0648\u0644': None, '\u0627\u0648\u0644': None, '\u0623\u0648\u0644': None, '\u0648\u0627\u062d\u062f': None,
+        '\u0627\u0644\u062b\u0627\u0646\u064a': None, '\u0627\u0644\u062b\u0627\u0646\u0649': None, '\u0627\u062a\u0646\u064a\u0646': None, '\u062b\u0627\u0646\u064a': None, '\u062b\u0627\u0646\u0649': None,
+        '\u0627\u0644\u062b\u0627\u0644\u062b': None, '\u062a\u0644\u0627\u062a\u0629': None, '\u062a\u0644\u0627\u062a\u0647': None, '\u062b\u0627\u0644\u062b': None,
+        '\u0627\u0644\u0631\u0627\u0628\u0639': None, '\u0627\u0631\u0628\u0639\u0629': None, '\u0623\u0631\u0628\u0639\u0629': None, '\u0631\u0627\u0628\u0639': None,
+        '\u0627\u0644\u062e\u0627\u0645\u0633': None, '\u062e\u0645\u0633\u0629': None, '\u062e\u0627\u0645\u0633': None,
+        '\u0627\u0644\u0633\u0627\u062f\u0633': None, '\u0633\u062a\u0629': None, '\u0633\u0627\u062f\u0633': None,
+        '\u0627\u0644\u0633\u0627\u0628\u0639': None, '\u0633\u0628\u0639\u0629': None, '\u0633\u0627\u0628\u0639': None,
+        '\u0627\u0644\u062b\u0627\u0645\u0646': None, '\u062a\u0645\u0627\u0646\u064a\u0629': None, '\u062b\u0627\u0645\u0646': None,
+        '\u0627\u0644\u062a\u0627\u0633\u0639': None, '\u062a\u0633\u0639\u0629': None, '\u062a\u0627\u0633\u0639': None,
+        '\u0627\u0644\u0639\u0627\u0634\u0631': None, '\u0639\u0627\u0634\u0631': None,
+        '\u0627\u0644\u062d\u0627\u062f\u064a \u0639\u0634\u0631': None, '\u062d\u0627\u062f\u064a \u0639\u0634\u0631': None,
+        '\u0627\u0644\u062b\u0627\u0646\u064a \u0639\u0634\u0631': None, '\u062b\u0627\u0646\u064a \u0639\u0634\u0631': None,
+    }
+    ORDINAL_LIST = [
+        ('\u0627\u0644\u0623\u0648\u0644','\u0627\u0644\u0627\u0648\u0644','\u0627\u0648\u0644','\u0623\u0648\u0644','\u0648\u0627\u062d\u062f'),   # \u2192 1
+        ('\u0627\u0644\u062b\u0627\u0646\u064a','\u0627\u0644\u062b\u0627\u0646\u0649','\u0627\u062a\u0646\u064a\u0646','\u062b\u0627\u0646\u064a','\u062b\u0627\u0646\u0649'), # \u2192 2
+        ('\u0627\u0644\u062b\u0627\u0644\u062b','\u062a\u0644\u0627\u062a\u0629','\u062a\u0644\u0627\u062a\u0647','\u062b\u0627\u0644\u062b'),       # \u2192 3
+        ('\u0627\u0644\u0631\u0627\u0628\u0639','\u0627\u0631\u0628\u0639\u0629','\u0623\u0631\u0628\u0639\u0629','\u0631\u0627\u0628\u0639'),        # \u2192 4
+        ('\u0627\u0644\u062e\u0627\u0645\u0633','\u062e\u0645\u0633\u0629','\u062e\u0627\u0645\u0633'),                # \u2192 5
+        ('\u0627\u0644\u0633\u0627\u062f\u0633','\u0633\u062a\u0629','\u0633\u0627\u062f\u0633'),                 # \u2192 6
+        ('\u0627\u0644\u0633\u0627\u0628\u0639','\u0633\u0628\u0639\u0629','\u0633\u0627\u0628\u0639'),                # \u2192 7
+        ('\u0627\u0644\u062b\u0627\u0645\u0646','\u062a\u0645\u0627\u0646\u064a\u0629','\u062b\u0627\u0645\u0646'),              # \u2192 8
+        ('\u0627\u0644\u062a\u0627\u0633\u0639','\u062a\u0633\u0639\u0629','\u062a\u0627\u0633\u0639'),                # \u2192 9
+        ('\u0627\u0644\u0639\u0627\u0634\u0631','\u0639\u0627\u0634\u0631'),                       # \u2192 10
+        ('\u0627\u0644\u062d\u0627\u062f\u064a \u0639\u0634\u0631','\u062d\u0627\u062f\u064a \u0639\u0634\u0631'),              # \u2192 11
+        ('\u0627\u0644\u062b\u0627\u0646\u064a \u0639\u0634\u0631','\u062b\u0627\u0646\u064a \u0639\u0634\u0631'),              # \u2192 12
+    ]
+    NUM_TO_NEW = {
+        1:'Primary 1',2:'Primary 2',3:'Primary 3',4:'Primary 4',5:'Primary 5',6:'Primary 6',
+        7:'Prep 1',8:'Prep 2',9:'Prep 3',
+        10:'Secondary 1',11:'Secondary 2',12:'Secondary 3',
+    }
+    for idx, variants in enumerate(ORDINAL_LIST, start=1):
+        for v in variants:
+            if v in m:
+                # Determine level from context keywords
+                if any(k in m for k in ('\u0628\u0631\u064a\u0628','prep','\u0625\u0639\u062f\u0627\u062f\u064a','\u0627\u0639\u062f\u0627\u062f\u064a')):
+                    prep_n = min(idx, 3)
+                    return f'Prep {prep_n}'
+                if any(k in m for k in ('\u0633\u0643\u0646\u062f\u0631\u064a','secondary','\u062b\u0627\u0646\u0648\u064a')):
+                    sec_n = min(idx, 3)
+                    return f'Secondary {sec_n}'
+                return NUM_TO_NEW.get(idx)
+
     return None
 
 def _normalize_phone(phone):
