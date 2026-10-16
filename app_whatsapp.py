@@ -204,6 +204,20 @@ def extract_grade(m):
             return f'Grade {num}'
     return None
 
+def is_registered_parent(from_phone):
+    """Return True if this phone number appears in any row of the Students tab as Parent Phone."""
+    try:
+        rows = read_tab("Students")
+        norm = from_phone.lstrip('+').strip()
+        for r in rows:
+            p = str(r.get("Parent Phone", "")).lstrip('+').strip()
+            if p and (p == norm or p.lstrip('0') == norm.lstrip('0')):
+                return True
+        return False
+    except Exception as e:
+        logger.error(f"[is_registered_parent] {e}")
+        return False
+
 def get_parent_students(from_phone):
     """Return list of student IDs linked to this parent phone (reads Students tab)."""
     try:
@@ -231,6 +245,32 @@ def get_parent_students(from_phone):
 def process_message(msg, from_phone=""):
     m = msg.lower().strip()
     is_arabic = any('\u0600' <= c <= '\u06FF' for c in msg)
+
+    # \u2500\u2500 Access control \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+    # These topics are private \u2014 only parents registered in the spreadsheet
+    PRIVATE_KW = [
+        # Fees
+        'fee','fees','cost','how much','price','\u0631\u0633\u0648\u0645','\u0645\u0635\u0627\u0631\u064A\u0641','\u0643\u0627\u0645','\u0633\u0639\u0631','\u062A\u0643\u0644\u0641\u0629','\u0627\u0644\u0631\u0633\u0648\u0645','\u0627\u0644\u0645\u0635\u0627\u0631\u064A\u0641','\u0628\u0643\u0627\u0645','\u0628\u0642\u062F \u0627\u064A\u0647','\u0642\u062F\u064A\u0647','\u0642\u062F \u0627\u064A\u0647',
+        # Homework
+        'homework','assignment','hw','\u0648\u0627\u062C\u0628','\u062A\u0643\u0644\u064A\u0641','\u0648\u0627\u062C\u0628\u0627\u062A','\u0627\u0644\u0648\u0627\u062C\u0628','\u0627\u0644\u0648\u0627\u062C\u0628\u0627\u062A','\u062A\u0643\u0644\u064A\u0641\u0627\u062A',
+        # Exam results
+        'result','results','exam','score','mark','marks','\u0646\u062A\u064A\u062C\u0629','\u0646\u062A\u0627\u0626\u062C','\u0627\u0645\u062A\u062D\u0627\u0646','\u0627\u0645\u062A\u062D\u0627\u0646\u0627\u062A','\u062F\u0631\u062C\u0629','\u062F\u0631\u062C\u0627\u062A','grade','grades','\u0627\u0644\u062F\u0631\u062C\u0627\u062A','\u062F\u0631\u062C\u0627\u062A\u0647',
+        # Attendance
+        'attendance','absent','\u062D\u0636\u0648\u0631','\u063A\u064A\u0627\u0628','\u0627\u0644\u063A\u064A\u0627\u0628','\u0627\u0644\u062D\u0636\u0648\u0631',
+    ]
+    _is_private = any(w in m for w in PRIVATE_KW) or bool(re.search(r'STU\d+', msg.upper()))
+    if _is_private and from_phone and not is_registered_parent(from_phone):
+        if is_arabic:
+            return (
+                "\uD83D\uDD12 \u0647\u0630\u0647 \u0627\u0644\u062E\u062F\u0645\u0629 \u0645\u062A\u0627\u062D\u0629 \u0641\u0642\u0637 \u0644\u0623\u0648\u0644\u064A\u0627\u0621 \u0623\u0645\u0648\u0631 \u0627\u0644\u0637\u0644\u0627\u0628 \u0627\u0644\u0645\u0633\u062C\u0644\u064A\u0646 \u0641\u064A \u0627\u0644\u0645\u062F\u0631\u0633\u0629.\n\n"
+                "\u0644\u0644\u0627\u0633\u062A\u0641\u0633\u0627\u0631 \u0623\u0648 \u0627\u0644\u062A\u0633\u062C\u064A\u0644:\n"
+                f"\uD83D\uDCDE {SCHOOL['phone']}"
+            )
+        return (
+            "\uD83D\uDD12 This service is available to registered school parents only.\n\n"
+            "For enquiries or registration:\n"
+            f"\uD83D\uDCDE {SCHOOL['phone']}"
+        )
 
     # Greet
     greet_kw = ['\u0645\u0631\u062d\u0628\u0627','\u0627\u0647\u0644\u0627','\u0623\u0647\u0644\u0627','\u0647\u0644\u0627','\u0627\u0644\u0633\u0644\u0627\u0645','\u0635\u0628\u0627\u062d','\u0645\u0633\u0627\u0621','hi','hello','hey','\u0633\u0644\u0627\u0645']
