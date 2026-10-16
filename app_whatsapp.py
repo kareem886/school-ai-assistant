@@ -38,7 +38,7 @@ META_API_URL    = f"https://graph.facebook.com/v18.0/{PHONE_NUMBER_ID}/messages"
 
 SCHOOL = {
     "name": "Modern Infinity Language School",
-    "phone": "02-3796-9155 / 02-3796-9166",
+    "phone": "0237969155 / +20 10 99578390",
     "whatsapp": "01066253331",
     "address": "El Yasmeen Compound, Entrance 1, El Sheikh Zayed, 6th of October City",
     "admin_hours": "Sunday to Thursday, 8:00 AM to 5:00 PM",
