@@ -31,8 +31,8 @@ APP_SECRET      = os.environ.get("APP_SECRET", "")
 # ── Admin accounts ─────────────────────────────────────────────────────────────────────
 ADMINS = {
     "admin":        {"password": "moderninfinity2026", "label": "Super Admin",   "grades": []},
-    "admin_junior": {"password": "junior2026",         "label": "Junior Admin",  "grades": ["KG1","KG2","Grade 1","Grade 2","Grade 3","Grade 4","Grade 5","Grade 6"]},
-    "admin_senior": {"password": "senior2026",         "label": "Senior Admin",  "grades": ["Grade 7","Grade 8","Grade 9","Grade 10","Grade 11","Grade 12"]},
+    "admin_junior": {"password": "junior2026",         "label": "Junior Admin",  "grades": ["KG1","KG2","Primary 1","Primary 2","Primary 3","Primary 4","Primary 5","Primary 6"]},
+    "admin_senior": {"password": "senior2026",         "label": "Senior Admin",  "grades": ["Prep 1","Prep 2","Prep 3","Secondary 1","Secondary 2","Secondary 3"]},
 }
 META_API_URL    = f"https://graph.facebook.com/v18.0/{PHONE_NUMBER_ID}/messages"
 
@@ -322,8 +322,8 @@ def process_message(msg, from_phone=""):
                     f"📍 *\u0645\u0648\u0642\u0639 \u0627\u0644\u0645\u062f\u0631\u0633\u0629*\n\n"
                     f"📞 {SCHOOL['phone']}")
         return (f"Welcome to Modern Infinity Language School! 👋\n\n"
-                f"📚 *Homework* \u2014 e.g. Homework for Grade 7\n"
-                f"📅 *Schedule* \u2014 e.g. Grade 5 schedule\n"
+                f"📚 *Homework* \u2014 e.g. Homework for Prep 1\n"
+                f"📅 *Schedule* \u2014 e.g. Primary 5 schedule\n"
                 f"💰 *Fees*\n"
                 f"💳 *Balance* \u2014 e.g. STU001\n"
                 f"📋 *Attendance* \u2014 e.g. STU001 attendance\n"
@@ -339,7 +339,7 @@ def process_message(msg, from_phone=""):
     if any(w in m for w in hw_kw):
         grade = extract_grade(m)
         if not grade:
-            return ("📚 \u062d\u062f\u062f \u0627\u0644\u0635\u0641 \u0645\u0646 \u0641\u0636\u0644\u0643\n\u0645\u062b\u0627\u0644: *\u0648\u0627\u062c\u0628 \u0627\u0644\u0635\u0641 \u0627\u0644\u0633\u0627\u0628\u0639*") if is_arabic else                    ("📚 Please specify the grade\nExample: *Homework for Grade 7*")
+            return ("📚 \u062d\u062f\u062f \u0627\u0644\u0635\u0641 \u0645\u0646 \u0641\u0636\u0644\u0643\n\u0645\u062b\u0627\u0644: *\u0648\u0627\u062c\u0628 \u0627\u0644\u0635\u0641 \u0627\u0644\u0633\u0627\u0628\u0639*") if is_arabic else                    ("📚 Please specify the grade\nExample: *Homework for Prep 1*")
         rows = read_tab("Homework")
         from datetime import datetime, date as _date
         today = _date.today()
@@ -377,7 +377,7 @@ def process_message(msg, from_phone=""):
     if any(w in m for w in sched_kw):
         grade = extract_grade(m)
         if not grade:
-            return ("📅 \u062d\u062f\u062f \u0627\u0644\u0635\u0641\n\u0645\u062b\u0627\u0644: *\u062c\u062f\u0648\u0644 \u0627\u0644\u0635\u0641 \u0627\u0644\u0633\u0627\u062f\u0633*") if is_arabic else                    ("📅 Please specify the grade\nExample: *Grade 6 schedule*")
+            return ("📅 \u062d\u062f\u062f \u0627\u0644\u0635\u0641\n\u0645\u062b\u0627\u0644: *\u062c\u062f\u0648\u0644 \u0627\u0644\u0635\u0641 \u0627\u0644\u0633\u0627\u062f\u0633*") if is_arabic else                    ("📅 Please specify the grade\nExample: *Primary 6 schedule*")
         rows = read_tab("Schedule")
         sched = [r for r in rows if grade.lower() in str(r.get("Grade","")).lower()]
         if not sched:
@@ -600,8 +600,8 @@ def process_message(msg, from_phone=""):
                 f"📍 \u0645\u0648\u0642\u0639 \u0627\u0644\u0645\u062f\u0631\u0633\u0629\n\n"
                 f"📞 {SCHOOL['phone']}")
     return (f"Welcome to Modern Infinity! 👋\n\n"
-            f"📚 Homework \u2014 Homework for Grade 7\n"
-            f"📅 Schedule \u2014 Grade 5 schedule\n"
+            f"📚 Homework \u2014 Homework for Prep 1\n"
+            f"📅 Schedule \u2014 Primary 5 schedule\n"
             f"💰 Fees\n"
             f"💳 Balance \u2014 STU001\n"
             f"📋 Attendance \u2014 STU001 attendance\n"
@@ -858,12 +858,12 @@ textarea:focus{border-color:var(--g)}
       <div class="role-card" data-u="admin_junior" data-p="" onclick="pickRole(this)">
         <div class="ri">🎒</div>
         <div class="rl">Junior Admin</div>
-        <div class="rs">KG – Grade 6</div>
+        <div class="rs">KG – Primary 6</div>
       </div>
       <div class="role-card" data-u="admin_senior" data-p="" onclick="pickRole(this)">
         <div class="ri">🎓</div>
         <div class="rl">Senior Admin</div>
-        <div class="rs">Grade 7 – 12</div>
+        <div class="rs">Prep 1 – Secondary 3</div>
       </div>
     </div>
 
@@ -984,16 +984,16 @@ var ALL_PARENTS  = [];
 var SEL_GRADES   = ['All'];
 
 // Grade definitions per scope
-var JUNIOR_GRADES = ['KG1','KG2','Grade 1','Grade 2','Grade 3','Grade 4','Grade 5','Grade 6'];
-var SENIOR_GRADES = ['Grade 7','Grade 8','Grade 9','Grade 10','Grade 11','Grade 12'];
-var ALL_GRADES    = ['KG1','KG2','Grade 1','Grade 2','Grade 3','Grade 4','Grade 5','Grade 6',
-                     'Grade 7','Grade 8','Grade 9','Grade 10','Grade 11','Grade 12'];
+var JUNIOR_GRADES = ['KG1','KG2','Primary 1','Primary 2','Primary 3','Primary 4','Primary 5','Primary 6'];
+var SENIOR_GRADES = ['Prep 1','Prep 2','Prep 3','Secondary 1','Secondary 2','Secondary 3'];
+var ALL_GRADES    = ['KG1','KG2','Primary 1','Primary 2','Primary 3','Primary 4','Primary 5','Primary 6',
+                     'Prep 1','Prep 2','Prep 3','Secondary 1','Secondary 2','Secondary 3'];
 
 // Role card pre-fill hints
 var ROLE_HINTS = {
   'admin':        'You are signing in as <strong>Super Admin</strong> — access to all grades',
-  'admin_junior': 'You are signing in as <strong>Junior Admin</strong> — KG to Grade 6 only',
-  'admin_senior': 'You are signing in as <strong>Senior Admin</strong> — Grade 7 to Grade 12 only'
+  'admin_junior': 'You are signing in as <strong>Junior Admin</strong> — KG to Primary 6 only',
+  'admin_senior': 'You are signing in as <strong>Senior Admin</strong> — Prep 1 to Secondary 3 only'
 };
 var ROLE_USERNAMES = {
   'admin':'admin','admin_junior':'admin_junior','admin_senior':'admin_senior'
@@ -1047,14 +1047,14 @@ function setupAdminUI(){
   var u = CURRENT_USER;
   var isSuper  = u.grades.length === 0;
   var isJunior = !isSuper && u.grades.includes('KG1');
-  var isSenior = !isSuper && u.grades.includes('Grade 7');
+  var isSenior = !isSuper && u.grades.includes('Prep 1');
 
   // Sidebar badge
   document.getElementById('sbAdminName').textContent = u.username;
   var scopeEl = document.getElementById('sbAdminScope');
   if(isSuper){  scopeEl.textContent='All Grades'; scopeEl.className='ab-scope scope-super'; }
-  else if(isJunior){ scopeEl.textContent='KG – Grade 6'; scopeEl.className='ab-scope scope-junior'; }
-  else{          scopeEl.textContent='Grade 7 – 12'; scopeEl.className='ab-scope scope-senior'; }
+  else if(isJunior){ scopeEl.textContent='KG – Primary 6'; scopeEl.className='ab-scope scope-junior'; }
+  else{          scopeEl.textContent='Prep 1 – Secondary 3'; scopeEl.className='ab-scope scope-senior'; }
 
   // Header scope tag
   var ht = document.getElementById('headerScopeTag');
@@ -1075,12 +1075,12 @@ function buildGradeGrid(isSuper, isJunior, isSenior){
   var html = '';
 
   // "All" button (scoped to this admin's grades)
-  var allLabel = isSuper ? 'All Parents' : (isJunior ? 'All KG – Grade 6' : 'All Grade 7–12');
+  var allLabel = isSuper ? 'All Parents' : (isJunior ? 'All KG – Primary 6' : 'All Prep – Secondary');
   html += '<div class="gc all sel" data-g="All" onclick="selGrade(this)">'+allLabel+'</div>';
 
   // Junior section
   if(isSuper || isJunior){
-    if(isSuper) html += '<div style="grid-column:1/-1;font-size:11px;font-weight:600;color:#64748b;padding:8px 4px 2px;letter-spacing:.5px">🎒 JUNIOR — KG to Grade 6</div>';
+    if(isSuper) html += '<div style="grid-column:1/-1;font-size:11px;font-weight:600;color:#64748b;padding:8px 4px 2px;letter-spacing:.5px">🎒 JUNIOR — KG to Primary 6</div>';
     JUNIOR_GRADES.forEach(function(g){
       html += '<div class="gc" data-g="'+g+'" onclick="selGrade(this)">'+g+'</div>';
     });
@@ -1088,7 +1088,7 @@ function buildGradeGrid(isSuper, isJunior, isSenior){
 
   // Senior section
   if(isSuper || isSenior){
-    if(isSuper) html += '<div style="grid-column:1/-1;font-size:11px;font-weight:600;color:#64748b;padding:8px 4px 2px;letter-spacing:.5px">🎓 SENIOR — Grade 7 to 12</div>';
+    if(isSuper) html += '<div style="grid-column:1/-1;font-size:11px;font-weight:600;color:#64748b;padding:8px 4px 2px;letter-spacing:.5px">🎓 SENIOR — Prep 1 to Secondary 3</div>';
     SENIOR_GRADES.forEach(function(g){
       html += '<div class="gc" data-g="'+g+'" onclick="selGrade(this)">'+g+'</div>';
     });
@@ -1144,7 +1144,7 @@ function loadParents(){
     el.innerHTML='<table class="ptable"><thead><tr><th>Name</th><th>Phone</th><th>Grade</th></tr></thead><tbody>'+
       pl.map(function(p){
         var grade = p.grade||'';
-        var pillCls = grade.toLowerCase().includes('kg')||parseInt(grade.replace(/\\D/g,''))<7 ? 'g-junior' : 'g-senior';
+        var pillCls = (grade.toLowerCase().includes('kg')||grade.toLowerCase().includes('primary')) ? 'g-junior' : 'g-senior';
         if(grade.toLowerCase().includes('kg')) pillCls='g-kg';
         return '<tr><td>'+(p.name||'—')+'</td><td>'+p.phone+'</td><td><span class="grade-pill '+pillCls+'">'+grade+'</span></td></tr>';
       }).join('')+'</tbody></table>';
@@ -1795,10 +1795,10 @@ textarea { resize: vertical; min-height: 70px; }
           <select id="grade">
             <option value="">Select grade…</option>
             <option>KG1</option><option>KG2</option>
-            <option>Grade 1</option><option>Grade 2</option><option>Grade 3</option>
-            <option>Grade 4</option><option>Grade 5</option><option>Grade 6</option>
-            <option>Grade 7</option><option>Grade 8</option><option>Grade 9</option>
-            <option>Grade 10</option><option>Grade 11</option><option>Grade 12</option>
+            <option>Primary 1</option><option>Primary 2</option><option>Primary 3</option>
+            <option>Primary 4</option><option>Primary 5</option><option>Primary 6</option>
+            <option>Prep 1</option><option>Prep 2</option><option>Prep 3</option>
+            <option>Secondary 1</option><option>Secondary 2</option><option>Secondary 3</option>
           </select>
         </div>
         <div class="field">
@@ -1860,10 +1860,10 @@ textarea { resize: vertical; min-height: 70px; }
           <select id="ex-grade" onchange="clearStudents()">
             <option value="">Select grade…</option>
             <option>KG1</option><option>KG2</option>
-            <option>Grade 1</option><option>Grade 2</option><option>Grade 3</option>
-            <option>Grade 4</option><option>Grade 5</option><option>Grade 6</option>
-            <option>Grade 7</option><option>Grade 8</option><option>Grade 9</option>
-            <option>Grade 10</option><option>Grade 11</option><option>Grade 12</option>
+            <option>Primary 1</option><option>Primary 2</option><option>Primary 3</option>
+            <option>Primary 4</option><option>Primary 5</option><option>Primary 6</option>
+            <option>Prep 1</option><option>Prep 2</option><option>Prep 3</option>
+            <option>Secondary 1</option><option>Secondary 2</option><option>Secondary 3</option>
           </select>
         </div>
         <div class="field">
@@ -2665,10 +2665,10 @@ input:checked+.slider:before{transform:translateX(24px)}
         <select id="gradeFilter">
           <option value="">All Grades</option>
           <option>KG1</option><option>KG2</option>
-          <option>Grade 1</option><option>Grade 2</option><option>Grade 3</option>
-          <option>Grade 4</option><option>Grade 5</option><option>Grade 6</option>
-          <option>Grade 7</option><option>Grade 8</option><option>Grade 9</option>
-          <option>Grade 10</option><option>Grade 11</option><option>Grade 12</option>
+          <option>Primary 1</option><option>Primary 2</option><option>Primary 3</option>
+          <option>Primary 4</option><option>Primary 5</option><option>Primary 6</option>
+          <option>Prep 1</option><option>Prep 2</option><option>Prep 3</option>
+          <option>Secondary 1</option><option>Secondary 2</option><option>Secondary 3</option>
         </select>
       </div>
       <div class="filter-group">
