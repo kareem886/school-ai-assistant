@@ -54,6 +54,22 @@ RATE_LIMIT_WINDOW = 60
 RATE_LIMIT_MAX = 10
 _rate_store = defaultdict(list)
 
+# Deduplication: track message IDs we've already processed (last 500, ~30 min window)
+_seen_msg_ids: list = []
+_SEEN_MAX = 500
+
+def _is_duplicate_msg(msg_id: str) -> bool:
+    """Return True if we've already processed this WhatsApp message ID."""
+    if not msg_id:
+        return False
+    if msg_id in _seen_msg_ids:
+        logger.info(f"[dedup] Skipping duplicate msg_id {msg_id[:20]}***")
+        return True
+    _seen_msg_ids.append(msg_id)
+    if len(_seen_msg_ids) > _SEEN_MAX:
+        del _seen_msg_ids[0]
+    return False
+
 def is_rate_limited(phone):
     now = time.time()
     window_start = now - RATE_LIMIT_WINDOW
@@ -613,6 +629,9 @@ def webhook():
         if not messages:
             return 'OK', 200
         msg_obj = messages[0]
+        msg_id   = msg_obj.get('id', '')
+        if _is_duplicate_msg(msg_id):
+            return 'OK', 200
         from_num = msg_obj.get('from', '').strip()
         msg_type = msg_obj.get('type', '')
 
