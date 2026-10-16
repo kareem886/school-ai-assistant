@@ -617,8 +617,14 @@ def webhook():
         msg_type = msg_obj.get('type', '')
 
         if not from_num:
-            logger.warning(f"[webhook] Message with no 'from' field, type={msg_type} — skipping")
-            return 'OK', 200
+            # Try contacts array as fallback (some WhatsApp clients omit 'from' on message obj)
+            contacts = value.get('contacts', [])
+            if contacts:
+                from_num = contacts[0].get('wa_id', '').strip()
+                logger.warning(f"[webhook] No 'from' on message, got from contacts: {from_num[:6]}*** type={msg_type}")
+            if not from_num:
+                logger.warning(f"[webhook] Message with no 'from' field, type={msg_type}, raw_msg={str(msg_obj)[:200]}")
+                return 'OK', 200
 
         if msg_type == 'text':
             body = msg_obj.get('text', {}).get('body', '')
